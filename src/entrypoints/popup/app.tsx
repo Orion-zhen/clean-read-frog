@@ -25,8 +25,8 @@ function App() {
             whatever is left of the 320px popup is its width, and a long display
             name ellipses inside that instead of pushing the icons off. */}
         <div className="flex items-center justify-between gap-2">
-          <UserAccountMenuPopup />
-          <div className="flex shrink-0 items-center">
+          {!__PURE_BUILD__ && <UserAccountMenuPopup />}
+          <div className="ml-auto flex shrink-0 items-center">
             <TranslationHubButton />
             <DiscordButton />
             <BlogNotification />

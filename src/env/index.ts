@@ -1,10 +1,16 @@
 import { createEnv } from "@t3-oss/env-core"
-import { createExtensionClientEnvSchema, resolveExtensionEnv } from "./shared"
+import {
+  createExtensionClientEnvSchema,
+  getExtensionDistribution,
+  resolveExtensionEnv,
+} from "./shared"
 
 const shouldSkipRequiredProductionEnv = import.meta.env.WXT_SKIP_ENV_VALIDATION === "true"
+const distribution = getExtensionDistribution(import.meta.env)
 const extensionClientEnvSchema = createExtensionClientEnvSchema(
   import.meta.env.PROD,
   shouldSkipRequiredProductionEnv,
+  distribution,
 )
 
 export const env = createEnv({

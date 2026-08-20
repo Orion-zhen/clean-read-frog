@@ -9,7 +9,7 @@ import {
   useFeatureProvider,
 } from "@/components/llm-providers/use-feature-providers"
 import {
-  FEATURE_KEYS,
+  AVAILABLE_FEATURE_KEYS,
   getFeatureDescriptionI18nKey,
   getFeatureLabelI18nKey,
 } from "@/utils/constants/feature-providers"
@@ -128,7 +128,7 @@ export function FeatureProvidersConfig() {
       id="feature-providers"
       title={i18n.t("options.apiProviders.featureProviders.title")}
     >
-      {FEATURE_KEYS.map((featureKey) => (
+      {AVAILABLE_FEATURE_KEYS.map((featureKey) => (
         <FeatureProviderItem key={featureKey} featureKey={featureKey} />
       ))}
       <CustomActionProviderItems />

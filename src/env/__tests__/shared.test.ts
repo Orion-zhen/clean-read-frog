@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { z } from "zod"
 import {
   createExtensionClientEnvSchema,
+  getExtensionDistribution,
   LOCAL_EXTENSION_ENV_DEFAULTS,
   PRODUCTION_EXTENSION_ENV_DEFAULTS,
   resolveExtensionEnv,
@@ -19,7 +20,13 @@ function parseResolvedExtensionEnv(
   skipRequiredProductionEnv = false,
 ) {
   return z
-    .object(createExtensionClientEnvSchema(isProd, skipRequiredProductionEnv))
+    .object(
+      createExtensionClientEnvSchema(
+        isProd,
+        skipRequiredProductionEnv,
+        getExtensionDistribution(rawEnv),
+      ),
+    )
     .parse(resolveExtensionEnv(rawEnv))
 }
 
@@ -85,6 +92,7 @@ describe("extension env parsing", () => {
         WXT_AUTH_COOKIE_DOMAINS: "readfrog.app,localhost",
       }),
     ).toEqual({
+      WXT_DISTRIBUTION: "official",
       WXT_API_URL: PRODUCTION_EXTENSION_ENV_DEFAULTS.WXT_API_URL,
       WXT_WEBSITE_URL: "https://www.readfrog.app",
       WXT_OFFICIAL_SITE_ORIGINS: ["https://readfrog.app", "https://www.readfrog.app"],
@@ -147,6 +155,19 @@ describe("extension env parsing", () => {
     ).toThrowError("expected string, received undefined")
   })
 
+  it("allows a production pure build without official service credentials", () => {
+    expect(
+      parseResolvedExtensionEnv(
+        {
+          WXT_DISTRIBUTION: "pure",
+        },
+        true,
+      ),
+    ).toMatchObject({
+      WXT_DISTRIBUTION: "pure",
+    })
+  })
+
   it("accepts Google and PostHog env vars when PROD is true", () => {
     expect(
       parseResolvedExtensionEnv(
@@ -156,6 +177,7 @@ describe("extension env parsing", () => {
         true,
       ),
     ).toEqual({
+      WXT_DISTRIBUTION: "official",
       WXT_API_URL: PRODUCTION_EXTENSION_ENV_DEFAULTS.WXT_API_URL,
       WXT_WEBSITE_URL: PRODUCTION_EXTENSION_ENV_DEFAULTS.WXT_WEBSITE_URL,
       WXT_OFFICIAL_SITE_ORIGINS: ["https://readfrog.app", "https://www.readfrog.app"],
@@ -178,6 +200,7 @@ describe("extension env parsing", () => {
         true,
       ),
     ).toEqual({
+      WXT_DISTRIBUTION: "official",
       WXT_API_URL: PRODUCTION_EXTENSION_ENV_DEFAULTS.WXT_API_URL,
       WXT_WEBSITE_URL: PRODUCTION_EXTENSION_ENV_DEFAULTS.WXT_WEBSITE_URL,
       WXT_OFFICIAL_SITE_ORIGINS: ["https://readfrog.app", "https://www.readfrog.app"],
@@ -188,6 +211,14 @@ describe("extension env parsing", () => {
       WXT_POSTHOG_TEST_UUID: undefined,
       WXT_ANALYTICS_DAILY_FEATURE_CACHE_ENABLED: false,
     })
+  })
+
+  it("rejects unknown distributions", () => {
+    expect(() =>
+      resolveExtensionEnv({
+        WXT_DISTRIBUTION: "custom",
+      }),
+    ).toThrowError(/Invalid/)
   })
 
   it("parses WXT_USE_LOCAL_PACKAGES strictly with zod stringbool", () => {

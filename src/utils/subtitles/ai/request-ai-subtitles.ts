@@ -128,6 +128,10 @@ export async function requestAiSubtitles(
   ctx: AiSubtitlesContext,
   opts?: { signal?: AbortSignal },
 ): Promise<{ segments: SubtitlesFragment[]; detectedLanguage: string }> {
+  if (__PURE_BUILD__) {
+    throw new Error("AI subtitle transcription is unavailable in the pure distribution")
+  }
+
   const { url, durationSec } = ctx
   const signal = opts?.signal
 

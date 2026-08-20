@@ -3,6 +3,9 @@ import { configDefaults, defineConfig } from "vitest/config"
 import { WxtVitest } from "wxt/testing/vitest-plugin"
 
 export default defineConfig({
+  define: {
+    __PURE_BUILD__: JSON.stringify(process.env.WXT_DISTRIBUTION === "pure"),
+  },
   // TODO: remove any
   plugins: [WxtVitest() as any, react()],
   test: {

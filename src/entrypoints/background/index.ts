@@ -46,7 +46,7 @@ export default defineBackground({
       await ensureInitializedConfig()
 
       // Open tutorial page when extension is installed
-      if (details.reason === "install") {
+      if (details.reason === "install" && !__PURE_BUILD__) {
         await browser.tabs.create({
           url: `${env.WXT_WEBSITE_URL}/guide/step-1`,
         })
@@ -109,7 +109,9 @@ export default defineBackground({
       await cleanupAllAiSegmentationCache()
     })
 
-    newUserGuide()
+    if (!__PURE_BUILD__) {
+      newUserGuide()
+    }
     setupAnalyticsMessageHandlers()
     translationMessage()
     registerActionIconListeners()
@@ -139,8 +141,10 @@ export default defineBackground({
     })()
 
     proxyFetch()
-    setupHostedAiStatusHandler()
-    setupNotebasePendingSaveProcessor(() => backgroundReady)
+    if (!__PURE_BUILD__) {
+      setupHostedAiStatusHandler()
+      setupNotebasePendingSaveProcessor(() => backgroundReady)
+    }
     setupEdgeTTSMessageHandlers()
     setupLLMGenerateTextMessageHandlers()
     setupTTSPlaybackMessageHandlers()

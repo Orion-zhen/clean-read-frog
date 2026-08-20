@@ -1,6 +1,10 @@
 import { z } from "zod"
 
+export const EXTENSION_DISTRIBUTIONS = ["official", "pure"] as const
+export type ExtensionDistribution = (typeof EXTENSION_DISTRIBUTIONS)[number]
+
 export const PRODUCTION_EXTENSION_ENV_DEFAULTS = {
+  WXT_DISTRIBUTION: "official",
   WXT_API_URL: "https://api.readfrog.app",
   WXT_WEBSITE_URL: "https://www.readfrog.app",
   WXT_OFFICIAL_SITE_ORIGINS: "https://readfrog.app,https://www.readfrog.app",
@@ -8,6 +12,7 @@ export const PRODUCTION_EXTENSION_ENV_DEFAULTS = {
 } as const
 
 export const LOCAL_EXTENSION_ENV_DEFAULTS = {
+  WXT_DISTRIBUTION: "official",
   WXT_API_URL: "https://localhost:4433",
   WXT_WEBSITE_URL: "https://localhost:8877",
   WXT_OFFICIAL_SITE_ORIGINS: "http://localhost:8888,https://localhost:8877",
@@ -83,6 +88,10 @@ export function isLocalPackagesEnabled(rawEnv: RawExtensionEnv) {
   return rawBooleanSchema.parse(rawEnv.WXT_USE_LOCAL_PACKAGES) ?? false
 }
 
+export function getExtensionDistribution(rawEnv: RawExtensionEnv): ExtensionDistribution {
+  return z.enum(EXTENSION_DISTRIBUTIONS).default("official").parse(rawEnv.WXT_DISTRIBUTION)
+}
+
 export function resolveExtensionEnv(rawEnv: RawExtensionEnv) {
   const defaults = isLocalPackagesEnabled(rawEnv)
     ? LOCAL_EXTENSION_ENV_DEFAULTS
@@ -90,6 +99,7 @@ export function resolveExtensionEnv(rawEnv: RawExtensionEnv) {
 
   return {
     ...rawEnv,
+    WXT_DISTRIBUTION: getExtensionDistribution(rawEnv),
     WXT_API_URL: rawEnv.WXT_API_URL ?? defaults.WXT_API_URL,
     WXT_WEBSITE_URL: rawEnv.WXT_WEBSITE_URL ?? defaults.WXT_WEBSITE_URL,
     WXT_OFFICIAL_SITE_ORIGINS:
@@ -98,10 +108,15 @@ export function resolveExtensionEnv(rawEnv: RawExtensionEnv) {
   }
 }
 
-export function createExtensionClientEnvSchema(isProd: boolean, skipRequiredProductionEnv = false) {
-  const requiresProductionEnv = isProd && !skipRequiredProductionEnv
+export function createExtensionClientEnvSchema(
+  isProd: boolean,
+  skipRequiredProductionEnv = false,
+  distribution: ExtensionDistribution = "official",
+) {
+  const requiresProductionEnv = isProd && !skipRequiredProductionEnv && distribution === "official"
 
   return {
+    WXT_DISTRIBUTION: z.enum(EXTENSION_DISTRIBUTIONS).default("official"),
     WXT_API_URL: strictUrlSchema,
     WXT_WEBSITE_URL: strictUrlSchema,
     WXT_OFFICIAL_SITE_ORIGINS: z

@@ -26,6 +26,7 @@ import {
 import { BUILT_IN_AI_PROVIDER_IDS, type BuiltInAiProviderId } from "@/utils/constants/provider-ids"
 import { API_PROVIDER_ITEMS } from "@/utils/constants/providers"
 import { getSelectionToolbarActions } from "@/utils/custom-actions"
+import { isProviderTypeAvailableInDistribution } from "@/utils/distribution"
 import { getHostedAiTierStatus } from "@/utils/hosted-ai/status"
 import { i18n } from "@/utils/i18n"
 import {
@@ -39,7 +40,7 @@ import {
   BUILT_IN_AI_PROVIDER_LOGO,
   BUILT_IN_AI_ADVANCE_PROVIDER_ID,
   getBuiltInAiProviderName,
-  isBuiltInAiProviderId,
+  isSystemProviderId,
 } from "@/utils/providers/provider-registry"
 import { ConfigItem } from "../../../components/config-item"
 import { EntityEditor } from "../../../components/entity-editor"
@@ -79,10 +80,7 @@ function useRequestedProvider() {
 
     const providerId = getRequestedProviderId(search)
     if (providerId) {
-      if (
-        !isBuiltInAiProviderId(providerId) &&
-        !getProviderConfigById(providersConfig, providerId)
-      ) {
+      if (!isSystemProviderId(providerId) && !getProviderConfigById(providersConfig, providerId)) {
         return
       }
 
@@ -93,7 +91,13 @@ function useRequestedProvider() {
     }
 
     const requestedType = getRequestedProviderType(search)
-    if (!requestedType || !isAPIProvider(requestedType)) return
+    if (
+      !requestedType ||
+      !isAPIProvider(requestedType) ||
+      !isProviderTypeAvailableInDistribution(requestedType)
+    ) {
+      return
+    }
 
     // Claimed before anything awaits: adding a provider rewrites the config this effect reads,
     // and React's development double-invoke runs it a second time. Either would add a duplicate.
@@ -127,7 +131,7 @@ function useRequestedProvider() {
 export function ProvidersConfig() {
   const selectedProviderId = useAtomValue(selectedProviderIdAtom)
   useRequestedProvider()
-  const editor = isBuiltInAiProviderId(selectedProviderId) ? (
+  const editor = isSystemProviderId(selectedProviderId) ? (
     <BuiltInProviderPanel key={selectedProviderId} providerId={selectedProviderId} />
   ) : (
     <ProviderConfigForm key={selectedProviderId} />
@@ -326,6 +330,10 @@ function FeatureCountBadge({ count, children }: { count: number; children: React
 }
 
 function BuiltInProviderSection() {
+  if (__PURE_BUILD__) {
+    return null
+  }
+
   return (
     <section className="flex flex-col gap-2 pt-1">
       <h3 className="px-1 text-xs font-medium text-muted-foreground">

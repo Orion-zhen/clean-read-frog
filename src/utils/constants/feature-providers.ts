@@ -1,8 +1,10 @@
 import type { Config } from "@/types/config/config"
 import type { ProviderConfig } from "@/types/config/provider"
+import type { DistributionCapability } from "@/utils/distribution"
 import { isLLMProvider, isTranslateProvider } from "@/types/config/provider"
 import { mergeWithArrayOverwrite } from "../atoms/config"
 import { getProviderConfigById } from "../config/helpers"
+import { isDistributionCapabilityEnabled } from "../distribution"
 
 export const FEATURE_KEYS = [
   "pageTranslation",
@@ -18,6 +20,8 @@ export interface FeatureProviderDef {
   getProviderId: (config: Config) => string
   configPath: readonly string[]
   isProvider: (provider: string) => boolean
+  fallbackKind: "translate" | "llm"
+  requiredCapabilities: readonly DistributionCapability[]
 }
 
 export const FEATURE_PROVIDER_DEFS = {
@@ -25,28 +29,46 @@ export const FEATURE_PROVIDER_DEFS = {
     isProvider: isTranslateProvider,
     getProviderId: (c: Config) => c.pageTranslation.providerId,
     configPath: ["pageTranslation", "providerId"],
+    fallbackKind: "translate",
+    requiredCapabilities: [],
   },
   videoSubtitles: {
     isProvider: isTranslateProvider,
     getProviderId: (c: Config) => c.videoSubtitles.providerId,
     configPath: ["videoSubtitles", "providerId"],
+    fallbackKind: "translate",
+    requiredCapabilities: [],
   },
   selectionTranslation: {
     isProvider: isTranslateProvider,
     getProviderId: (c: Config) => c.selectionToolbar.features.translate.providerId,
     configPath: ["selectionToolbar", "features", "translate", "providerId"],
+    fallbackKind: "translate",
+    requiredCapabilities: [],
   },
   inputTranslation: {
     isProvider: isTranslateProvider,
     getProviderId: (c: Config) => c.inputTranslation.providerId,
     configPath: ["inputTranslation", "providerId"],
+    fallbackKind: "translate",
+    requiredCapabilities: [],
   },
   noteSuggestion: {
     isProvider: isLLMProvider,
     getProviderId: (c: Config) => c.selectionToolbar.noteSuggestion.providerId,
     configPath: ["selectionToolbar", "noteSuggestion", "providerId"],
+    fallbackKind: "llm",
+    requiredCapabilities: ["noteSuggestion"],
   },
 } as const satisfies Record<FeatureKey, FeatureProviderDef>
+
+export function isFeatureAvailableInDistribution(featureKey: FeatureKey): boolean {
+  return FEATURE_PROVIDER_DEFS[featureKey].requiredCapabilities.every(
+    isDistributionCapabilityEnabled,
+  )
+}
+
+export const AVAILABLE_FEATURE_KEYS = FEATURE_KEYS.filter(isFeatureAvailableInDistribution)
 
 /** Maps FeatureKey (with dots) to i18n-safe key (with underscores) for `options.apiProviders.featureProviders.features.*` */
 export const FEATURE_KEY_I18N_MAP = {

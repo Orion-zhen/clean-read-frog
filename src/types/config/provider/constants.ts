@@ -223,6 +223,51 @@ export function isAPIProvider(provider: string): provider is APIProviderTypes {
   return API_PROVIDER_TYPES.includes(provider)
 }
 
+/**
+ * Commercial classification used by downstream distributions.
+ *
+ * This record is deliberately exhaustive and fail-closed: adding an API provider requires an
+ * explicit classification before type-checking succeeds. Pure builds automatically reject every
+ * non-neutral provider; they never need a second provider denylist kept in sync by hand.
+ */
+export const API_PROVIDER_COMMERCIAL_POLICIES = {
+  "openai-compatible": "neutral",
+  "open-responses": "neutral",
+  jalapenocloud: "sponsored",
+  atlascloud: "sponsored",
+  openrouter: "neutral",
+  minimax: "neutral",
+  siliconflow: "neutral",
+  tensdaq: "referral",
+  volcengine: "neutral",
+  openai: "neutral",
+  deepseek: "neutral",
+  google: "neutral",
+  anthropic: "neutral",
+  xai: "neutral",
+  deeplx: "neutral",
+  deepl: "neutral",
+  azure: "neutral",
+  bedrock: "neutral",
+  groq: "neutral",
+  deepinfra: "neutral",
+  mistral: "neutral",
+  togetherai: "neutral",
+  cohere: "neutral",
+  fireworks: "neutral",
+  cerebras: "neutral",
+  replicate: "neutral",
+  perplexity: "neutral",
+  vercel: "neutral",
+  ollama: "neutral",
+  alibaba: "neutral",
+  moonshotai: "neutral",
+  huggingface: "neutral",
+} as const satisfies Record<APIProviderTypes, "neutral" | "sponsored" | "referral">
+
+export type APIProviderCommercialPolicy =
+  (typeof API_PROVIDER_COMMERCIAL_POLICIES)[APIProviderTypes]
+
 export const PURE_API_PROVIDER_TYPES = ["deeplx", "deepl"] as const satisfies Readonly<
   Exclude<APIProviderTypes, LLMProviderTypes>[]
 >

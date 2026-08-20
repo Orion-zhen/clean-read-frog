@@ -376,6 +376,8 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
 
   const fireNoteSuggestion = useEffectEvent(
     (preparedText: string, provider: NoteSuggestionProviderRef) => {
+      if (__PURE_BUILD__) return
+
       maybeFireNoteSuggestion({
         sessionKey: noteSuggestionSessionKey,
         selectionText: preparedText,
@@ -811,7 +813,7 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
         onAnchorChange={setAnchor}
         actionsRef={popoverActionsRef}
         onReuseRequest={handleReuseRequest}
-        disablePointerDismissal={isSaveToNotebaseDialogOpen}
+        disablePointerDismissal={!__PURE_BUILD__ && isSaveToNotebaseDialogOpen}
       >
         {children}
         <SelectionPopover.Content
@@ -835,7 +837,8 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
               isTranslating={isTranslating}
               thinking={thinking}
             />
-            {!isTranslating &&
+            {!__PURE_BUILD__ &&
+              !isTranslating &&
               !!translatedText &&
               !error &&
               noteSuggestion?.sessionKey === noteSuggestionSessionKey && (

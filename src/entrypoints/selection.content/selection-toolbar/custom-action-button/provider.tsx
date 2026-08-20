@@ -389,7 +389,7 @@ export function SelectionCustomActionProvider({ children }: { children: ReactNod
         onAnchorChange={setAnchor}
         actionsRef={popoverActionsRef}
         onReuseRequest={handleReuseRequest}
-        disablePointerDismissal={isSaveToNotebaseDialogOpen}
+        disablePointerDismissal={!__PURE_BUILD__ && isSaveToNotebaseDialogOpen}
       >
         <SelectionPopover.Content
           key={popoverSessionKey}
@@ -429,18 +429,20 @@ export function SelectionCustomActionProvider({ children }: { children: ReactNod
           >
             {activeAction && (
               <>
-                <SaveToNotebaseButton
-                  action={activeAction}
-                  isRunning={displayedIsRunning}
-                  result={displayedResult}
-                />
+                {!__PURE_BUILD__ && (
+                  <SaveToNotebaseButton
+                    action={activeAction}
+                    isRunning={displayedIsRunning}
+                    result={displayedResult}
+                  />
+                )}
                 <CustomActionToolButton action={activeAction} />
               </>
             )}
           </CustomActionFooterContent>
         </SelectionPopover.Content>
       </SelectionPopover.Root>
-      <SaveToNotebaseDialogHost />
+      {!__PURE_BUILD__ && <SaveToNotebaseDialogHost />}
     </SelectionCustomActionContext>
   )
 }

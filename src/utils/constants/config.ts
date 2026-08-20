@@ -55,6 +55,10 @@ export const CONFIG_SCHEMA_VERSION = 98
 export const DEFAULT_FLOATING_BUTTON_POSITION = 0.66
 export const DEFAULT_FLOATING_BUTTON_SIDE: FloatingButtonSide = "right"
 
+const DEFAULT_CUSTOM_ACTION_PROVIDER_ID = __PURE_BUILD__
+  ? DEFAULT_PROVIDER_CONFIG.openai.id
+  : BUILT_IN_AI_PROVIDER_ID
+
 /**
  * Build the code-owned Dictionary action definition in the current UI locale.
  * Only enabled/provider/Notebase state is persisted; callers merge those mutable
@@ -64,7 +68,7 @@ export function createDefaultDictionaryAction(): SelectionToolbarCustomAction | 
   const template = CUSTOM_ACTION_TEMPLATES.find((t) => t.id === "dictionary")
   if (!template) return null
 
-  const action = template.createAction(BUILT_IN_AI_PROVIDER_ID)
+  const action = template.createAction(DEFAULT_CUSTOM_ACTION_PROVIDER_ID)
   return {
     ...action,
     id: BUILT_IN_DICTIONARY_ACTION_ID,
@@ -153,12 +157,12 @@ export const DEFAULT_CONFIG: Config = {
     builtInActions: {
       dictionary: {
         enabled: true,
-        providerId: BUILT_IN_AI_PROVIDER_ID,
+        providerId: DEFAULT_CUSTOM_ACTION_PROVIDER_ID,
       },
     },
     customActions: [],
     noteSuggestion: {
-      enabled: true,
+      enabled: !__PURE_BUILD__,
       actionId: BUILT_IN_DICTIONARY_ACTION_ID,
       // Fresh installs always carry the OpenAI default provider; suggestions
       // start working the moment the user adds their key, with no hosted plan
@@ -248,7 +252,7 @@ export function buildFreshDefaultConfig(): Config {
       builtInActions: {
         dictionary: {
           enabled: true,
-          providerId: BUILT_IN_AI_PROVIDER_ID,
+          providerId: DEFAULT_CUSTOM_ACTION_PROVIDER_ID,
         },
       },
       customActions: [],

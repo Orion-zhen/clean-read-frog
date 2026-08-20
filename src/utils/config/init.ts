@@ -11,6 +11,7 @@ import {
   DEFAULT_CONFIG,
 } from "../constants/config"
 import { logger } from "../logger"
+import { normalizeConfigForDistribution } from "./distribution"
 import { runMigration } from "./migration"
 
 export interface InitializeConfigResult {
@@ -60,6 +61,10 @@ export async function initializeConfig(): Promise<InitializeConfigResult> {
       currentVersion = nextVersion
     }
   }
+
+  const distributionResult = normalizeConfigForDistribution(config)
+  config = distributionResult.config
+  didConfigChange = didConfigChange || distributionResult.changed
 
   if (!configSchema.safeParse(config).success) {
     logger.warn("Config is invalid, using default config")

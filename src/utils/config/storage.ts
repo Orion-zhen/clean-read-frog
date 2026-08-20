@@ -4,6 +4,7 @@ import { storage } from "#imports"
 import { configSchema } from "@/types/config/config"
 import { CONFIG_SCHEMA_VERSION, CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from "../constants/config"
 import { logger } from "../logger"
+import { normalizeConfigForDistribution } from "./distribution"
 
 export async function getLocalConfig() {
   const config = await storage.getItem<Config>(`local:${CONFIG_STORAGE_KEY}`)
@@ -11,7 +12,7 @@ export async function getLocalConfig() {
     logger.warn("No config found in storage")
     return null
   }
-  const parsedConfig = configSchema.safeParse(config)
+  const parsedConfig = configSchema.safeParse(normalizeConfigForDistribution(config).config)
   if (!parsedConfig.success) {
     logger.error("Config is invalid, using default config")
     return DEFAULT_CONFIG
@@ -20,7 +21,7 @@ export async function getLocalConfig() {
 }
 
 export async function setLocalConfig(config: Config) {
-  const parsedConfig = configSchema.safeParse(config)
+  const parsedConfig = configSchema.safeParse(normalizeConfigForDistribution(config).config)
   if (!parsedConfig.success) {
     throw new Error("Config is invalid")
   }
@@ -41,7 +42,7 @@ export async function getLocalConfigAndMeta(): Promise<ConfigValueAndMeta> {
       throw new Error("Local config not found")
     }
 
-    const parsedConfig = configSchema.safeParse(config)
+    const parsedConfig = configSchema.safeParse(normalizeConfigForDistribution(config).config)
     if (!parsedConfig.success) {
       throw new Error("Local config is invalid")
     }
@@ -61,7 +62,7 @@ export async function getLocalConfigAndMeta(): Promise<ConfigValueAndMeta> {
 
 export async function setLocalConfigAndMeta(config: Config, meta: Partial<ConfigMeta>) {
   const lastModifiedAt = meta.lastModifiedAt ?? Date.now()
-  const parsedConfig = configSchema.safeParse(config)
+  const parsedConfig = configSchema.safeParse(normalizeConfigForDistribution(config).config)
   if (!parsedConfig.success) {
     throw new Error("Config is invalid")
   }

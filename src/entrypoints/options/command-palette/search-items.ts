@@ -1,4 +1,6 @@
 import type { GeneratedI18nStructure } from "#i18n"
+import type { DistributionCapability } from "@/utils/distribution"
+import { isDistributionCapabilityEnabled } from "@/utils/distribution"
 
 type I18nKey = keyof GeneratedI18nStructure
 
@@ -8,6 +10,7 @@ export interface SearchItem {
   titleKey: string
   descriptionKey?: string
   pageKey: string
+  requiredCapabilities?: readonly DistributionCapability[]
 }
 
 type SearchItemDefinition = Omit<SearchItem, "titleKey" | "descriptionKey" | "pageKey"> & {
@@ -16,7 +19,7 @@ type SearchItemDefinition = Omit<SearchItem, "titleKey" | "descriptionKey" | "pa
   pageKey: I18nKey
 }
 
-export const SEARCH_ITEMS: SearchItem[] = [
+const SEARCH_ITEM_DEFINITIONS = [
   // Preference page
   {
     // Titled with the section, so "appearance" still finds a row that reads "Theme".
@@ -363,6 +366,7 @@ export const SEARCH_ITEMS: SearchItem[] = [
     titleKey: "options.selectionToolbar.actions.noteSuggestion.title",
     descriptionKey: "options.selectionToolbar.actions.noteSuggestion.description",
     pageKey: "options.selectionToolbar.title",
+    requiredCapabilities: ["noteSuggestion"],
   },
   {
     sectionId: "selection-toolbar-opacity",
@@ -447,6 +451,7 @@ export const SEARCH_ITEMS: SearchItem[] = [
     titleKey: "options.videoSubtitles.aiQuota.title",
     descriptionKey: "options.videoSubtitles.aiQuota.description",
     pageKey: "options.videoSubtitles.title",
+    requiredCapabilities: ["aiSubtitles"],
   },
   {
     // Its own page, drilled into from the Video Subtitles page's Subtitle style section.
@@ -523,3 +528,7 @@ export const SEARCH_ITEMS: SearchItem[] = [
     pageKey: "options.tts.title",
   },
 ] satisfies SearchItemDefinition[]
+
+export const SEARCH_ITEMS: SearchItem[] = SEARCH_ITEM_DEFINITIONS.filter((item) =>
+  (item.requiredCapabilities ?? []).every(isDistributionCapabilityEnabled),
+)

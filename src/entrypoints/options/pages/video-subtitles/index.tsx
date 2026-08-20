@@ -15,7 +15,7 @@ export function VideoSubtitlesPage() {
       innerClassName="flex flex-col gap-10"
     >
       <PreferenceSection />
-      <AiQuotaSection />
+      {!__PURE_BUILD__ && <AiQuotaSection />}
       <SubtitlesStyleSection />
       <CustomPromptsSection />
       <SubtitlesQueueSection />

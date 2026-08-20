@@ -17,7 +17,7 @@ export function ApiProvidersPage() {
       <FeatureProvidersConfig />
       <LanguageDetectionConfig />
       <AIContentAwareConfig />
-      <BuiltInAiUsageConfig />
+      {!__PURE_BUILD__ && <BuiltInAiUsageConfig />}
     </PageLayout>
   )
 }

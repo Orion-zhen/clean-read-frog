@@ -20,41 +20,52 @@ import {
 } from "@/types/config/provider"
 import { FEATURE_KEYS, FEATURE_PROVIDER_DEFS } from "@/utils/constants/feature-providers"
 import { getSelectionToolbarActions, patchSelectionToolbarAction } from "@/utils/custom-actions"
+import { isProviderConfigAvailableInDistribution } from "@/utils/distribution"
 import { getUsableProviderIdsForCapability } from "@/utils/providers/provider-availability"
 
 export function getProviderConfigById<T extends ProviderConfig>(
   providersConfig: T[],
   providerId: string,
 ): T | undefined {
-  return providersConfig.find((p) => p.id === providerId)
+  return providersConfig.find(
+    (provider) => provider.id === providerId && isProviderConfigAvailableInDistribution(provider),
+  )
 }
 
 export function getLLMProvidersConfig(providersConfig: ProvidersConfig): LLMProviderConfig[] {
-  return providersConfig.filter(isLLMProviderConfig)
+  return providersConfig.filter(isProviderConfigAvailableInDistribution).filter(isLLMProviderConfig)
 }
 
 export function getAPIProvidersConfig(providersConfig: ProvidersConfig): APIProviderConfig[] {
-  return providersConfig.filter(isAPIProviderConfig)
+  return providersConfig.filter(isProviderConfigAvailableInDistribution).filter(isAPIProviderConfig)
 }
 
 export function getPureAPIProvidersConfig(
   providersConfig: ProvidersConfig,
 ): PureAPIProviderConfig[] {
-  return providersConfig.filter(isPureAPIProviderConfig)
+  return providersConfig
+    .filter(isProviderConfigAvailableInDistribution)
+    .filter(isPureAPIProviderConfig)
 }
 
 export function getNonAPIProvidersConfig(providersConfig: ProvidersConfig): NonAPIProviderConfig[] {
-  return providersConfig.filter(isNonAPIProviderConfig)
+  return providersConfig
+    .filter(isProviderConfigAvailableInDistribution)
+    .filter(isNonAPIProviderConfig)
 }
 
 export function getTranslateProvidersConfig(
   providersConfig: ProvidersConfig,
 ): TranslateProviderConfig[] {
-  return providersConfig.filter(isTranslateProviderConfig)
+  return providersConfig
+    .filter(isProviderConfigAvailableInDistribution)
+    .filter(isTranslateProviderConfig)
 }
 
 export function filterEnabledProvidersConfig(providersConfig: ProvidersConfig): ProvidersConfig {
-  return providersConfig.filter((p) => p.enabled)
+  return providersConfig.filter(
+    (provider) => provider.enabled && isProviderConfigAvailableInDistribution(provider),
+  )
 }
 
 export function getEnabledLLMProvidersConfig(

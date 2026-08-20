@@ -46,7 +46,7 @@ export function ActionsSection() {
           onCheckedChange={(checked) => setFeatureEnabled("speak", checked)}
         />
       </ConfigItem>
-      <NoteSuggestionItems />
+      {!__PURE_BUILD__ && <NoteSuggestionItems />}
     </ConfigSection>
   )
 }

@@ -4,7 +4,14 @@ import ViteYaml from "@modyfi/vite-plugin-yaml"
 import { defineConfig } from "wxt"
 import { z } from "zod"
 import {
+  assertHtmlAssetReferences,
+  assertPureBuildOutput,
+  createPureServiceBoundaryPlugin,
+  createPureUnusedAssetPruner,
+} from "./scripts/pure-build-output"
+import {
   createExtensionClientEnvSchema,
+  getExtensionDistribution,
   isLocalPackagesEnabled,
   resolveExtensionEnv,
 } from "./src/env/shared"
@@ -12,6 +19,8 @@ import {
 const WXT_API_KEY_PATTERN = /^WXT_.*API_KEY/
 const ALLOWED_BUNDLED_API_KEYS = new Set(["WXT_POSTHOG_API_KEY"])
 const useLocalPackages = isLocalPackagesEnabled(process.env)
+const distribution = getExtensionDistribution(process.env)
+const isPureBuild = distribution === "pure"
 const shouldSkipEnvValidation = process.env.WXT_SKIP_ENV_VALIDATION === "true"
 // Root of the read-frog monorepo whose source is aliased in when developing
 // with local packages. Defaults to the sibling checkout; override with
@@ -46,7 +55,7 @@ export default defineConfig({
       "storage",
       "tabs",
       "alarms",
-      "cookies",
+      ...(!isPureBuild ? ["cookies"] : []),
       "contextMenus",
       "identity",
       "scripting",
@@ -88,6 +97,20 @@ export default defineConfig({
     excludeSources: ["docs/**/*", "assets/**/*", "repos/**/*", "readmes/**/*"],
   },
   hooks: {
+    "build:done": async (wxt, output) => {
+      if (!isPureBuild) return
+      assertPureBuildOutput(output)
+      await assertHtmlAssetReferences(wxt.config.outDir)
+    },
+    "entrypoints:resolved": (_wxt, entrypoints) => {
+      if (!isPureBuild) return
+
+      for (const entrypoint of entrypoints) {
+        if (entrypoint.name === "guide" || entrypoint.name === "partner-bridge") {
+          entrypoint.skipped = true
+        }
+      }
+    },
     "vite:build:extendConfig": (entrypoints, viteConfig) => {
       const entrypoint = entrypoints.length === 1 ? entrypoints[0] : undefined
       if (entrypoint?.type !== "content-script") return
@@ -112,6 +135,9 @@ export default defineConfig({
     },
   },
   vite: (configEnv) => ({
+    define: {
+      __PURE_BUILD__: JSON.stringify(isPureBuild),
+    },
     resolve: {
       // CodeMirror breaks with "Unrecognized extension value in extension set"
       // if the bundle contains more than one copy of these packages (#1782).
@@ -127,6 +153,9 @@ export default defineConfig({
       ],
     },
     plugins: [
+      ...(isPureBuild
+        ? [createPureServiceBoundaryPlugin(__dirname), createPureUnusedAssetPruner()]
+        : []),
       // Lets the runtime i18next facade (src/utils/i18n) `import` the `src/locales/*.yml`
       // files as JS objects so i18next can bundle them for runtime language switching.
       //
@@ -150,6 +179,7 @@ export default defineConfig({
                   createExtensionClientEnvSchema(
                     configEnv.mode === "production",
                     shouldSkipEnvValidation,
+                    distribution,
                   ),
                 ).parse(resolveExtensionEnv(process.env))
 

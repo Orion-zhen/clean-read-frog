@@ -10,6 +10,7 @@ import {
   PROVIDER_GROUPS,
   getProviderItemName,
 } from "@/utils/constants/providers"
+import { isProviderTypeAvailableInDistribution } from "@/utils/distribution"
 import { i18n } from "@/utils/i18n"
 import { selectedProviderIdAtom } from "./atoms"
 import { addProvider } from "./utils"
@@ -37,7 +38,7 @@ export default function AddProviderDialog({ onClose }: { onClose: () => void }) 
           groupDescription={i18n.t(
             `options.apiProviders.dialog.groups.${groupKey as keyof typeof PROVIDER_GROUPS}.description`,
           )}
-          providerTypes={group.types}
+          providerTypes={group.types.filter(isProviderTypeAvailableInDistribution)}
           handleAddProvider={handleAddProvider}
         />
       ))}

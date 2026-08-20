@@ -6,6 +6,7 @@ import {
   getProviderItemName,
 } from "@/utils/constants/providers"
 import { getRandomUUID } from "@/utils/crypto-polyfill"
+import { isProviderTypeAvailableInDistribution } from "@/utils/distribution"
 import { getUniqueName } from "@/utils/name"
 
 export async function addProvider(
@@ -14,6 +15,10 @@ export async function addProvider(
   setProvidersConfig: (config: Partial<Config["providersConfig"]>) => Promise<void>,
   setSelectedProviderId?: (id: string) => void,
 ): Promise<string> {
+  if (!isProviderTypeAvailableInDistribution(providerType)) {
+    throw new Error(`Provider type "${providerType}" is unavailable in this distribution`)
+  }
+
   const existingNames = new Set(providersConfig.map((p) => p.name))
   const providerName = getUniqueName(getProviderItemName(providerType), existingNames)
 

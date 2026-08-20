@@ -8,7 +8,7 @@ export function createYoutubeSubtitlesAdapter(config: PlatformConfig) {
     config,
     fetchers: {
       native: () => new YoutubeSubtitlesFetcher(),
-      ...(createAiSubtitlesContext
+      ...(!__PURE_BUILD__ && createAiSubtitlesContext
         ? { ai: () => new AiSubtitlesFetcher(createAiSubtitlesContext) }
         : {}),
     },

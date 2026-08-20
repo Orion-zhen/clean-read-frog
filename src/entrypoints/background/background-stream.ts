@@ -730,6 +730,13 @@ export async function generateTextForProviderRef(
   }
 
   if (providerRef.kind === "system") {
+    if (__PURE_BUILD__) {
+      throw new BackgroundStreamError(
+        "invalid_request",
+        "Hosted AI is unavailable in the pure distribution",
+      )
+    }
+
     const partStream = await createHostedTextPartStream(
       {
         providerId: providerRef.providerId,
@@ -785,7 +792,15 @@ export async function runStreamTextInBackground(
     throw new DOMException("stream aborted", "AbortError")
   }
 
-  const partStream = isBuiltInAiProviderId(serializablePayload.providerId)
+  const isHostedProvider = isBuiltInAiProviderId(serializablePayload.providerId)
+  if (isHostedProvider && __PURE_BUILD__) {
+    throw new BackgroundStreamError(
+      "invalid_request",
+      "Hosted AI is unavailable in the pure distribution",
+    )
+  }
+
+  const partStream = isHostedProvider
     ? await createHostedTextPartStream(serializablePayload, signal)
     : await createLocalTextPartStream(serializablePayload, options)
 
@@ -864,7 +879,15 @@ export async function runStructuredObjectStreamInBackground(
   }
 
   const objectSchema = createStructuredObjectSchema(serializablePayload.outputSchema)
-  const partStream = isBuiltInAiProviderId(serializablePayload.providerId)
+  const isHostedProvider = isBuiltInAiProviderId(serializablePayload.providerId)
+  if (isHostedProvider && __PURE_BUILD__) {
+    throw new BackgroundStreamError(
+      "invalid_request",
+      "Hosted AI is unavailable in the pure distribution",
+    )
+  }
+
+  const partStream = isHostedProvider
     ? await createHostedStructuredObjectPartStream(serializablePayload, signal)
     : await createLocalStructuredObjectPartStream(serializablePayload, objectSchema, options)
 
@@ -923,6 +946,13 @@ export async function runNoteSuggestionStreamInBackground(
 
   // The card renders only the final result, so neither branch forwards onChunk.
   if (isBuiltInAiProviderId(providerId)) {
+    if (__PURE_BUILD__) {
+      throw new BackgroundStreamError(
+        "invalid_request",
+        "Hosted AI is unavailable in the pure distribution",
+      )
+    }
+
     // Hosted note suggestions stream the fixed contract object (the server
     // enforces it via Output.object). Its `action.createNewDictionaryAction`
     // and `action.targetActionId` fields belong to a richer server-driven flow

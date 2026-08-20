@@ -14,6 +14,10 @@ function promptUpgrade(): void {
 }
 
 export async function ensureSignedIn(): Promise<boolean> {
+  if (__PURE_BUILD__) {
+    return false
+  }
+
   const { data } = await authClient.getSession()
   if (!data?.user) {
     promptLogIn()
@@ -34,6 +38,10 @@ export async function ensureSignedIn(): Promise<boolean> {
  * successful response.
  */
 export async function ensureAiSubtitlesEntitled(): Promise<boolean> {
+  if (__PURE_BUILD__) {
+    return false
+  }
+
   let usage: Awaited<ReturnType<typeof orpcClient.videoTranscript.getUsage>>
   try {
     usage = await orpcClient.videoTranscript.getUsage()

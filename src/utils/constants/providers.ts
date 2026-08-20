@@ -31,6 +31,7 @@ import {
   isCustomModelOnlyProvider,
 } from "@/types/config/provider"
 import { omit, pick } from "@/types/utils"
+import { isProviderConfigAvailableInDistribution } from "@/utils/distribution"
 import { i18n } from "@/utils/i18n"
 import { getLobeIconsCDNUrlFn } from "../logo"
 
@@ -187,21 +188,20 @@ export const DEFAULT_LLM_PROVIDER_MODELS: LLMProviderModels = {
   },
 }
 
-export const PROVIDER_ITEMS: Record<
-  AllProviderTypes,
-  {
-    logo: (theme: Theme) => string
-    name: string
-    website: string
-    sponsor?: ProviderSponsorConfig
-    /**
-     * Where someone signs up for or copies this provider's key. Only providers that set it get
-     * the "Get API key" button next to the API key field — absent means no button, because most
-     * providers' key pages sit behind a console we cannot link straight into.
-     */
-    apiKeyUrl?: string
-  }
-> = {
+interface ProviderItem {
+  logo: (theme: Theme) => string
+  name: string
+  website: string
+  sponsor?: ProviderSponsorConfig
+  /**
+   * Where someone signs up for or copies this provider's key. Only providers that set it get
+   * the "Get API key" button next to the API key field — absent means no button, because most
+   * providers' key pages sit behind a console we cannot link straight into.
+   */
+  apiKeyUrl?: string
+}
+
+export const PROVIDER_ITEMS = {
   "microsoft-translate": {
     logo: getLobeIconsCDNUrlFn("microsoft-color"),
     name: NON_API_TRANSLATE_PROVIDERS_MAP["microsoft-translate"],
@@ -221,29 +221,6 @@ export const PROVIDER_ITEMS: Record<
     logo: (theme: Theme) => (theme === "light" ? deeplxLogoLight : deeplxLogoDark),
     name: "DeepL",
     website: "https://www.deepl.com/pro-api",
-  },
-  jalapenocloud: {
-    logo: () => jalapenoCloudLogo,
-    name: "Jalapeno Cloud",
-    website: "https://www.jalapeno-cloud.ai/readfrog",
-    apiKeyUrl: "https://www.jalapeno-cloud.ai/readfrog",
-    sponsor: {
-      sponsoring: true,
-      referUrl: "https://www.jalapeno-cloud.ai/readfrog",
-      // Both default to the generic sponsor wording; Jalapeno names its actual offer instead.
-      badgeI18nKey: "options.apiProviders.badges.sponsorJalapenoCloud",
-      ctaI18nKey: "options.apiProviders.sponsorCtaJalapenoCloud",
-    },
-  },
-  atlascloud: {
-    logo: getLobeIconsCDNUrlFn("atlascloud"),
-    name: "Atlas Cloud",
-    website: "https://readfrog.s.gy/altas",
-    apiKeyUrl: "https://readfrog.s.gy/altas",
-    sponsor: {
-      sponsoring: true,
-      referUrl: "https://readfrog.s.gy/altas",
-    },
   },
   "openai-compatible": {
     logo: () => customProviderLogo,
@@ -355,11 +332,6 @@ export const PROVIDER_ITEMS: Record<
     name: "Vercel",
     website: "https://vercel.com",
   },
-  tensdaq: {
-    logo: () => tensdaqLogoColor,
-    name: "Tensdaq",
-    website: "https://dashboard.x-aio.com/zh/register?ref=c356c1daba9a4641a18e",
-  },
   ollama: {
     logo: getLobeIconsCDNUrlFn("ollama"),
     name: "Ollama",
@@ -385,7 +357,38 @@ export const PROVIDER_ITEMS: Record<
     name: "Hugging Face",
     website: "https://huggingface.co/",
   },
-}
+  ...(!__PURE_BUILD__
+    ? {
+        jalapenocloud: {
+          logo: () => jalapenoCloudLogo,
+          name: "Jalapeno Cloud",
+          website: "https://www.jalapeno-cloud.ai/readfrog",
+          apiKeyUrl: "https://www.jalapeno-cloud.ai/readfrog",
+          sponsor: {
+            sponsoring: true,
+            referUrl: "https://www.jalapeno-cloud.ai/readfrog",
+            badgeI18nKey: "options.apiProviders.badges.sponsorJalapenoCloud",
+            ctaI18nKey: "options.apiProviders.sponsorCtaJalapenoCloud",
+          },
+        },
+        atlascloud: {
+          logo: getLobeIconsCDNUrlFn("atlascloud"),
+          name: "Atlas Cloud",
+          website: "https://readfrog.s.gy/altas",
+          apiKeyUrl: "https://readfrog.s.gy/altas",
+          sponsor: {
+            sponsoring: true,
+            referUrl: "https://readfrog.s.gy/altas",
+          },
+        },
+        tensdaq: {
+          logo: () => tensdaqLogoColor,
+          name: "Tensdaq",
+          website: "https://dashboard.x-aio.com/zh/register?ref=c356c1daba9a4641a18e",
+        },
+      }
+    : {}),
+} as Record<AllProviderTypes, ProviderItem>
 
 export const DEFAULT_PROVIDER_CONFIG = {
   "google-translate": {
@@ -402,10 +405,10 @@ export const DEFAULT_PROVIDER_CONFIG = {
   },
   jalapenocloud: {
     id: "jalapenocloud-default",
-    name: PROVIDER_ITEMS.jalapenocloud.name,
+    name: "Jalapeno Cloud",
     enabled: true,
     provider: "jalapenocloud",
-    baseURL: "https://api.jalapeno-cloud.ai/v1",
+    baseURL: __PURE_BUILD__ ? "" : "https://api.jalapeno-cloud.ai/v1",
     model: DEFAULT_LLM_PROVIDER_MODELS.jalapenocloud,
     // Attribution headers are not here on purpose: they are ours to send, not the user's to
     // configure, so they live in FORCED_PROVIDER_HEADERS and never enter stored config.
@@ -420,10 +423,10 @@ export const DEFAULT_PROVIDER_CONFIG = {
   },
   atlascloud: {
     id: "atlascloud-default",
-    name: PROVIDER_ITEMS.atlascloud.name,
+    name: "Atlas Cloud",
     enabled: true,
     provider: "atlascloud",
-    baseURL: "https://api.atlascloud.ai/v1",
+    baseURL: __PURE_BUILD__ ? "" : "https://api.atlascloud.ai/v1",
     model: DEFAULT_LLM_PROVIDER_MODELS.atlascloud,
   },
   siliconflow: {
@@ -436,10 +439,10 @@ export const DEFAULT_PROVIDER_CONFIG = {
   },
   tensdaq: {
     id: "tensdaq-default",
-    name: PROVIDER_ITEMS.tensdaq.name,
+    name: "Tensdaq",
     enabled: true,
     provider: "tensdaq",
-    baseURL: "https://tensdaq-api.x-aio.com/v1",
+    baseURL: __PURE_BUILD__ ? "" : "https://tensdaq-api.x-aio.com/v1",
     model: DEFAULT_LLM_PROVIDER_MODELS.tensdaq,
   },
   "openai-compatible": {
@@ -669,10 +672,14 @@ export const MICROSOFT_TRANSLATE_PROVIDER_ID = DEFAULT_PROVIDER_CONFIG["microsof
  * owns it.
  */
 export const FORCED_PROVIDER_HEADERS: Partial<Record<LLMProviderTypes, Record<string, string>>> = {
-  jalapenocloud: {
-    "HTTP-Referer": env.WXT_WEBSITE_URL,
-    "X-Jalapeno-Title": APP_NAME,
-  },
+  ...(!__PURE_BUILD__
+    ? {
+        jalapenocloud: {
+          "HTTP-Referer": env.WXT_WEBSITE_URL,
+          "X-Jalapeno-Title": APP_NAME,
+        },
+      }
+    : {}),
   openrouter: {
     "HTTP-Referer": env.WXT_WEBSITE_URL,
     "X-OpenRouter-Title": APP_NAME,
@@ -686,10 +693,14 @@ export const FORCED_PROVIDER_HEADERS: Partial<Record<LLMProviderTypes, Record<st
 }
 
 export const PROVIDER_URL_PLACEHOLDERS: Partial<Record<APIProviderTypes, string>> = {
-  jalapenocloud: DEFAULT_PROVIDER_CONFIG.jalapenocloud.baseURL,
-  atlascloud: DEFAULT_PROVIDER_CONFIG.atlascloud.baseURL,
+  ...(!__PURE_BUILD__
+    ? {
+        jalapenocloud: DEFAULT_PROVIDER_CONFIG.jalapenocloud.baseURL,
+        atlascloud: DEFAULT_PROVIDER_CONFIG.atlascloud.baseURL,
+        tensdaq: DEFAULT_PROVIDER_CONFIG.tensdaq.baseURL,
+      }
+    : {}),
   siliconflow: DEFAULT_PROVIDER_CONFIG.siliconflow.baseURL,
-  tensdaq: DEFAULT_PROVIDER_CONFIG.tensdaq.baseURL,
   "openai-compatible": DEFAULT_PROVIDER_CONFIG["openai-compatible"].baseURL,
   "open-responses": DEFAULT_PROVIDER_CONFIG["open-responses"].url,
   openai: "https://api.openai.com/v1",
@@ -725,7 +736,7 @@ export const DEFAULT_PROVIDER_CONFIG_LIST: ProvidersConfig = [
   DEFAULT_PROVIDER_CONFIG.openai,
   DEFAULT_PROVIDER_CONFIG.jalapenocloud,
   DEFAULT_PROVIDER_CONFIG.atlascloud,
-]
+].filter(isProviderConfigAvailableInDistribution)
 
 /** Resolve a provider's default description in the active interface language. */
 export function getDefaultProviderDescription(providerType: APIProviderTypes): string | undefined {

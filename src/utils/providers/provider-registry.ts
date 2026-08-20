@@ -15,6 +15,7 @@ import {
   type BuiltInAiProviderId,
   type HostedAiModelTier,
 } from "@/utils/constants/provider-ids"
+import { isProviderConfigAvailableInDistribution } from "@/utils/distribution"
 import { i18n } from "@/utils/i18n"
 
 export {
@@ -97,7 +98,7 @@ const SYSTEM_PROVIDER_DEFS = {
 } as const satisfies Record<string, SystemProviderDef>
 
 function getSystemProviderDefs(): SystemProviderDef[] {
-  return Object.values(SYSTEM_PROVIDER_DEFS)
+  return __PURE_BUILD__ ? [] : Object.values(SYSTEM_PROVIDER_DEFS)
 }
 
 const LOCAL_PROVIDER_CAPABILITY_PREDICATES = {
@@ -160,7 +161,7 @@ export function getHostedAiModelTier(providerId: BuiltInAiProviderId): HostedAiM
   return providerId === BUILT_IN_AI_ADVANCE_PROVIDER_ID ? "advance" : "normal"
 }
 
-export function isSystemProviderId(providerId: string): boolean {
+export function isSystemProviderId(providerId: string): providerId is BuiltInAiProviderId {
   return !!getSystemProviderDef(providerId)
 }
 
@@ -191,7 +192,9 @@ export function doesProviderSupportsCapability(
   providerId: string,
   options: { requireEnable?: boolean } = {},
 ): boolean {
-  const providerConfig = providersConfig.find((provider) => provider.id === providerId)
+  const providerConfig = providersConfig.find(
+    (provider) => provider.id === providerId && isProviderConfigAvailableInDistribution(provider),
+  )
   if (providerConfig) {
     return (
       (!options.requireEnable || providerConfig.enabled) &&
@@ -211,6 +214,7 @@ export function getProviderIdsForCapability(
   const localIds = providersConfig
     .filter(
       (provider) =>
+        isProviderConfigAvailableInDistribution(provider) &&
         (!options.requireEnable || provider.enabled) &&
         isLocalProviderConfigCompatibleWithCapability(capability, provider),
     )
@@ -229,7 +233,9 @@ export function getSelectableProvidersForCapability(
 
   const localProviders = providersConfig.filter(
     (provider) =>
-      provider.enabled && isLocalProviderConfigCompatibleWithCapability(capability, provider),
+      isProviderConfigAvailableInDistribution(provider) &&
+      provider.enabled &&
+      isLocalProviderConfigCompatibleWithCapability(capability, provider),
   )
 
   return [...systemProviders, ...localProviders]
@@ -240,7 +246,9 @@ export function resolveProviderRefForCapability<C extends ProviderCapability>(
   providersConfig: ProvidersConfig,
   providerId: string,
 ): ProviderRefForCapability<C> | null {
-  const providerConfig = providersConfig.find((provider) => provider.id === providerId)
+  const providerConfig = providersConfig.find(
+    (provider) => provider.id === providerId && isProviderConfigAvailableInDistribution(provider),
+  )
   if (providerConfig) {
     if (!isLocalProviderConfigCompatibleWithCapability(capability, providerConfig)) {
       return null

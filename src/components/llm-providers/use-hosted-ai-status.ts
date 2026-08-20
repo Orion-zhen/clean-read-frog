@@ -23,7 +23,20 @@ export interface HostedAiStatusResult {
  * their own spend up to a TTL late. The two may briefly disagree; only the
  * background's answer decides whether a hosted call is attempted.
  */
-export function useHostedAiStatus(options: { enabled?: boolean } = {}): HostedAiStatusResult {
+type UseHostedAiStatus = (options?: { enabled?: boolean }) => HostedAiStatusResult
+
+const PURE_HOSTED_AI_STATUS: HostedAiStatusResult = {
+  status: undefined,
+  isSignedIn: false,
+  isPending: false,
+  isError: false,
+}
+
+function usePureHostedAiStatus(_options: { enabled?: boolean } = {}): HostedAiStatusResult {
+  return PURE_HOSTED_AI_STATUS
+}
+
+function useOfficialHostedAiStatus(options: { enabled?: boolean } = {}): HostedAiStatusResult {
   const { data: session, isPending: isSessionPending } = authClient.useSession()
   const statusQuery = useQuery(
     orpc.hostedAi.status.queryOptions({
@@ -46,3 +59,8 @@ export function useHostedAiStatus(options: { enabled?: boolean } = {}): HostedAi
     isError: statusQuery.isError,
   }
 }
+
+/** Pure builds never initialize an auth session or hosted-status query. */
+export const useHostedAiStatus: UseHostedAiStatus = __PURE_BUILD__
+  ? usePureHostedAiStatus
+  : useOfficialHostedAiStatus
