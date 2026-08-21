@@ -27,6 +27,7 @@ jobs:
       has_updates: ${{ steps.sync.outputs.has_updates }}
       base_sha: ${{ steps.sync.outputs.base_sha }}
       upstream_sha: ${{ steps.sync.outputs.upstream_sha }}
+      sync_head_sha: ${{ steps.sync.outputs.sync_head_sha }}
       pr_number: ${{ steps.sync.outputs.pr_number }}
     steps:
       - name: Checkout downstream branch
@@ -35,7 +36,7 @@ jobs:
           ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
 
-      - name: Push upstream branch and create PR
+      - name: Create merged sync branch and PR
         id: sync
         env:
           GH_TOKEN: ${{ github.token }}
@@ -59,9 +60,23 @@ jobs:
 
           echo "has_updates=true" >> "${GITHUB_OUTPUT}"
 
-          # Point the PR branch directly at upstream/main. GitHub's merge commit will
-          # preserve both the downstream customizations and upstream ancestry.
-          git push origin "${upstream_sha}:refs/heads/${SYNC_BRANCH}"
+          # Build the exact tree that the PR will merge so downstream-only changes
+          # remain present on the sync branch and in the PR diff.
+          git switch --create "${SYNC_BRANCH}" "${base_sha}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-ff --no-edit "${upstream_sha}"
+
+          sync_head_sha="$(git rev-parse HEAD)"
+          echo "sync_head_sha=${sync_head_sha}" >> "${GITHUB_OUTPUT}"
+
+          remote_sync_sha="$(
+            git ls-remote --heads origin "refs/heads/${SYNC_BRANCH}" | awk '{print $1}'
+          )"
+          git push \
+            --force-with-lease="refs/heads/${SYNC_BRANCH}:${remote_sync_sha}" \
+            origin \
+            "HEAD:refs/heads/${SYNC_BRANCH}"
 
           pr_number="$(
             gh pr list \
@@ -78,9 +93,10 @@ jobs:
 
           - Downstream base: \`${base_sha}\`
           - Upstream revision: \`${upstream_sha}\`
+          - Merged revision: \`${sync_head_sha}\`
 
-          The merged tree is validated by this workflow before the PR is merged automatically.
-          If merging or validation fails, this PR remains open for diagnosis.
+          The PR head is the exact merged tree validated by this workflow before automatic merging.
+          If validation fails, this PR remains open for diagnosis.
           EOF
 
           if [[ -z "${pr_number}" ]]; then
@@ -115,26 +131,12 @@ jobs:
       SKIP_FREE_API: true
       WXT_SKIP_ENV_VALIDATION: true
     steps:
-      - name: Checkout exact downstream base
+      - name: Checkout exact merged revision
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.prepare.outputs.base_sha }}
+          ref: ${{ needs.prepare.outputs.sync_head_sha }}
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Merge exact upstream revision
-        env:
-          UPSTREAM_SHA: ${{ needs.prepare.outputs.upstream_sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
-          git fetch upstream "${UPSTREAM_BRANCH}"
-          git cat-file -e "${UPSTREAM_SHA}^{commit}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git merge --no-ff --no-edit "${UPSTREAM_SHA}"
 
       - name: Setup pnpm and Node.js
         uses: pnpm/setup@v2
@@ -178,7 +180,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
-          UPSTREAM_SHA: ${{ needs.prepare.outputs.upstream_sha }}
+          SYNC_HEAD_SHA: ${{ needs.prepare.outputs.sync_head_sha }}
           PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
         shell: bash
         run: |
@@ -198,7 +200,7 @@ jobs:
               --json headRefOid \
               --jq '.headRefOid'
           )"
-          if [[ "${current_head}" != "${UPSTREAM_SHA}" ]]; then
+          if [[ "${current_head}" != "${SYNC_HEAD_SHA}" ]]; then
             echo "Sync PR head changed during validation; refusing to merge an unvalidated revision."
             exit 1
           fi
@@ -207,4 +209,4 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --merge \
             --delete-branch \
-            --match-head-commit "${UPSTREAM_SHA}"
+            --match-head-commit "${SYNC_HEAD_SHA}"

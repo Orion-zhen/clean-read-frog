@@ -1,0 +1,34 @@
+name: PR - Downstream Pure Build & Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  WXT_SKIP_ENV_VALIDATION: true
+
+jobs:
+  pure-test-and-build:
+    name: Pure Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@v2
+        with:
+          cache: true
+          install: false
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+        shell: bash
+
+      - name: Build and audit pure distribution
+        run: pnpm build:pure
+
+      - name: Run pure distribution tests
+        run: pnpm test:pure

@@ -50,11 +50,5 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Build and audit pure distribution
-        run: pnpm build:pure
-
       - name: Run tests
         run: pnpm test --exclude="**/free-api.test.ts"
-
-      - name: Run pure distribution tests
-        run: pnpm test:pure
