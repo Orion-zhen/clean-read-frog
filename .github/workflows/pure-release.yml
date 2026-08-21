@@ -1,0 +1,82 @@
+name: Pure Release
+
+on:
+  workflow_run:
+    workflows:
+      - Sync Upstream
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: pure-release
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: pure-build
+  WXT_GOOGLE_CLIENT_ID: ${{ secrets.WXT_GOOGLE_CLIENT_ID || vars.WXT_GOOGLE_CLIENT_ID }}
+  WXT_POSTHOG_API_KEY: ${{ secrets.WXT_POSTHOG_API_KEY || vars.WXT_POSTHOG_API_KEY }}
+  WXT_POSTHOG_HOST: ${{ secrets.WXT_POSTHOG_HOST || vars.WXT_POSTHOG_HOST }}
+  WXT_ANALYTICS_DAILY_FEATURE_CACHE_ENABLED: "true"
+  WXT_SKIP_ENV_VALIDATION: true
+
+jobs:
+  release:
+    name: Build and publish pure release
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      HUSKY: 0
+
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@v2
+        with:
+          cache: true
+          install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build pure extension ZIP packages
+        run: pnpm zip:pure:all
+
+      - name: Record release revision
+        id: revision
+        shell: bash
+        run: echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+
+      - name: Delete existing rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release delete "${RELEASE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --cleanup-tag \
+              --yes
+          elif git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh api \
+              --method DELETE \
+              "repos/${GITHUB_REPOSITORY}/git/refs/tags/${RELEASE_TAG}"
+          fi
+
+      - name: Create rolling release and upload ZIP packages
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Pure Build
+          target_commitish: ${{ steps.revision.outputs.sha }}
+          make_latest: true
+          fail_on_unmatched_files: true
+          files: .output/*.zip
