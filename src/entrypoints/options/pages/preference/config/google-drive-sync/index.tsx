@@ -1,10 +1,10 @@
 import { Icon } from "@iconify/react"
-import { useAtomValue, useSetAtom } from "jotai"
+import { createStore, Provider, useAtomValue } from "jotai"
 import { Activity, useState } from "react"
 import { Button } from "@/components/ui/base-ui/button"
 import { toastManager } from "@/components/ui/base-ui/toast"
 import { useGoogleDriveAuth } from "@/hooks/use-google-drive-auth"
-import { resolutionsAtom, unresolvedConfigsAtom } from "@/utils/atoms/google-drive-sync"
+import { resolutionsAtom, unresolvedConfigsAtom } from "@/utils/atoms/config-sync"
 import { lastSyncTimeAtom } from "@/utils/atoms/last-sync-time"
 import { clearAccessToken } from "@/utils/google-drive/auth"
 import { syncConfig } from "@/utils/google-drive/sync"
@@ -20,8 +20,7 @@ export function GoogleDriveSyncConfigItem() {
     query: { data: authData },
     invalidate: invalidateAuthData,
   } = useGoogleDriveAuth()
-  const setUnresolvedData = useSetAtom(unresolvedConfigsAtom)
-  const setResolutions = useSetAtom(resolutionsAtom)
+  const [conflictStore] = useState(() => createStore())
   const lastSyncTime = useAtomValue(lastSyncTimeAtom)
 
   const handleSync = async () => {
@@ -30,7 +29,7 @@ export function GoogleDriveSyncConfigItem() {
     const result = await syncConfig()
 
     if (result.status === "unresolved") {
-      setUnresolvedData(result.data)
+      conflictStore.set(unresolvedConfigsAtom, result.data)
       setIsOpen(true)
     } else if (result.status === "success") {
       const messages = {
@@ -63,7 +62,7 @@ export function GoogleDriveSyncConfigItem() {
 
   const handleDialogClose = (success: boolean) => {
     setIsOpen(false)
-    setResolutions({})
+    conflictStore.set(resolutionsAtom, {})
     if (success) {
       toastManager.add({
         type: "success",
@@ -127,11 +126,13 @@ export function GoogleDriveSyncConfigItem() {
         </div>
       </ConfigItem>
 
-      <UnresolvedDialog
-        open={isOpen}
-        onResolved={() => handleDialogClose(true)}
-        onCancelled={() => handleDialogClose(false)}
-      />
+      <Provider store={conflictStore}>
+        <UnresolvedDialog
+          open={isOpen}
+          onResolved={() => handleDialogClose(true)}
+          onCancelled={() => handleDialogClose(false)}
+        />
+      </Provider>
     </>
   )
 }

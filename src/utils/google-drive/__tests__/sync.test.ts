@@ -8,8 +8,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ConfigVersionTooNewError } from "@/utils/config/errors"
 import { getLocalConfigAndMeta, setLocalConfigAndMeta } from "@/utils/config/storage"
 import { getLastSyncedConfigAndMeta, setLastSyncConfigAndMeta } from "@/utils/config/sync"
+import { CONFIG_SCHEMA_VERSION, DEFAULT_CONFIG } from "@/utils/constants/config"
 import { getRemoteConfigAndMetaWithUserEmail, setRemoteConfigAndMeta } from "../storage"
-import { syncConfig } from "../sync"
+import { syncConfig, syncMergedConfig } from "../sync"
 
 // Mock the storage modules
 vi.mock("@/utils/config/storage", () => ({
@@ -79,6 +80,28 @@ function createLastSyncedConfigValueAndMeta(
     },
   }
 }
+
+describe("Google Drive adapter", () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it("persists merged configs with legacy email metadata, without targetId", async () => {
+    const merged = structuredClone(DEFAULT_CONFIG)
+    await syncMergedConfig(merged, "a@test.com")
+
+    expect(setRemoteConfigAndMeta).toHaveBeenCalledWith({
+      value: merged,
+      meta: { schemaVersion: CONFIG_SCHEMA_VERSION, lastModifiedAt: expect.any(Number) },
+    })
+    expect(setLastSyncConfigAndMeta).toHaveBeenCalledWith(merged, {
+      schemaVersion: CONFIG_SCHEMA_VERSION,
+      lastModifiedAt: expect.any(Number),
+      lastSyncedAt: expect.any(Number),
+      email: "a@test.com",
+    })
+  })
+})
 
 describe("syncConfig", () => {
   beforeEach(() => {

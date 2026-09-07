@@ -1,16 +1,12 @@
-import type { Config } from "@/types/config/config"
 import type {
   ApplyResolutionsResult,
   DiffConflictsResult,
-} from "@/utils/google-drive/conflict-merge"
+} from "@/utils/config-sync/conflict-merge"
+import type { UnresolvedConfigs } from "@/utils/config-sync/types"
 import { atom } from "jotai"
-import { applyResolutions, detectConflicts } from "@/utils/google-drive/conflict-merge"
+import { applyResolutions, detectConflicts } from "@/utils/config-sync/conflict-merge"
 
-export interface UnresolvedConfigs {
-  base: Config
-  local: Config
-  remote: Config
-}
+export type { UnresolvedConfigs } from "@/utils/config-sync/types"
 
 type Resolution = "local" | "remote"
 

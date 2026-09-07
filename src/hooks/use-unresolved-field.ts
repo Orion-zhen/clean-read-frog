@@ -1,4 +1,4 @@
-import type { FieldConflict } from "@/utils/google-drive/conflict-merge"
+import type { FieldConflict } from "@/utils/config-sync/conflict-merge"
 import { useAtomValue, useSetAtom } from "jotai"
 import { useMemo } from "react"
 import {
@@ -6,7 +6,7 @@ import {
   resetResolutionAtom,
   resolutionsAtom,
   selectResolutionAtom,
-} from "@/utils/atoms/google-drive-sync"
+} from "@/utils/atoms/config-sync"
 
 export interface UseConflictFieldResult {
   conflict: FieldConflict | undefined
