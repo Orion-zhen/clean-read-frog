@@ -139,7 +139,7 @@ export async function executeBatchTranslation<TContext>(
     dataList[0]!,
     promptResolver,
     {
-      isBatch: true,
+      isBatch: dataList.length > 1,
       context,
       signal,
       hostedRequestId,

@@ -446,7 +446,7 @@ describe("translation queue helpers", () => {
       llmProvider,
       expect.any(Function),
       expect.objectContaining({
-        isBatch: true,
+        isBatch: false,
         context: {
           webTitle: "Video title",
           webDescription: "Video description",
@@ -518,7 +518,7 @@ describe("translation queue helpers", () => {
       llmProvider,
       expect.any(Function),
       expect.objectContaining({
-        isBatch: true,
+        isBatch: false,
         context: expect.objectContaining({
           webTitle: "First video",
           webDescription: "First description",
@@ -532,7 +532,7 @@ describe("translation queue helpers", () => {
       llmProvider,
       expect.any(Function),
       expect.objectContaining({
-        isBatch: true,
+        isBatch: false,
         context: expect.objectContaining({
           webTitle: "Second video",
           webDescription: "Second description",
