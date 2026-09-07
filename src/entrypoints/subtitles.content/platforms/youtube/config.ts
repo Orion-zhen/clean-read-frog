@@ -5,6 +5,7 @@ import {
   YOUTUBE_NAVIGATE_FINISH_EVENT,
   YOUTUBE_NAVIGATE_START_EVENT,
 } from "@/utils/constants/subtitles"
+import { requestPlayerData } from "@/utils/subtitles/fetchers/youtube"
 import { getYoutubeVideoId } from "@/utils/subtitles/video-id"
 
 type YoutubeMode = "watch" | "embed" | "shorts"
@@ -19,6 +20,7 @@ const NAVIGATE_EVENTS = {
 }
 
 const SHORTS_ACTIVE_PLAYER = "#reel-overlay-container .html5-video-player"
+const WATCH_PLAYER = "#movie_player.html5-video-player"
 
 function createYoutubeAiSubtitlesContext() {
   const videoId = getYoutubeVideoId()
@@ -38,6 +40,15 @@ function createYoutubeAiSubtitlesContext() {
   return { videoId, url: location.href, durationSec: Math.ceil(duration) }
 }
 
+async function isYoutubeLiveContent(): Promise<boolean> {
+  const videoId = getYoutubeVideoId()
+  if (!videoId) {
+    return false
+  }
+  const response = await requestPlayerData(videoId)
+  return response.data?.isLiveContent ?? false
+}
+
 /** YouTube marks mid-rolls / pre-rolls on the html5 player with these classes. */
 function isYoutubeAdPlaying(playerContainer: HTMLElement): boolean {
   return (
@@ -51,7 +62,7 @@ const YOUTUBE_MODE_CONFIGS: Record<YoutubeMode, PlatformConfig> = {
     embedded: false,
     selectors: {
       video: "video.html5-main-video",
-      playerContainer: "#movie_player.html5-video-player",
+      playerContainer: WATCH_PLAYER,
       controlsBar: "#movie_player .ytp-right-controls",
       nativeSubtitles: YOUTUBE_NATIVE_SUBTITLES_CLASS,
     },
@@ -68,9 +79,11 @@ const YOUTUBE_MODE_CONFIGS: Record<YoutubeMode, PlatformConfig> = {
         return !!player && !player.classList.contains("ytp-autohide")
       },
     },
+    supportsSidebar: true,
     getVideoId: getYoutubeVideoId,
     createAiSubtitlesContext: createYoutubeAiSubtitlesContext,
     isAdPlaying: isYoutubeAdPlaying,
+    isLiveContent: isYoutubeLiveContent,
   },
 
   embed: {
@@ -96,6 +109,7 @@ const YOUTUBE_MODE_CONFIGS: Record<YoutubeMode, PlatformConfig> = {
     getVideoId: getYoutubeVideoId,
     createAiSubtitlesContext: createYoutubeAiSubtitlesContext,
     isAdPlaying: isYoutubeAdPlaying,
+    isLiveContent: isYoutubeLiveContent,
   },
 
   shorts: {
@@ -121,6 +135,7 @@ const YOUTUBE_MODE_CONFIGS: Record<YoutubeMode, PlatformConfig> = {
     getVideoId: getYoutubeVideoId,
     createAiSubtitlesContext: createYoutubeAiSubtitlesContext,
     isAdPlaying: isYoutubeAdPlaying,
+    isLiveContent: isYoutubeLiveContent,
   },
 }
 

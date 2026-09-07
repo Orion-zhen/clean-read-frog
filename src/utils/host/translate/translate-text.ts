@@ -1,9 +1,11 @@
 import type { LangCodeISO6393, LangLevel } from "@read-frog/definitions"
 import type { HostedAiTextStreamRoute } from "@/types/background-stream"
 import type { Config } from "@/types/config/config"
+import type { LLMProviderConfig, TranslateProviderConfig } from "@/types/config/provider"
 import type { TranslationTextFormat } from "@/types/config/translate"
 import type { WebPagePromptContext } from "@/types/content"
-import type { SerializableProviderRef, UnwrappedProviderRef } from "@/utils/providers/provider-ref"
+import type { PromptableProviderRef, SerializableProviderRef } from "@/utils/providers/provider-ref"
+import type { ResolvedProviderRef } from "@/utils/providers/provider-registry"
 import { LANG_CODE_TO_EN_NAME } from "@read-frog/definitions"
 import { toastManager } from "@/components/ui/base-ui/toast"
 import { isAPIProviderConfig, isLLMProviderConfig } from "@/types/config/provider"
@@ -12,11 +14,12 @@ import { detectLanguage } from "@/utils/content/language"
 import { i18n } from "@/utils/i18n"
 import { logger } from "@/utils/logger"
 import { getTranslatePrompt } from "@/utils/prompts/translate"
-import { isSystemProviderRef, serializeProviderRef } from "@/utils/providers/provider-ref"
+import { serializeProviderRef } from "@/utils/providers/provider-ref"
 import { resolveProviderRefForCapability } from "@/utils/providers/provider-registry"
 import { TranslationCancelledError } from "@/utils/request/cancellation"
 import { Sha256Hex } from "../../hash"
 import { sendMessage } from "../../message"
+import { getInMemoryTranslation, storeInMemoryTranslation } from "./in-memory-translation-cache"
 import { prepareTranslationText } from "./text-preparation"
 import {
   getPageTranslationSessionId,
@@ -170,8 +173,10 @@ async function buildWebPageHashComponents(
  * on one status snapshot: no per-paragraph status fetches, and a mid-session
  * status blip cannot fail in-flight paragraphs.
  */
-function getSessionProviderRefFor(provider: UnwrappedProviderRef): SerializableProviderRef | null {
-  if (!isSystemProviderRef(provider)) {
+function getSessionProviderRefFor(
+  provider: ResolvedProviderRef<TranslateProviderConfig>,
+): SerializableProviderRef | null {
+  if (provider.kind !== "system") {
     return null
   }
   const sessionRef = getPageTranslationSessionProviderRef()
@@ -206,11 +211,21 @@ let lastRequestedSystemKey: string | null = null
  * later paragraphs skip the network entirely.
  */
 export async function resolvePageProviderRef(
-  provider: UnwrappedProviderRef,
+  provider: ResolvedProviderRef<LLMProviderConfig>,
+  sessionId: string | undefined,
+  feature: HostedAiTextStreamRoute,
+): Promise<PromptableProviderRef>
+export async function resolvePageProviderRef(
+  provider: ResolvedProviderRef<TranslateProviderConfig>,
+  sessionId: string | undefined,
+  feature: HostedAiTextStreamRoute,
+): Promise<SerializableProviderRef>
+export async function resolvePageProviderRef(
+  provider: ResolvedProviderRef<TranslateProviderConfig>,
   sessionId: string | undefined,
   feature: HostedAiTextStreamRoute,
 ): Promise<SerializableProviderRef> {
-  if (!isSystemProviderRef(provider)) {
+  if (provider.kind === "local") {
     return serializeProviderRef(provider, feature)
   }
 
@@ -259,7 +274,7 @@ export interface TranslateTextOptions {
     targetCode: LangCodeISO6393
     level: LangLevel
   }
-  providerConfig: UnwrappedProviderRef
+  providerConfig: ResolvedProviderRef<TranslateProviderConfig>
   enableAIContentAware?: boolean
   extraHashTags?: string[]
   webPageContext?: WebPagePromptContext
@@ -332,9 +347,28 @@ export async function translateTextCore(options: TranslateTextOptions): Promise<
   // id had gone null) or re-populate the queue AFTER the session's cancel
   // message already drained it — both defeat cancellation (#1881). Callers on
   // the page path swallow this error; input/selection requests carry no
-  // sessionId and skip the gate entirely.
+  // sessionId and skip the gate entirely. The gate must also precede the
+  // memory-tier read below: a cancelled session must not keep painting
+  // translations out of memory.
   if (sessionId !== undefined && getPageTranslationSessionId() !== sessionId) {
     throw new TranslationCancelledError(sessionId)
+  }
+
+  const hash = Sha256Hex(...hashComponents)
+
+  // In-tab memory tier over the background cache, same hash identity.
+  // Virtualized pages (X articles/timelines) destroy and recreate paragraph
+  // nodes on scroll; the recreated nodes re-enter this pipeline for text the
+  // tab already translated, and paying the message round trip again makes the
+  // page visibly re-translate paragraph by paragraph. Scoped to
+  // page-translation runs (sessionId) so input/selection behavior is
+  // untouched; forceRetranslation bypasses the read exactly like it bypasses
+  // the background cache, but its fresh result still lands in the store below.
+  if (sessionId !== undefined && !forceRetranslation) {
+    const memoryHit = getInMemoryTranslation(hash)
+    if (memoryHit !== undefined) {
+      return isNoTranslationSentinel(memoryHit) ? "" : memoryHit
+    }
   }
 
   const result = await sendMessage("enqueueTranslateRequest", {
@@ -342,7 +376,7 @@ export async function translateTextCore(options: TranslateTextOptions): Promise<
     langConfig,
     providerRef,
     scheduleAt: Date.now(),
-    hash: Sha256Hex(...hashComponents),
+    hash,
     textFormat,
     preserveLineBreaks,
     webTitle: normalizedWebPageContext?.webTitle,
@@ -353,6 +387,11 @@ export async function translateTextCore(options: TranslateTextOptions): Promise<
     forceRetranslation,
     hostedFeature,
   })
+  if (sessionId !== undefined) {
+    // Raw result, sentinel included, so a "no translation needed" verdict is
+    // remembered too; the mapping below stays the single mapping point.
+    storeInMemoryTranslation(hash, result)
+  }
   // The sentinel must be mapped here and only here: every batch-pipeline
   // consumer (page paragraphs, document title, input translation, selection
   // toolbar standard path) routes through this function and already handles
