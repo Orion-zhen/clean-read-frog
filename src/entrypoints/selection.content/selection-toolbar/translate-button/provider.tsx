@@ -8,9 +8,9 @@ import type {
 import type { SelectionToolbarInlineError } from "../inline-error"
 import type { SelectionPopoverActions } from "@/components/ui/selection-popover"
 import type { BackgroundTextStreamSnapshot, ThinkingSnapshot } from "@/types/background-stream"
-import type { LLMProviderConfig, ProviderConfig } from "@/types/config/provider"
-import type { SerializableProviderRef } from "@/utils/providers/provider-ref"
-import type { SystemProviderRef } from "@/utils/providers/provider-registry"
+import type { LLMProviderConfig, TranslateProviderConfig } from "@/types/config/provider"
+import type { PromptableProviderRef } from "@/utils/providers/provider-ref"
+import type { ResolvedProviderRef, SystemProviderRef } from "@/utils/providers/provider-registry"
 import { LANG_CODE_TO_EN_NAME } from "@read-frog/definitions"
 import { HotkeyManager } from "@tanstack/hotkeys"
 import { useAtomValue, useSetAtom } from "jotai"
@@ -55,7 +55,7 @@ import { SelectionToolbarErrorAlert } from "../../components/selection-toolbar-e
 import { SelectionToolbarFooterContent } from "../../components/selection-toolbar-footer-content"
 import { SelectionToolbarTitleContent } from "../../components/selection-toolbar-title-content"
 import {
-  isSelectionToolbarVisibleAtom,
+  isSelectionToolbarOpenAtom,
   noteSuggestionProviderAtom,
   selectionSessionAtom,
   selectionToolbarTranslateRequestAtom,
@@ -88,7 +88,7 @@ interface SelectionTranslatePendingOpenRequest {
  * context (pure translate providers, hosted tier unavailable).
  */
 async function getSelectionWebPagePromptContext(
-  summaryProviderRef: SerializableProviderRef | null,
+  summaryProviderRef: PromptableProviderRef | null,
   enableAIContentAware: boolean,
 ) {
   const webPageContext = await getOrCreateWebPageContext()
@@ -172,6 +172,7 @@ async function translateWithTextStream({
 
   const translatedText = await streamBackgroundText(
     {
+      providerKind: "local",
       providerId,
       instructions: systemPrompt,
       prompt,
@@ -210,7 +211,7 @@ async function translateWithHostedTextStream({
   // provider. Fail soft — a summary the tier cannot fund degrades to raw
   // context instead of blocking the translation, whose own stream surfaces
   // the real error.
-  let summaryProviderRef: SerializableProviderRef | null = null
+  let summaryProviderRef: PromptableProviderRef | null = null
   if (translateRequest.enableAIContentAware) {
     const availability = await checkProviderAvailability(provider, "selectionTranslation")
     summaryProviderRef = availability.available ? availability.providerRef : null
@@ -243,6 +244,7 @@ async function translateWithHostedTextStream({
 
   return streamBackgroundText(
     {
+      providerKind: "system",
       providerId: provider.id,
       modelTier: provider.modelTier,
       requestId: getRandomUUID(),
@@ -259,11 +261,11 @@ async function translateWithHostedTextStream({
 
 async function translateWithStandardProvider({
   text,
-  providerConfig,
+  provider,
   translateRequest,
 }: {
   text: string
-  providerConfig: ProviderConfig
+  provider: ResolvedProviderRef<TranslateProviderConfig>
   translateRequest: SelectionToolbarTranslateRequestSlice
 }) {
   // This path is reached only for pure translate providers (the dispatch sends
@@ -277,7 +279,7 @@ async function translateWithStandardProvider({
   const translatedText = await translateTextCore({
     text,
     langConfig: translateRequest.language,
-    providerConfig,
+    providerConfig: provider,
     hostedFeature: "selectionTranslation",
     enableAIContentAware: translateRequest.enableAIContentAware,
     extraHashTags: ["selectionTranslation"],
@@ -342,7 +344,7 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
   const noteSuggestionProvider = useAtomValue(noteSuggestionProviderAtom)
   const providersConfig = useAtomValue(configFieldsAtomMap.providersConfig)
   const selectionToolbar = useAtomValue(configFieldsAtomMap.selectionToolbar)
-  const setIsSelectionToolbarVisible = useSetAtom(isSelectionToolbarVisibleAtom)
+  const setIsSelectionToolbarOpen = useSetAtom(isSelectionToolbarOpenAtom)
   const setConfig = useSetAtom(writeConfigAtom)
   const abortControllerRef = useRef<AbortController | null>(null)
   const pendingOpenRequestRef = useRef<SelectionTranslatePendingOpenRequest | null>(null)
@@ -428,9 +430,9 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
 
     setActiveSession(pendingRequest?.session ?? selectionSession)
     setSourceSurface(pendingRequest?.surface ?? ANALYTICS_SURFACE.SELECTION_TOOLBAR)
-    setIsSelectionToolbarVisible(false)
+    setIsSelectionToolbarOpen(false)
     pendingOpenRequestRef.current = null
-  }, [selectionSession, setIsSelectionToolbarVisible])
+  }, [selectionSession, setIsSelectionToolbarOpen])
 
   const handleProviderChange = useCallback(
     (providerId: string) => {
@@ -562,7 +564,7 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
           setThinking(null)
           nextTranslatedText = await translateWithStandardProvider({
             text: preparedText,
-            providerConfig: provider.config,
+            provider,
             translateRequest,
           })
         }
