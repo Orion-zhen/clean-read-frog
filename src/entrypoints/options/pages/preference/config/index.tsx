@@ -5,11 +5,13 @@ import { ConfigSection } from "../../../components/config-section"
 import { GoogleDriveSyncConfigItem } from "./google-drive-sync"
 import { ManualConfigSyncConfigItems } from "./manual-config-sync"
 import { ResetConfigItem } from "./reset-config"
+import { WebDavSyncConfigItem } from "./webdav-sync"
 
 export function ConfigManagementSection() {
   return (
     <ConfigSection title={i18n.t("options.preference.config.title")}>
       <GoogleDriveSyncConfigItem />
+      <WebDavSyncConfigItem />
       <ManualConfigSyncConfigItems />
       <ConfigNavItem
         to="/preference/config-backup"

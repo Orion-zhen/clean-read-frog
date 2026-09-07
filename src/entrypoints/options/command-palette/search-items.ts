@@ -66,6 +66,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     pageKey: "options.preference.title",
   },
   {
+    sectionId: "webdav-sync",
+    route: "/preference",
+    titleKey: "options.preference.config.webdav.title",
+    descriptionKey: "options.preference.config.webdav.description",
+    pageKey: "options.preference.title",
+  },
+  {
     sectionId: "manual-config-sync",
     route: "/preference",
     titleKey: "options.preference.config.manualSync.title",

@@ -410,6 +410,38 @@ options:
             title: 合并后的配置存在验证错误
             description: 请调整下方差异以修复：
           moreErrors: ...还有 $1 个错误
+      webdav:
+        title: WebDAV 云同步
+        description: 手动将配置与 WebDAV 服务器同步。
+        configure: 配置连接
+        disconnect: 清除连接
+        sync: 同步到 WebDAV
+        directoryUrl: WebDAV 目录地址
+        username: 用户名
+        password: 密码或应用专用密码
+        setupDescription: 请填写已存在的 WebDAV 目录。同步使用 read-frog-config.json，不会创建目录。清除连接仅删除本地凭据和同步记录，不会删除远端文件。
+        securityNotice: 凭据仅保存在此扩展的本地存储中，未经加密，也不会包含在同步配置中。配置可能包含 API 密钥。建议使用 HTTPS 和应用专用密码。HTTP 会以未加密方式传输凭据和配置。
+        concurrencyNotice: 只有服务器提供强 ETag 并遵守条件请求时，才能防止并发写入覆盖。否则请避免多台设备同时同步。
+        test: 测试连接
+        testSuccess: 目录可读取，尚未验证写入权限。
+        save: 保存
+        firstSyncTitle: 首次同步此 WebDAV 目标
+        firstSyncDescription: 如果远端已有配置，将覆盖本地配置。否则将上传本地配置。如需保留当前配置，请先导出备份。
+        errors:
+          invalidSettings: 请填写不含凭据、查询参数或片段的 HTTP(S) 目录地址、不含冒号的用户名，以及密码。
+          unauthorized: 认证失败，请检查用户名和密码。
+          forbidden: 权限不足，请检查 WebDAV 目录的访问权限。
+          notFound: WebDAV 目录不存在，请先在服务器上创建目录。
+          notCollection: 此地址未返回可读取的 WebDAV 目录，请检查 WebDAV 接口地址。
+          unsupported: 服务器不支持所需的 WebDAV 请求方法。
+          remoteChanged: 同步期间远端配置已变化，请重新同步以读取最新版本。已保存到本地的合并配置会保留。
+          invalidConfig: 远端配置无效，已停止同步，未覆盖远端文件。
+          invalidBaseline: 本地 WebDAV 同步记录无效，请先导出备份，再清除并重新配置连接。
+          tooLarge: WebDAV 响应超过 10 MB 限制。
+          timeout: WebDAV 请求超时。
+          network: 无法连接 WebDAV，请检查地址、网络和证书。同步不会跟随重定向。
+          http: WebDAV 请求失败。
+          operation: WebDAV 操作失败，请检查扩展存储后重试。
       manualSync:
         title: 手动配置同步
         description: 手动导入和导出您的配置设置

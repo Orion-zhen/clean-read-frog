@@ -410,6 +410,38 @@ options:
             title: The merged config has validation errors.
             description: "Adjust the differences below to fix:"
           moreErrors: ...and $1 more errors
+      webdav:
+        title: WebDAV cloud sync
+        description: Manually sync your configuration with a WebDAV server.
+        configure: Configure
+        disconnect: Clear connection
+        sync: Sync to WebDAV
+        directoryUrl: WebDAV directory URL
+        username: Username
+        password: Password or app password
+        setupDescription: Enter an existing WebDAV directory. Sync uses read-frog-config.json and does not create directories. Clearing the connection removes local credentials and sync history, not the remote file.
+        securityNotice: Credentials are saved only in this extension's local storage, not encrypted or included in synced configs. Configs may contain API keys. Use HTTPS and an app password. HTTP sends credentials and configs without encryption.
+        concurrencyNotice: Concurrent writes are protected only when the server supplies a strong ETag and honors conditional requests. Otherwise, avoid syncing multiple devices at once.
+        test: Test connection
+        testSuccess: Directory is readable. Write permission has not been tested.
+        save: Save
+        firstSyncTitle: First sync with this WebDAV target
+        firstSyncDescription: If a remote config exists, it will replace your local config. Otherwise, your local config will be uploaded. Export a backup before continuing if needed.
+        errors:
+          invalidSettings: Enter an HTTP(S) directory URL without credentials, query or fragment, a username without a colon, and a password.
+          unauthorized: Authentication failed. Check your username and password.
+          forbidden: Permission denied. Check access permissions on the WebDAV directory.
+          notFound: WebDAV directory not found. Create it on the server first.
+          notCollection: The address did not return a readable WebDAV directory. Check the WebDAV endpoint.
+          unsupported: The server does not support the required WebDAV method.
+          remoteChanged: Remote config changed during sync. Sync again to read the latest version. Any merged config already saved locally is kept.
+          invalidConfig: Remote config is invalid. Sync stopped without overwriting the remote file.
+          invalidBaseline: Local WebDAV sync history is invalid. Export a backup, then clear and configure the connection again.
+          tooLarge: The WebDAV response exceeds the 10 MB limit.
+          timeout: WebDAV request timed out.
+          network: Cannot connect to WebDAV. Check the address, network and certificate. Redirects are not followed.
+          http: WebDAV request failed.
+          operation: WebDAV operation failed. Check extension storage and try again.
       manualSync:
         title: Manual config sync
         description: Manually import and export your configuration settings

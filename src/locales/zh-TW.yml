@@ -410,6 +410,38 @@ options:
             title: 合併後的設定存在驗證錯誤
             description: 請調整下方差異以修復：
           moreErrors: …還有 $1 個錯誤
+      webdav:
+        title: WebDAV 雲端同步
+        description: 手動將設定與 WebDAV 伺服器同步。
+        configure: 設定連線
+        disconnect: 清除連線
+        sync: 同步到 WebDAV
+        directoryUrl: WebDAV 目錄網址
+        username: 使用者名稱
+        password: 密碼或應用程式專用密碼
+        setupDescription: 請填寫已存在的 WebDAV 目錄。同步使用 read-frog-config.json，不會建立目錄。清除連線僅刪除本機憑證和同步紀錄，不會刪除遠端檔案。
+        securityNotice: 憑證僅儲存在此擴充功能的本機儲存空間中，未經加密，也不會包含在同步設定中。設定可能包含 API 金鑰。建議使用 HTTPS 和應用程式專用密碼。HTTP 會以未加密方式傳輸憑證和設定。
+        concurrencyNotice: 只有伺服器提供強 ETag 並遵守條件請求時，才能防止並行寫入覆蓋。否則請避免多台裝置同時同步。
+        test: 測試連線
+        testSuccess: 目錄可讀取，尚未驗證寫入權限。
+        save: 儲存
+        firstSyncTitle: 首次同步此 WebDAV 目標
+        firstSyncDescription: 如果遠端已有設定，將覆蓋本機設定。否則將上傳本機設定。如需保留目前設定，請先匯出備份。
+        errors:
+          invalidSettings: 請填寫不含憑證、查詢參數或片段的 HTTP(S) 目錄網址、不含冒號的使用者名稱，以及密碼。
+          unauthorized: 驗證失敗，請檢查使用者名稱和密碼。
+          forbidden: 權限不足，請檢查 WebDAV 目錄的存取權限。
+          notFound: WebDAV 目錄不存在，請先在伺服器上建立目錄。
+          notCollection: 此網址未回傳可讀取的 WebDAV 目錄，請檢查 WebDAV 介面網址。
+          unsupported: 伺服器不支援所需的 WebDAV 請求方法。
+          remoteChanged: 同步期間遠端設定已變更，請重新同步以讀取最新版本。已儲存到本機的合併設定會保留。
+          invalidConfig: 遠端設定無效，已停止同步，未覆蓋遠端檔案。
+          invalidBaseline: 本機 WebDAV 同步紀錄無效，請先匯出備份，再清除並重新設定連線。
+          tooLarge: WebDAV 回應超過 10 MB 限制。
+          timeout: WebDAV 請求逾時。
+          network: 無法連線至 WebDAV，請檢查網址、網路和憑證。同步不會跟隨重新導向。
+          http: WebDAV 請求失敗。
+          operation: WebDAV 操作失敗，請檢查擴充功能儲存空間後重試。
       manualSync:
         title: 手動設定同步
         description: 手動匯入與匯出設定
