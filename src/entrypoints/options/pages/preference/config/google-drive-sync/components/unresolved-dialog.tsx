@@ -1,26 +1,24 @@
 import { useAtomValue } from "jotai"
 import { useState } from "react"
 import { toastManager } from "@/components/ui/base-ui/toast"
-import { useGoogleDriveAuth } from "@/hooks/use-google-drive-auth"
 import { resolvedConfigResultAtom, unresolvedConfigsAtom } from "@/utils/atoms/config-sync"
+import { GoogleAccountChangedError } from "@/utils/google-drive/auth"
 import { syncMergedConfig } from "@/utils/google-drive/sync"
+import { i18n } from "@/utils/i18n"
 import { logger } from "@/utils/logger"
 import { UnresolvedDialog as ConfigSyncUnresolvedDialog } from "../../config-sync/unresolved-dialog"
 
 interface UnresolvedDialogProps {
   open: boolean
+  email: string | undefined
   onResolved: () => void
   onCancelled: () => void
 }
 
-export function UnresolvedDialog({ open, onResolved, onCancelled }: UnresolvedDialogProps) {
+export function UnresolvedDialog({ open, email, onResolved, onCancelled }: UnresolvedDialogProps) {
   const [isConfirming, setIsConfirming] = useState(false)
   const unresolvedConfigs = useAtomValue(unresolvedConfigsAtom)
   const resolvedConfigResult = useAtomValue(resolvedConfigResultAtom)
-  const {
-    query: { data: authData },
-  } = useGoogleDriveAuth()
-  const email = authData?.userInfo?.email
 
   const handleConfirm = async () => {
     if (!resolvedConfigResult?.config || !unresolvedConfigs) {
@@ -36,6 +34,14 @@ export function UnresolvedDialog({ open, onResolved, onCancelled }: UnresolvedDi
       onResolved()
     } catch (error) {
       logger.error("Failed to sync merged config", error)
+      // Worth naming: "sync failed, try again" would send the user round the
+      // same loop, when what they need to know is which account they are on.
+      if (error instanceof GoogleAccountChangedError) {
+        toastManager.add({
+          type: "error",
+          title: i18n.t("options.preference.config.googleDrive.accountChangedError"),
+        })
+      }
       onCancelled()
     } finally {
       setIsConfirming(false)
