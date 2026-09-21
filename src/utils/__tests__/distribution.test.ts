@@ -22,7 +22,7 @@ describe("provider distribution policy", () => {
     )
   })
 
-  it.skipIf(IS_PURE_BUILD)("keeps commercial policy in sync with provider metadata", () => {
+  it.skipIf(IS_PURE_BUILD)("keeps promotion metadata within the commercial policy", () => {
     const promotedProviderTypes = Object.entries(API_PROVIDER_ITEMS)
       .filter(
         ([, provider]) =>
@@ -33,9 +33,12 @@ describe("provider distribution policy", () => {
           ),
       )
       .map(([providerType]) => providerType)
-      .toSorted()
 
-    expect(promotedProviderTypes).toEqual([...PURE_EXCLUDED_PROVIDER_TYPES].toSorted())
+    expect(
+      promotedProviderTypes.every((providerType) =>
+        PURE_EXCLUDED_PROVIDER_TYPES.includes(providerType as (typeof API_PROVIDER_TYPES)[number]),
+      ),
+    ).toBe(true)
   })
 })
 

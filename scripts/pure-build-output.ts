@@ -21,6 +21,11 @@ const PURE_GATEWAY_REPLACEMENTS = {
       signOut: async () => ({ data: null, error: null }),
     };
   `,
+  "/src/utils/auth/host-permission.ts": `
+    export const ACCOUNT_ORIGIN_PATTERNS = [];
+    export const hasAccountHostPermission = async () => false;
+    export const requestAccountHostPermission = async () => false;
+  `,
   "/src/utils/orpc/client.ts": `
     const unavailable = (path) => new Proxy(
       () => { throw new Error(path + " is unavailable in the pure distribution"); },
@@ -77,6 +82,7 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
     "/src/entrypoints/options/pages/video-subtitles/ai-quota/",
     "/src/entrypoints/selection.content/selection-toolbar/custom-action-button/",
   ],
+  "/src/utils/auth/host-permission.ts": ["/src/components/user-account-menu/"],
   "/src/utils/orpc/client.ts": [
     "/src/components/llm-providers/use-hosted-ai-status.ts",
     "/src/components/user-account-menu/",
