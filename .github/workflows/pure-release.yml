@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  RELEASE_TAG: pure-build
+  RELEASE_TAG_PREFIX: pure-build
   WXT_ANALYTICS_DAILY_FEATURE_CACHE_ENABLED: "true"
   WXT_SKIP_ENV_VALIDATION: true
 
@@ -50,29 +50,45 @@ jobs:
         shell: bash
         run: echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
 
-      - name: Delete existing rolling release
+      - name: Generate unique release tag
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(jq -r '.version' package.json)"
+          tag="${RELEASE_TAG_PREFIX}-v${version}-${GITHUB_RUN_ID}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Delete previous pure releases and tags
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
 
-          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release delete "${RELEASE_TAG}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --cleanup-tag \
-              --yes
-          elif git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
-            gh api \
-              --method DELETE \
-              "repos/${GITHUB_REPOSITORY}/git/refs/tags/${RELEASE_TAG}"
-          fi
+          tags="$(git ls-remote --tags --refs origin "refs/tags/${RELEASE_TAG_PREFIX}*" | awk '{print $2}' | sed 's#refs/tags/##')"
+          while IFS= read -r tag; do
+            [[ -z "${tag}" ]] && continue
 
-      - name: Create rolling release and upload ZIP packages
+            if gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+              gh release delete "${tag}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --cleanup-tag \
+                --yes
+            else
+              gh api \
+                --method DELETE \
+                "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}"
+            fi
+          done <<< "${tags}"
+
+      - name: Create release and upload ZIP packages
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: Pure Build
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: Pure Build v${{ steps.release.outputs.version }}
           target_commitish: ${{ steps.revision.outputs.sha }}
           make_latest: true
           fail_on_unmatched_files: true

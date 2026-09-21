@@ -21,6 +21,8 @@ export function setupFeatureUsedEventHandlers(): void {
       void recordFeatureActiveDay()
     }
 
-    await captureFeatureUsedEventInBackground(message.data)
+    if (!__PURE_BUILD__) {
+      await captureFeatureUsedEventInBackground(message.data)
+    }
   })
 }

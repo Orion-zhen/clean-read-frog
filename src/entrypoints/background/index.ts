@@ -171,7 +171,9 @@ export default defineBackground({
     void (async () => {
       await backgroundReady
       void initializeContextMenu()
-      await setupUninstallSurvey()
+      if (!__PURE_BUILD__) {
+        await setupUninstallSurvey()
+      }
     })()
 
     // Keep background-resolved strings in the selected language when it changes.
@@ -184,7 +186,9 @@ export default defineBackground({
         if (newConfig.uiLanguage === currentUiLanguage) return
         currentUiLanguage = newConfig.uiLanguage
         await setUiLanguage(newConfig.uiLanguage)
-        await setupUninstallSurvey()
+        if (!__PURE_BUILD__) {
+          await setupUninstallSurvey()
+        }
       })()
     })
   },
