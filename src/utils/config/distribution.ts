@@ -1,6 +1,8 @@
 import type { Config } from "@/types/config/config"
 import type { ProviderConfig } from "@/types/config/provider"
+import type { SelectionToolbarBuiltInActionState } from "@/types/config/selection-toolbar"
 import { isLLMProviderConfig, isTranslateProviderConfig } from "@/types/config/provider"
+import { selectionToolbarBuiltInActionsSchema } from "@/types/config/selection-toolbar"
 import { FEATURE_KEYS, FEATURE_PROVIDER_DEFS } from "@/utils/constants/feature-providers"
 import { DEFAULT_PROVIDER_CONFIG } from "@/utils/constants/providers"
 import { isProviderConfigAvailableInDistribution } from "@/utils/distribution"
@@ -119,10 +121,23 @@ export function normalizeConfigForDistribution(
     return nextProviderId
   }
 
-  const dictionary = config.selectionToolbar.builtInActions.dictionary
-  const { notebaseConnection: _dictionaryNotebaseConnection, ...dictionaryWithoutNotebase } =
-    dictionary
-  changed ||= dictionary.notebaseConnection !== undefined
+  const normalizeBuiltInAction = (action: SelectionToolbarBuiltInActionState) => {
+    const { notebaseConnection: _notebaseConnection, ...localAction } = action
+    const providerId = llmProviderId(action.providerId)
+    changed ||= action.notebaseConnection !== undefined
+    return { ...localAction, providerId }
+  }
+  const builtInActions = { ...config.selectionToolbar.builtInActions }
+  // UI reads can precede background migration. Normalize schema defaults too.
+  for (const key of ["sentenceAnalysis", "improveWriting"] as const) {
+    if (builtInActions[key] === undefined) {
+      builtInActions[key] = selectionToolbarBuiltInActionsSchema.shape[key].parse(undefined)
+      changed = true
+    }
+  }
+  for (const key of Object.keys(builtInActions) as (keyof typeof builtInActions)[]) {
+    builtInActions[key] = normalizeBuiltInAction(builtInActions[key])
+  }
 
   const customActions = config.selectionToolbar.customActions.map((action) => {
     const { notebaseConnection: _notebaseConnection, ...actionWithoutNotebase } = action
@@ -131,7 +146,6 @@ export function normalizeConfigForDistribution(
     return { ...actionWithoutNotebase, providerId }
   })
 
-  const dictionaryProviderId = llmProviderId(dictionary.providerId)
   changed ||= config.selectionToolbar.noteSuggestion.enabled
 
   const languageDetection = (() => {
@@ -148,19 +162,25 @@ export function normalizeConfigForDistribution(
       providerId: llmProviderId(config.languageDetection.providerId ?? llmFallback.providerId),
     }
   })()
+  const selectedProviderIds = config.translationHub.selectedProviderIds
+  const availableHubIds = new Set(
+    providersConfig.filter(isTranslateProviderConfig).map((provider) => provider.id),
+  )
+  const localHubIds =
+    selectedProviderIds?.filter((id) => availableHubIds.has(id)) ?? selectedProviderIds
+  changed ||= localHubIds?.length !== selectedProviderIds?.length
+
   const normalizedConfig: Config = {
     ...config,
     providersConfig,
     languageDetection,
+    translationHub: {
+      ...config.translationHub,
+      selectedProviderIds: localHubIds,
+    },
     selectionToolbar: {
       ...config.selectionToolbar,
-      builtInActions: {
-        ...config.selectionToolbar.builtInActions,
-        dictionary: {
-          ...dictionaryWithoutNotebase,
-          providerId: dictionaryProviderId,
-        },
-      },
+      builtInActions,
       customActions,
       noteSuggestion: {
         ...config.selectionToolbar.noteSuggestion,

@@ -22,7 +22,7 @@ export function setupFeatureUsedEventHandlers(): void {
     }
 
     if (!__PURE_BUILD__) {
-      await captureFeatureUsedEventInBackground(message.data)
+      await captureFeatureUsedEventInBackground(message.data, message.sender?.tab)
     }
   })
 }

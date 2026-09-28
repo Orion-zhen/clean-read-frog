@@ -16,10 +16,15 @@ vi.mock("@/utils/logger", () => ({
   },
 }))
 
-const { buildFeatureUsedEventProperties, getLatencyMs, trackFeatureUsed } =
-  await import("@/utils/analytics")
+const {
+  buildFeatureUsedEventProperties,
+  createFeatureUsageContext,
+  getLatencyMs,
+  trackFeatureAttempt,
+  trackFeatureUsed,
+} = await import("@/utils/analytics")
 
-describe("analytics helpers", () => {
+describe.skipIf(__PURE_BUILD__)("analytics helpers", () => {
   beforeEach(() => {
     sendMessageMock.mockReset()
     loggerWarnMock.mockReset()
@@ -41,6 +46,9 @@ describe("analytics helpers", () => {
         finishedAt: 1_500,
         provider: "openai",
         backend_kind: "llm",
+        translation_mode: "bilingual",
+        target_language: "cmn",
+        source_language: "jpn",
       }),
     ).toEqual({
       feature: ANALYTICS_FEATURE.PAGE_TRANSLATION,
@@ -49,6 +57,9 @@ describe("analytics helpers", () => {
       latency_ms: 1_500,
       provider: "openai",
       backend_kind: "llm",
+      translation_mode: "bilingual",
+      target_language: "cmn",
+      source_language: "jpn",
     })
   })
 
@@ -77,6 +88,37 @@ describe("analytics helpers", () => {
     })
   })
 
+  it("reports char_count from the tracked use, not from the usage context", async () => {
+    sendMessageMock.mockResolvedValue(undefined)
+    const context = createFeatureUsageContext(
+      ANALYTICS_FEATURE.TRANSLATION_HUB,
+      ANALYTICS_SURFACE.TRANSLATION_HUB,
+      0,
+    )
+
+    expect(context).not.toHaveProperty("char_count")
+
+    await trackFeatureAttempt(
+      {
+        ...context,
+        provider: "openai",
+        backend_kind: "llm",
+        char_count: 42,
+        target_language: "cmn",
+      },
+      async () => "translated",
+    )
+
+    expect(sendMessageMock).toHaveBeenCalledWith(
+      "trackFeatureUsedEvent",
+      expect.objectContaining({
+        feature: ANALYTICS_FEATURE.TRANSLATION_HUB,
+        outcome: "success",
+        char_count: 42,
+      }),
+    )
+  })
+
   it("tracks feature usage with the expected event payload", async () => {
     sendMessageMock.mockResolvedValue(undefined)
 
@@ -88,6 +130,8 @@ describe("analytics helpers", () => {
       finishedAt: 1_500,
       provider: "openai" as const,
       backend_kind: "llm" as const,
+      translation_mode: "bilingual" as const,
+      target_language: "cmn" as const,
     }
 
     await expect(trackFeatureUsed(input)).resolves.toBeUndefined()
@@ -111,9 +155,52 @@ describe("analytics helpers", () => {
         finishedAt: 1_500,
         provider: "openai",
         backend_kind: "llm",
+        translation_mode: "bilingual",
+        target_language: "cmn",
       }),
     ).resolves.toBeUndefined()
 
     expect(loggerWarnMock).toHaveBeenCalledOnce()
+  })
+})
+
+describe.skipIf(!__PURE_BUILD__)("pure analytics boundary", () => {
+  beforeEach(() => {
+    sendMessageMock.mockReset()
+    loggerWarnMock.mockReset()
+  })
+
+  const context = {
+    ...createFeatureUsageContext(
+      ANALYTICS_FEATURE.TRANSLATION_HUB,
+      ANALYTICS_SURFACE.TRANSLATION_HUB,
+    ),
+    provider: "openai" as const,
+    backend_kind: "llm" as const,
+    char_count: 42,
+    target_language: "cmn" as const,
+  }
+
+  it("does not send feature metadata to the background", async () => {
+    await trackFeatureUsed({ ...context, outcome: "success" })
+    expect(sendMessageMock).not.toHaveBeenCalled()
+  })
+
+  it("preserves successful actions without tracking", async () => {
+    const run = vi.fn<() => Promise<string>>(async () => "translated")
+    await expect(trackFeatureAttempt(context, run)).resolves.toBe("translated")
+    expect(run).toHaveBeenCalledOnce()
+    expect(sendMessageMock).not.toHaveBeenCalled()
+  })
+
+  it("preserves action failures without tracking", async () => {
+    const error = new Error("provider failed")
+    await expect(
+      trackFeatureAttempt(context, async () => {
+        throw error
+      }),
+    ).rejects.toBe(error)
+    expect(sendMessageMock).not.toHaveBeenCalled()
+    expect(loggerWarnMock).not.toHaveBeenCalled()
   })
 })

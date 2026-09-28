@@ -31,6 +31,7 @@ import { i18n } from "@/utils/i18n"
 import { logger } from "@/utils/logger"
 import { sendMessage } from "@/utils/message"
 import { getUniqueName } from "@/utils/name"
+import { buildCustomActionOptionsRoute } from "@/utils/navigation"
 import { trackNoteSuggestionEvent } from "@/utils/note-suggestion/analytics"
 import {
   createNotebaseConnectedAccountSnapshot,
@@ -124,12 +125,16 @@ export function SaveToNotebaseDialogHost() {
     setDialogState({ open: false })
   }
 
-  const recordSuggestionAcceptedIfNeeded = (actionName?: string) => {
+  const recordSuggestionAcceptedIfNeeded = (actionName: string) => {
     if (analyticsSource !== "note_suggestion") {
       return
     }
 
-    trackNoteSuggestionEvent("suggestion_accepted", { actionName, provider: analyticsProvider })
+    trackNoteSuggestionEvent({
+      action_id: "suggestion_accepted",
+      action_name: actionName,
+      provider: analyticsProvider,
+    })
   }
 
   const buildCustomActionsWithDraft = (draft: SelectionToolbarCustomAction) => {
@@ -340,7 +345,7 @@ export function SaveToNotebaseDialogHost() {
 
     closeDialog()
     void sendMessage("openOptionsPage", {
-      route: `/custom-actions?actionId=${encodeURIComponent(pendingNotebaseSave.actionId)}`,
+      route: buildCustomActionOptionsRoute(pendingNotebaseSave.actionId, { tab: "notebase" }),
     })
   }
 

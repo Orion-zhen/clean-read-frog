@@ -162,6 +162,12 @@ export function SelectionCustomActionProvider({ children }: { children: ReactNod
   const displayedIsRunning =
     (isOpen && webPageContext === undefined) || (executionPlan.executionContext ? isRunning : false)
   const displayedThinking = executionPlan.executionContext ? thinking : null
+  const layoutStatus = displayedIsRunning ? "streaming" : displayedError ? "error" : "done"
+  // The layout's ctx mirrors the prompt tokens of the run on screen; before
+  // there is one (precheck, page context still loading) it falls back to the
+  // same sources those tokens are built from.
+  const layoutSelection = executionPlan.executionContext?.promptTokens.selection ?? cleanSelection
+  const layoutTargetCode = executionPlan.executionContext?.targetCode ?? language.targetCode
 
   const resetPopoverSession = useCallback((options?: { clearAnchor?: boolean }) => {
     setActiveSession(null)
@@ -261,11 +267,8 @@ export function SelectionCustomActionProvider({ children }: { children: ReactNod
           ...createFeatureUsageContext(
             ANALYTICS_FEATURE.CUSTOM_AI_ACTION,
             ANALYTICS_SURFACE.CONTEXT_MENU,
-            Date.now(),
-            {
-              action_id: actionId,
-            },
           ),
+          action_id: actionId,
           ...UNKNOWN_FEATURE_PROVIDER,
           outcome: "failure",
         })
@@ -280,12 +283,9 @@ export function SelectionCustomActionProvider({ children }: { children: ReactNod
           ...createFeatureUsageContext(
             ANALYTICS_FEATURE.CUSTOM_AI_ACTION,
             ANALYTICS_SURFACE.CONTEXT_MENU,
-            Date.now(),
-            {
-              action_id: action.id,
-              action_name: action.name,
-            },
           ),
+          action_id: action.id,
+          action_name: action.name,
           ...classifyResolvedProvider(
             resolveProviderRefForCapability("customAction", providersConfig, action.providerId),
           ),
@@ -335,17 +335,13 @@ export function SelectionCustomActionProvider({ children }: { children: ReactNod
       return
     }
 
+    if (!activeActionId) return
     const analyticsContext = createFeatureUsageContext(
       ANALYTICS_FEATURE.CUSTOM_AI_ACTION,
       sourceSurface,
-      Date.now(),
-      {
-        action_id: activeActionId ?? undefined,
-        action_name: activeAction?.name,
-      },
     )
     const nextErrorKey = JSON.stringify({
-      actionId: analyticsContext.action_id ?? null,
+      actionId: activeActionId,
       description: executionPlan.error.description,
       popoverSessionKey,
       surface: sourceSurface,
@@ -358,11 +354,13 @@ export function SelectionCustomActionProvider({ children }: { children: ReactNod
 
     void trackFeatureUsed({
       ...analyticsContext,
+      action_id: activeActionId,
+      ...(activeAction ? { action_name: activeAction.name } : {}),
       ...classifyResolvedProvider(customActionRequest.provider),
       outcome: "failure",
     })
   }, [
-    activeAction?.name,
+    activeAction,
     activeActionId,
     executionPlan.error,
     executionPlan.executionContext,
@@ -411,8 +409,10 @@ export function SelectionCustomActionProvider({ children }: { children: ReactNod
             ref={bodyRef}
           >
             <CustomActionContent
-              isRunning={displayedIsRunning}
-              outputSchema={activeAction?.outputSchema ?? []}
+              action={activeAction}
+              status={layoutStatus}
+              selection={layoutSelection}
+              targetCode={layoutTargetCode}
               selectionContent={selectionText}
               value={displayedResult}
               thinking={displayedThinking}

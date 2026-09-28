@@ -11,7 +11,7 @@ import { configAtom } from "@/utils/atoms/config"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import { i18n } from "@/utils/i18n"
 import { CustomActionConfigForm } from ".."
-import { selectedCustomActionIdAtom } from "../../atoms"
+import { customActionEditorTabAtom, selectedCustomActionIdAtom } from "../../atoms"
 
 vi.mock("@/components/form/quick-insertable-textarea-field-auto-save", () => ({
   QuickInsertableTextareaFieldAutoSave: ({
@@ -47,11 +47,21 @@ vi.mock("../output-schema-field", () => ({
   ReadOnlyOutputSchemaField: () => <div>ReadOnlyOutputSchemaField</div>,
 }))
 
+// The layout editor and preview (CodeMirror, shadow DOM) are verified in a browser.
+vi.mock("../layout-field", () => ({
+  LayoutField: () => <div>LayoutField</div>,
+  ReadOnlyLayoutField: () => <div>ReadOnlyLayoutField</div>,
+}))
+
 vi.mock("../notebase-connection-field", () => ({
   NotebaseConnectionField: () => (
     <div>{i18n.t("options.selectionToolbar.customActions.form.notebase.title")}</div>
   ),
 }))
+
+const AI_CONFIG_HELPER_TRIGGER = i18n.t(
+  "options.selectionToolbar.customActions.form.aiConfigHelper.trigger",
+)
 
 function seedConfig(store: ReturnType<typeof createStore>, config: SeedConfig) {
   void fakeBrowser.storage.local.set({ config })
@@ -62,7 +72,7 @@ function cloneConfig(config: Config): Config {
   return JSON.parse(JSON.stringify(config)) as Config
 }
 
-describe("customActionConfigForm notebase availability", () => {
+describe.skipIf(__PURE_BUILD__)("customActionConfigForm notebase availability", () => {
   it("renders built-in fields read-only and duplicates the complete action", async () => {
     const store = createStore()
     const config = cloneConfig(DEFAULT_CONFIG)
@@ -91,6 +101,8 @@ describe("customActionConfigForm notebase availability", () => {
     expect(screen.getByText("IconField:readOnly")).toBeInTheDocument()
     expect(screen.queryByText("OutputSchemaField")).not.toBeInTheDocument()
     expect(screen.getByText("ReadOnlyOutputSchemaField")).toBeInTheDocument()
+    expect(screen.queryByText("LayoutField")).not.toBeInTheDocument()
+    expect(screen.getByText("ReadOnlyLayoutField")).toBeInTheDocument()
     expect(screen.getByText("ProviderField")).toBeInTheDocument()
     expect(
       screen.queryByText(i18n.t("options.selectionToolbar.customActions.form.delete")),
@@ -99,6 +111,7 @@ describe("customActionConfigForm notebase availability", () => {
     expect(
       screen.queryByRole("button", { name: i18n.t("options.apiProviders.form.duplicate") }),
     ).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: AI_CONFIG_HELPER_TRIGGER })).not.toBeInTheDocument()
 
     const customizeButton = screen.getByRole("button", {
       name: i18n.t("options.selectionToolbar.customActions.form.customize"),
@@ -201,7 +214,6 @@ describe("customActionConfigForm notebase availability", () => {
           name: "summary",
           type: "string" as const,
           description: "Summary",
-          speaking: false,
         },
       ],
       notebaseConnection: {
@@ -228,6 +240,7 @@ describe("customActionConfigForm notebase availability", () => {
 
     expect(screen.getByText("NameField:editable")).toBeInTheDocument()
     expect(screen.getByText("OutputSchemaField")).toBeInTheDocument()
+    expect(screen.getByText("LayoutField")).toBeInTheDocument()
     expect(
       screen.queryByRole("button", {
         name: i18n.t("options.selectionToolbar.customActions.form.customize"),
@@ -254,5 +267,87 @@ describe("customActionConfigForm notebase availability", () => {
     })
     expect(duplicate.id).not.toBe(action.id)
     expect(duplicate.notebaseConnection).not.toBe(action.notebaseConnection)
+  })
+
+  it("copies a prompt carrying the custom action's current settings", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true })
+
+    const store = createStore()
+    const config = cloneConfig(DEFAULT_CONFIG)
+    const action = {
+      id: "action-1",
+      name: "Summarize",
+      icon: "tabler:sparkles",
+      enabled: true,
+      providerId: config.selectionToolbar.builtInActions.dictionary.providerId,
+      systemPrompt: "You are helpful.",
+      prompt: "Summarize {{selection}}.",
+      outputSchema: [
+        { id: "summary-field", name: "summary", type: "string" as const, description: "" },
+      ],
+    }
+    config.selectionToolbar.customActions = [action, { ...action, id: "action-2", name: "Explain" }]
+    seedConfig(store, config)
+    void store.set(selectedCustomActionIdAtom, action.id)
+
+    render(
+      <Provider store={store}>
+        <CustomActionConfigForm />
+      </Provider>,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: AI_CONFIG_HELPER_TRIGGER }))
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: i18n.t("options.selectionToolbar.customActions.form.aiConfigHelper.copy"),
+      }),
+    )
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    const prompt = writeText.mock.calls[0]![0]
+    expect(prompt).toContain("**Name:** `Summarize`")
+    expect(prompt).toContain("```text\nSummarize {{selection}}.\n```")
+    expect(prompt).toContain("named `Explain`")
+    expect(await screen.findByRole("button", { name: i18n.t("action.copied") })).toBeInTheDocument()
+  })
+})
+
+describe.skipIf(!__PURE_BUILD__)("pure custom action editor", () => {
+  it.each(["built-in", "custom"])("keeps the %s layout editor without Notebase", (kind) => {
+    const store = createStore()
+    const config = cloneConfig(DEFAULT_CONFIG)
+    config.selectionToolbar.customActions = [
+      {
+        id: "local-action",
+        name: "Local action",
+        icon: "tabler:sparkles",
+        providerId: config.selectionToolbar.builtInActions.dictionary.providerId,
+        systemPrompt: "You are helpful.",
+        prompt: "Explain {{selection}}.",
+        outputSchema: [{ id: "result", name: "result", type: "string", description: "" }],
+        layout: "<p>{{ fields.result }}</p>",
+      },
+    ]
+    seedConfig(store, config)
+    void store.set(
+      selectedCustomActionIdAtom,
+      kind === "built-in" ? "default-dictionary" : "local-action",
+    )
+    store.set(customActionEditorTabAtom, "notebase")
+
+    render(
+      <Provider store={store}>
+        <CustomActionConfigForm />
+      </Provider>,
+    )
+
+    expect(
+      screen.getByText(kind === "built-in" ? "ReadOnlyLayoutField" : "LayoutField"),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(i18n.t("options.selectionToolbar.customActions.form.notebase.title")),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("tab", { name: /Notebase/i })).not.toBeInTheDocument()
   })
 })

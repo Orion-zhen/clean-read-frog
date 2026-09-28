@@ -4,6 +4,9 @@ import { access, readFile, readdir } from "node:fs/promises"
 import path from "node:path"
 
 const FORBIDDEN_SOURCE_MODULE_PATTERNS = [
+  "/node_modules/posthog-js/",
+  "/src/entrypoints/background/analytics.ts",
+  "/src/entrypoints/background/analytics-feature-cache.ts",
   "/src/utils/auth/",
   "/src/utils/orpc/",
   "/src/entrypoints/background/hosted-ai-status.ts",
@@ -13,6 +16,9 @@ const FORBIDDEN_SOURCE_MODULE_PATTERNS = [
 ] as const
 
 const PURE_GATEWAY_REPLACEMENTS = {
+  "/src/entrypoints/background/analytics.ts": `
+    export const captureFeatureUsedEventInBackground = async () => {};
+  `,
   "/src/utils/auth/auth-client.ts": `
     const guest = { data: null, isPending: false, error: null };
     export const authClient = {
@@ -74,6 +80,7 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
   keyof typeof PURE_GATEWAY_REPLACEMENTS,
   readonly string[]
 > = {
+  "/src/entrypoints/background/analytics.ts": ["/src/entrypoints/background/feature-used-event.ts"],
   "/src/utils/auth/auth-client.ts": [
     "/src/components/llm-providers/use-hosted-ai-status.ts",
     "/src/components/user-account-menu/",

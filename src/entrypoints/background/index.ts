@@ -120,8 +120,8 @@ export default defineBackground({
 
     if (!__PURE_BUILD__) {
       newUserGuide()
+      setupFeatureUsedEventHandlers()
     }
-    setupFeatureUsedEventHandlers()
     translationMessage()
     registerActionIconListeners()
 

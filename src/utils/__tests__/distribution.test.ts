@@ -13,6 +13,7 @@ import {
   PURE_EXCLUDED_PROVIDER_TYPES,
   isProviderTypeAvailableInDistribution,
 } from "@/utils/distribution"
+import { CUSTOM_ACTION_NOTEBASE_SECTION_ID } from "@/utils/navigation"
 import { getSystemProviderIdsForCapability } from "@/utils/providers/provider-registry"
 
 describe("provider distribution policy", () => {
@@ -83,5 +84,8 @@ describe.skipIf(!IS_PURE_BUILD)("pure distribution", () => {
       "selection-toolbar-note-suggestion",
     )
     expect(SEARCH_ITEMS.map((item) => item.sectionId)).not.toContain("subtitles-ai-quota")
+    expect(SEARCH_ITEMS.map((item) => item.sectionId)).not.toContain(
+      CUSTOM_ACTION_NOTEBASE_SECTION_ID,
+    )
   })
 })
