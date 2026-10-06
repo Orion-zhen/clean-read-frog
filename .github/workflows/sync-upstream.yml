@@ -65,7 +65,24 @@ jobs:
           git switch --create "${SYNC_BRANCH}" "${base_sha}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git merge --no-ff --no-edit "${upstream_sha}"
+          if ! git merge --no-ff --no-edit "${upstream_sha}"; then
+            conflicts="$(git diff --name-only --diff-filter=U)"
+            echo "::error::Upstream merge failed. Resolve it on a separate sync branch and validate Pure before merging."
+            {
+              echo "## Upstream sync requires manual resolution"
+              echo
+              echo "- Downstream base: \`${base_sha}\`"
+              echo "- Upstream revision: \`${upstream_sha}\`"
+              echo
+              echo "No sync branch was pushed and main was not changed."
+              echo "Resolve the merge on a separate branch, preserve Pure boundaries and WebDAV, then run the checks in readmes/PURE_BUILD.md."
+              echo
+              echo '```text'
+              printf '%s\n' "${conflicts}"
+              echo '```'
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 1
+          fi
 
           sync_head_sha="$(git rev-parse HEAD)"
           echo "sync_head_sha=${sync_head_sha}" >> "${GITHUB_OUTPUT}"

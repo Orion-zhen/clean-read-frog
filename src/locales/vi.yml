@@ -1,6 +1,6 @@
 name: Read Frog
-extName: Read Frog - Dịch và học
-extDescription: Read Frog là tiện ích mở rộng trình duyệt mã nguồn mở được thiết kế để giúp bạn học ngôn ngữ sâu từ bất kỳ trang web nào.
+extName: "Read Frog - Dịch AI và thẻ ghi nhớ"
+extDescription: "Dịch song ngữ bằng AI cho trang web và phụ đề YouTube, Netflix, X. Lưu từ mới và ôn tập bằng thẻ ghi nhớ."
 uninstallSurveyUrl: https://tally.so/r/nPK6Ob
 account:
   login: Đăng nhập
@@ -643,9 +643,12 @@ options:
       providerUnavailable: Nhà cung cấp đã chọn không khả dụng
     customActions:
       title: Hành động AI tùy chỉnh
-      pageDescription: Viết prompt của riêng bạn và chạy trên văn bản đã chọn từ thanh công cụ chọn văn bản.
+      pageDescription: Viết prompt của riêng bạn và chạy trên văn bản đã chọn từ thanh công cụ chọn văn bản. Dữ liệu, kiểu dáng và cách tương tác của kết quả đều có thể tùy chỉnh.
       description: Thêm các hành động AI có cấu trúc của riêng bạn cho văn bản được chọn
       configTitle: Cấu hình hành động
+      introVideo:
+        trigger: "Xem video"
+        title: "Hành động AI tùy chỉnh trong 30 giây"
       builtIn: Tích hợp
       add: Thêm hành động AI
       edit: Chỉnh sửa hành động AI
@@ -723,8 +726,10 @@ options:
           replay: Phát lại
           sampleData: Dữ liệu mẫu
           sampleDataHint: Chỉ dùng cho bản xem trước này và không được lưu.
+          sampleDataSavedHint: Chỉ dùng cho bản xem trước này và được lưu cùng tác vụ này.
           sampleDataReset: Đặt lại mẫu
-          sampleValue: Mẫu $1
+          sampleSelection: Văn bản đã chọn
+          sampleTargetLanguage: Ngôn ngữ đích
           insertField: Trường
           insertSpeak: Nút đọc
           insertCondition: Khi có giá trị
@@ -843,6 +848,14 @@ options:
             9. Nếu không biết một trường, hãy trả về chuỗi rỗng thay vì đoán.
             10. Trả lời tất cả các trường văn bản bằng {{targetLanguage}}, trừ khi cần giữ nguyên dạng gốc cho rõ ràng.
             11. Dạng trong câu đánh dấu vị trí của từ được chọn trong Câu. Đây là một CHUỖI chứa mảng JSON gọn gồm các phần tử {"text": ...}, mỗi phần tử trích nguyên văn từng ký tự trong Câu, ví dụ [{"text":"blossoms"}]. Nếu Câu tách từ thành các phần riêng (ví dụ "anrufen" trong "Er ruft seine Mutter an"), hãy cho mỗi phần một phần tử, theo thứ tự: [{"text":"ruft"},{"text":"an"}]. Hãy thoát (escape) đúng các dấu ngoặc kép bên trong.
+            12. Mẹo ghi nhớ giúp người học nhớ chính từ được chọn (ở ngôn ngữ gốc của nó, không phải bản dịch), theo cách một giáo viên giỏi sẽ làm cho riêng từ này. Đưa ra tối đa 3 mẹo, mỗi mẹo một dòng, mẹo hữu ích nhất đặt trước. Chỉ viết những mẹo thật sự hữu ích; thà ít còn hơn thêm một mẹo yếu, và nếu không có gì thật sự hữu ích thì trả về chuỗi rỗng, đừng cố nghĩ ra. Mỗi dòng chỉ một kỹ thuật: bắt đầu bằng tên kỹ thuật và dấu hai chấm, cả tên kỹ thuật lẫn nội dung đều bằng {{targetLanguage}}. Hãy bắt đầu từ cấu tạo của từ, rồi thêm những gì thật sự hữu ích:
+               - Cấu tạo từ: các thành phần có nghĩa (gốc từ, tiền tố, hậu tố, hoặc các từ tạo nên từ ghép) và cách chúng ghép lại thành nghĩa.
+               - Chữ Hán: với từ viết bằng chữ Hán (tiếng Trung, từ Hán trong tiếng Nhật, từ gốc Hán trong tiếng Hàn), nghĩa của từng chữ hoặc các bộ phận của một chữ.
+               - Nguồn gốc: từ đến từ đâu, hoặc một từ liên quan mà người học có thể đã biết (từ cùng gốc, từ vay mượn, cùng chữ Hán trong ngôn ngữ khác).
+               - Đồng nghĩa / Trái nghĩa: một từ gần nghĩa và điểm khác nhau, hoặc một từ trái nghĩa.
+               - Từ dễ nhầm: từ có hình thức hoặc âm thanh giống, và cách phân biệt.
+               - Kết hợp từ: cụm từ thường đi kèm, đáng học như một khối.
+               Bỏ qua kỹ thuật không phù hợp, đừng viết dòng nào chỉ để nói rằng nó không áp dụng được. Mỗi mẹo phải dạy điều mà Định nghĩa chưa nói: đừng lặp lại nghĩa bằng lời khác, đừng kể lại Câu, đừng giải thích dạng biến đổi của từ. Chỉ viết những điều bạn chắc chắn: không bịa nguồn gốc, gốc từ hay bộ phận chữ Hán. Bỏ qua những câu chuyện nguồn gốc còn tranh cãi hoặc chỉ là truyền thuyết, kể cả khi chỉ coi đó là “một cách nhớ cho vui” (sincere không bắt nguồn từ “không có sáp”, posh cũng không phải từ viết tắt). Chỉ tách một từ thành các phần hay các chữ khi chúng thật sự tạo nên nghĩa của từ; những từ như 犹豫 hay 葡萄 là một khối, hãy dùng kỹ thuật khác cho chúng. Không chơi chữ dựa trên âm gần giống trong bất kỳ ngôn ngữ nào, và không tách một từ thành những từ không liên quan.
 
             ## Ví dụ
 
@@ -857,6 +870,9 @@ options:
             - Dạng trong câu: [{"text":"blossoms"}]
             - Định nghĩa: 花；花朵（尤指果树的花）
             - Bản dịch câu: 樱花短暂的美丽提醒我们珍惜每一刻。
+            - Mẹo ghi nhớ:
+              词源：和 bloom（开花）同源，bl- 开头的 bloom、blossom 都和开花有关
+              近义词：bloom 多指花开的状态，blossom 常指果树（樱桃、苹果）的花
             - Độ khó: B2
 
             ### Ví dụ 2
@@ -870,6 +886,9 @@ options:
             - Dạng trong câu: [{"text":"感動"}]
             - Định nghĩa: Being deeply moved; emotional touch
             - Bản dịch câu: I thought this movie was boring, but the ending was moving.
+            - Mẹo ghi nhớ:
+              Characters: 感 (feel) + 動 (move): your feelings are moved.
+              Collocation: 感動する = to be moved; 感動的 = moving, touching.
             - Độ khó: B1
           prompt: |-
             ## Đầu vào
@@ -890,6 +909,8 @@ options:
           fieldDefinitionDescription: "Một định nghĩa ngắn gọn cho nghĩa trong ngữ cảnh."
           fieldSentenceTranslation: "Bản dịch câu"
           fieldSentenceTranslationDescription: "Bản dịch chỉ của Câu."
+          fieldMemoryTips: "Mẹo ghi nhớ"
+          fieldMemoryTipsDescription: "Cách ghi nhớ từ: tối đa 3 mẹo, mỗi mẹo một dòng, mỗi dòng bắt đầu bằng tên kỹ thuật và dấu hai chấm (ví dụ: Cấu tạo từ: …); chuỗi rỗng nếu không có gì thật sự hữu ích."
           fieldDifficulty: "Độ khó"
           fieldDifficultyDescription: "Cấp độ khó CEFR ước tính: A1, A2, B1, B2, C1 hoặc C2."
         sentenceAnalysis:
@@ -1134,6 +1155,9 @@ options:
         range:
           main: Nội dung chính
           all: Tất cả nội dung
+      translateTitle:
+        title: Dịch tiêu đề tab
+        description: Dịch cả tiêu đề trang hiển thị trên tab trình duyệt. Tắt để giữ nguyên tiêu đề gốc.
     hoverTranslation:
       title: Dịch khi di chuột
       enable:
@@ -1469,6 +1493,9 @@ options:
           description: Tất cả kết quả AI phân đoạn đã lưu trong bộ nhớ đệm sẽ bị xóa. Lần tới khi phát video có bật AI phân đoạn, phụ đề sẽ được xử lý lại.
   whatsNew:
     title: Có gì mới
+    postType:
+      promotion: Khuyến mãi
+      update: Cập nhật
   rateUs:
     title: Đánh giá chúng tôi
   configMigration:
@@ -1510,6 +1537,8 @@ translation:
   autoModeSameLanguage: Ngôn ngữ phát hiện '$1' giống với ngôn ngữ đích
   extensionContextInvalidated: Tiện ích đã được cập nhật. Hãy tải lại trang này rồi thử lại.
 speak:
+  languageDetectionFallback: Đã chuyển sang phát hiện ngôn ngữ cục bộ
+  languageDetectionSettingsHint: Trong Cài đặt, chọn LLM khả dụng hoặc phát hiện cục bộ.
   fetchingAudio: Đang tạo âm thanh...
   playingAudio: Đang phát âm thanh...
   failedToGenerateSpeech: Không thể tạo giọng nói
@@ -1562,6 +1591,7 @@ action:
   pinToToolbar: Ghim vào thanh công cụ
   unpinFromToolbar: Bỏ ghim khỏi thanh công cụ
   dragToReorder: Kéo để sắp xếp lại
+  addCustomAction: Thêm hành động AI tùy chỉnh
 noteSuggestion:
   title: Có thể bạn muốn lưu
   description: Chọn những từ bạn muốn lưu vào Notebase để ôn tập bất cứ lúc nào.

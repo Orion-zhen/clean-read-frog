@@ -4,11 +4,14 @@
 
 它会移除：
 
-- Read Frog 登录、账号、套餐、订阅和托管 AI 相关界面；
-- 基于账号的 AI 字幕转录和 Notebase 集成；
-- 内置的托管 AI 服务商；
-- 赞助/推广服务商（目前包括 Jalapeno Cloud、Atlas Cloud 和 Tensdaq），以及它们的默认配置、添加服务商选项、持久化配置和深层链接；
+- Read Frog 登录、账号、套餐、订阅和托管 AI 相关界面。
+- 基于账号的 AI 字幕转录和 Notebase 集成。
+- 内置的托管 AI 服务商。
+- 赞助/推广服务商（目前包括 Jalapeno Cloud、Atlas Cloud 和 Tensdaq），以及它们的默认配置、添加服务商选项、持久化配置和深层链接。
 - 身份验证 Cookie 权限以及自动打开的 Read Frog 网站新手引导。
+- 官方博客消息推送、设置页的 What's New 弹窗和官方介绍视频。
+- 错误提示中的登录、套餐升级和付款入口。
+- PostHog 统计上报。
 
 本地翻译服务商、由用户提供 API Key 的服务商、自定义 AI 操作、常规字幕翻译、Google Drive 配置同步以及扩展的其他功能仍然可用。
 
@@ -130,16 +133,43 @@ Pure 发行版采用失败关闭（fail-closed）策略：
 
 功能服务商注册表与设置搜索注册表共享同一套能力策略，因此禁用的功能不会留下无效设置或命令面板入口。
 
+官方消息推送、介绍视频、套餐徽章和 Notebase 编辑器的 Pure 适配层集中在下游的 `scripts/pure-build-output.ts`。这些组件在 Pure 构建时被替换，不修改上游 UI 文件。适配层只允许已审查的导入位置，新调用点需要重新审查。
+
 ## 跟进上游更新
 
-此 fork 将自己的修改保留在 `main` 分支。要将这些修改重新应用到最新的上游版本：
+此 fork 使用合并提交保留上游历史和 `main` 中的下游修改。不要通过 rebase 或强制推送重写 `main`。
+
+同步前备份扩展配置。配置迁移后，旧版本可能无法读取新配置，WebDAV 和 Google Drive 同步设备应使用兼容的配置版本。
 
 ```bash
-git fetch upstream
-git rebase upstream/main
-SKIP_FREE_API=true pnpm test
-pnpm test:pure
-pnpm type-check
-pnpm build:pure
-git push --force-with-lease origin main
+git switch main
+git pull --ff-only origin main
+git fetch --no-tags upstream main
+git switch -c sync/upstream-update
+git merge --no-ff --no-commit upstream/main
 ```
+
+如果发生冲突，先在同步分支解决，不要整体采用 `ours` 或 `theirs`。检查安装引导、账户和云端网关、付费入口、推广服务商、官方消息推送及统计上报是否仍受 Pure 策略控制。上游搬迁模块后，只允许已审查的调用点使用 Pure 适配层，不要扩大整个目录的白名单。保留 WebDAV 和已有配置同步逻辑。
+
+合并后安装依赖并验证：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm fmt:check
+pnpm lint
+SKIP_FREE_API=true pnpm test
+SKIP_FREE_API=true pnpm test:pure
+pnpm build:pure
+pnpm build:pure:edge
+pnpm build:pure:firefox
+```
+
+检查构建产物和实际浏览器中的设置页、popup、划词工具，确认没有账户查询、官方促销请求和统计上报。通过验证后提交并推送同步分支，通过 PR 合并到 `main`：
+
+```bash
+git add .
+git commit -m "fix(sync): merge upstream while preserving pure builds and WebDAV"
+git push -u origin sync/upstream-update
+```
+
+自动同步工作流发生合并失败时，会在运行摘要中报告版本和冲突文件并停止，不会推送未解决的同步分支或修改 `main`。人工解决并合并后，可以重新运行 Sync Upstream 或手动触发 Pure Release。

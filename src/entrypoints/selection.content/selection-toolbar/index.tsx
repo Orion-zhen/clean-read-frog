@@ -3,6 +3,7 @@ import type {
   EbookBridgeSelectionPayload,
 } from "@read-frog/definitions"
 import type { ModalDialogHostController } from "./modal-dialog-host"
+import type { DeferredSelectionOpenDetail } from "@/utils/constants/selection"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import {
@@ -12,9 +13,11 @@ import {
 import { configFieldsAtomMap } from "@/utils/atoms/config"
 import { NOTRANSLATE_CLASS } from "@/utils/constants/dom-labels"
 import {
+  DEFERRED_SELECTION_OPEN_EVENT,
   EXTERNAL_SELECTION_CLEAR_EVENT,
   EXTERNAL_SELECTION_OPEN_EVENT,
   MARGIN,
+  SELECTION_TOOLBAR_READY_EVENT,
 } from "@/utils/constants/selection"
 import { getSelectionToolbarItems } from "@/utils/selection-toolbar-items"
 import { cn } from "@/utils/styles/utils"
@@ -230,7 +233,9 @@ export function SelectionToolbar() {
   )
   // With nothing pinned the toolbar still shows its "more" menu; with nothing
   // enabled there is nothing to show.
-  const hasAnyEnabledItem = getSelectionToolbarItems(selectionToolbar).some((item) => item.enabled)
+  const enabledItems = getSelectionToolbarItems(selectionToolbar).filter((item) => item.enabled)
+  const hasAnyEnabledItem = enabledItems.length > 0
+  const hasAnyPinnedItem = enabledItems.some((item) => item.pinned)
   const isSelectionToolbarVisible =
     isSelectionToolbarOpen && selectionToolbar.enabled && !isSiteDisabled && hasAnyEnabledItem
   const dropdownOpenRef = useRef(false)
@@ -508,11 +513,29 @@ export function SelectionToolbar() {
       }
     }
 
+    const handleDeferredSelection = (event: Event) => {
+      const detail = (event as CustomEvent<DeferredSelectionOpenDetail>).detail
+      if (
+        !detail ||
+        typeof detail.text !== "string" ||
+        !Number.isFinite(detail.x) ||
+        !Number.isFinite(detail.y)
+      )
+        return
+      if (window.getSelection()?.toString() !== detail.text) return
+      handleMouseUp(new MouseEvent("mouseup", { clientX: detail.x, clientY: detail.y }))
+    }
+
     document.addEventListener("mouseup", handleMouseUp)
     document.addEventListener("mousedown", handleMouseDown)
     document.addEventListener("selectionchange", handleSelectionChange)
+    window.addEventListener(DEFERRED_SELECTION_OPEN_EVENT, handleDeferredSelection)
+    window.__READ_FROG_SELECTION_TOOLBAR_READY__ = true
+    window.dispatchEvent(new CustomEvent(SELECTION_TOOLBAR_READY_EVENT))
 
     return () => {
+      window.__READ_FROG_SELECTION_TOOLBAR_READY__ = false
+      window.removeEventListener(DEFERRED_SELECTION_OPEN_EVENT, handleDeferredSelection)
       document.removeEventListener("mouseup", handleMouseUp)
       document.removeEventListener("mousedown", handleMouseDown)
       document.removeEventListener("selectionchange", handleSelectionChange)
@@ -609,14 +632,17 @@ export function SelectionToolbar() {
           )}
         >
           <SelectionSpeechProvider>
+            {/* Clips the buttons' hover fills to its rounded corners. The close
+                button is positioned against the wrapper above, so it isn't clipped. */}
             <div
               data-slot="selection-toolbar-surface"
-              className="flex items-center rounded-sm border border-border/50 bg-popover shadow-(--rf-elevation-floating)"
+              className="flex items-center overflow-hidden rounded-lg border border-border/50 bg-popover shadow-md"
               style={{ opacity: "var(--rf-selection-opacity, 1)" }}
             >
-              <div className="no-scrollbar flex max-w-105 items-center overflow-x-auto overflow-y-hidden rounded-sm">
+              <div className="no-scrollbar flex max-w-105 items-center overflow-x-auto overflow-y-hidden scroll-driven:scroll-fade-x">
                 <SelectionToolbarPinnedItems />
               </div>
+              {hasAnyPinnedItem && <div className="w-px shrink-0 self-stretch bg-border" />}
               <SelectionToolbarMoreMenu />
               <CloseButton />
             </div>

@@ -7,6 +7,7 @@ import { DEFAULT_PROVIDER_CONFIG } from "@/utils/constants/providers"
 import { IS_PURE_BUILD, isProviderConfigAvailableInDistribution } from "@/utils/distribution"
 import { BUILT_IN_AI_PROVIDER_ID } from "@/utils/providers/provider-registry"
 import { testSeries as v101Fixtures } from "./example/v101"
+import { testSeries as v107Fixtures } from "./example/v107"
 
 describe.skipIf(!IS_PURE_BUILD)("pure config normalization", () => {
   it("normalizes newly defaulted actions when the UI reads a v101 config before migration", () => {
@@ -39,6 +40,37 @@ describe.skipIf(!IS_PURE_BUILD)("pure config normalization", () => {
         id: provider.id,
         ...("apiKey" in provider ? { apiKey: provider.apiKey } : {}),
       })
+    }
+    expect(JSON.stringify(normalized)).not.toContain(BUILT_IN_AI_PROVIDER_ID)
+    expect(normalizeConfigForDistribution(normalized).changed).toBe(false)
+  })
+
+  it("migrates v107 to v109 without losing local settings or action sample data", async () => {
+    const oldConfig = structuredClone(v107Fixtures["custom-action-with-custom-layout"]!.config)
+    expect(oldConfig.selectionToolbar.customActions.length).toBeGreaterThan(0)
+    const migrated = await migrateConfig(oldConfig, 107)
+    const normalized = configSchema.parse(normalizeConfigForDistribution(migrated).config)
+    expect(normalized.pageTranslation.page.translateTitle).toBe(true)
+    expect(normalized.language).toEqual(oldConfig.language)
+    expect(normalized.siteRules).toEqual(oldConfig.siteRules)
+    expect(normalized.selectionToolbar.customActions.map((action) => action.id)).toEqual(
+      oldConfig.selectionToolbar.customActions.map((action: { id: string }) => action.id),
+    )
+    for (const action of normalized.selectionToolbar.customActions) {
+      const original = oldConfig.selectionToolbar.customActions.find(
+        (candidate: { id: string }) => candidate.id === action.id,
+      )
+      expect(action.layout).toBe(original.layout)
+      expect(action.outputSchema).toEqual(original.outputSchema)
+      expect(action.sampleData).toBeDefined()
+      expect(action.notebaseConnection).toBeUndefined()
+    }
+    for (const provider of oldConfig.providersConfig.filter(
+      isProviderConfigAvailableInDistribution,
+    )) {
+      expect(normalized.providersConfig.find((current) => current.id === provider.id)).toEqual(
+        provider,
+      )
     }
     expect(JSON.stringify(normalized)).not.toContain(BUILT_IN_AI_PROVIDER_ID)
     expect(normalizeConfigForDistribution(normalized).changed).toBe(false)

@@ -10,6 +10,7 @@ import { useRef, useState } from "react"
 import { toastManager } from "@/components/ui/base-ui/toast"
 import { ANALYTICS_FEATURE, ANALYTICS_SURFACE } from "@/types/analytics"
 import { createFeatureUsageContext, trackFeatureUsed } from "@/utils/analytics"
+import { classifyFailureReason } from "@/utils/analytics-failure-reason"
 import { EDGE_TTS_FEATURE_PROVIDER } from "@/utils/analytics-provider"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
 import { detectLanguage } from "@/utils/content/language"
@@ -73,6 +74,9 @@ async function resolveVoiceForText(
   const detectedLanguage = await detectLanguage(text, {
     minLength: 0,
     enableLLM,
+    // Voice detection can fall back without blocking speech. Tell the user
+    // what happened and how to choose a working detection mode.
+    llmFallbackToastContext: "speak",
   })
   logger.info("[TextToSpeech] Resolving voice for text", {
     text,
@@ -186,6 +190,7 @@ export function useTextToSpeech(
       void trackFeatureUsed({
         ...variables.analyticsContext,
         outcome: "failure",
+        failure_reason: classifyFailureReason(error),
       })
       toastManager.add({
         type: "error",

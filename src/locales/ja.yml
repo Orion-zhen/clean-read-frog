@@ -1,6 +1,6 @@
-name: 読書カエル
-extName: 読書カエル - 翻訳して学ぶ
-extDescription: 読書カエルは、あらゆるウェブサイトから言語を深く学ぶために設計されたオープンソースのブラウザ拡張機能です。
+name: Read Frog
+extName: "Read Frog - AI対訳翻訳・二重字幕・単語帳"
+extDescription: "ウェブページと YouTube・Netflix・X の動画字幕を AI で対訳翻訳。知らない単語は保存して、フラッシュカードで復習できます。"
 uninstallSurveyUrl: https://tally.so/r/nPK6Ob
 account:
   login: ログイン
@@ -54,7 +54,7 @@ popup:
   discord:
     tooltip: Discordに参加して開発者とつながり、新機能を先行体験しましょう
   blog:
-    notification: 読書カエルの最新情報
+    notification: Read Frog の最新情報
   aiSmartContext: AI スマートコンテキスト
   aiSmartContextDescription: ウェブページのコンテキストを使用して翻訳品質を向上させます。LLM翻訳プロバイダーが必要です。
   storeReview:
@@ -643,9 +643,12 @@ options:
       providerUnavailable: 選択したプロバイダーは利用できません
     customActions:
       title: カスタム AI アクション
-      pageDescription: 独自のプロンプトを作成し、選択ツールバーから選択したテキストに対して実行します。
+      pageDescription: 独自のプロンプトを作成し、選択ツールバーから選択したテキストに対して実行します。生成結果のデータ、スタイル、インタラクションはすべてカスタマイズできます。
       description: 選択テキスト向けに独自の構造化 AI アクションを追加
       configTitle: アクション設定
+      introVideo:
+        trigger: "動画を見る"
+        title: "30 秒でわかるカスタム AI アクション"
       builtIn: 組み込み
       add: AI アクションを追加
       edit: AI アクションを編集
@@ -723,8 +726,10 @@ options:
           replay: 再生
           sampleData: サンプルデータ
           sampleDataHint: このプレビューでのみ使われ、保存されません。
+          sampleDataSavedHint: このプレビューでのみ使われ、このアクションと一緒に保存されます。
           sampleDataReset: サンプルをリセット
-          sampleValue: $1のサンプル
+          sampleSelection: 選択したテキスト
+          sampleTargetLanguage: 翻訳先の言語
           insertField: フィールド
           insertSpeak: 読み上げボタン
           insertCondition: 値があるとき
@@ -843,6 +848,14 @@ options:
             9. わからない項目は、推測せずに空文字列を返してください。
             10. 原文の形が必要な場合を除き、すべてのテキスト項目は {{targetLanguage}} で答えてください。
             11. 例文中の語形は、選択された語句が例文のどこにあるかを示します。これは {"text": ...} 要素からなるコンパクトな JSON 配列を含む文字列で、各要素は例文を一字一句そのまま引用します。例：[{"text":"blossoms"}]。例文で語句が複数の部分に分かれている場合（例：「Er ruft seine Mutter an」の「anrufen」）は、部分ごとに順番に 1 要素ずつ書いてください：[{"text":"ruft"},{"text":"an"}]。内側の引用符は正しくエスケープしてください。
+            12. 覚え方のコツは、良い先生がこの語のために教えるように、選択された語そのもの（訳語ではなく、元の言語の語）を覚える手助けをします。コツは最大 3 個、1 行に 1 つずつ、最も役立つものから書いてください。本当に役立つコツだけを書き、弱いコツを足すより少ないほうがよいです。本当に役立つものがなければ、無理に作らず空文字列を返してください。各行は 1 つの技法だけを扱い、技法名とコロンで始めます。技法名も内容も {{targetLanguage}} で書いてください。まず語の成り立ちから考え、ほかに本当に役立つものを加えます：
+               - 語の構成：意味を持つ部分（語根、接頭辞、接尾辞、または複合語を構成する語）と、それらがどう組み合わさって意味になるか。
+               - 漢字：漢字で書かれる語（中国語、日本語の漢語、漢字由来の韓国語）なら、各漢字の意味、または漢字の部品。
+               - 語源：語の由来、または学習者が知っていそうな関連語（同源語、外来語、別の言語で同じ漢字を使う語）。
+               - 類義語／対義語：類義語とその違い、または対義語。
+               - 紛らわしい語：形や音が似ている語と、その見分け方。
+               - コロケーション：その語がよく使われる決まった言い回しで、まとめて覚える価値のあるもの。
+               当てはまらない技法は飛ばし、当てはまらないと書くだけの行は作らないでください。どのコツも「意味」に書いていないことを教えてください。意味を言い換えて繰り返したり、例文をなぞったり、語形変化を説明したりしないでください。確かな事実だけを書き、語源・語根・漢字の部品をでっち上げないでください。異説のある語源や俗説の語源話は、「楽しく覚えるための話」という形でも書かないでください（sincere は「蝋なし」から来た語ではなく、posh も頭字語ではありません）。部分や漢字に分けて説明するのは、それらが本当に意味を作っている場合だけにしてください。「犹豫」「葡萄」のように字に分けても意味にならない語には、別の技法を使ってください。どの言語の語呂合わせも、語を無関係な語に分解する覚え方も使わないでください。
 
             ## 例
 
@@ -857,6 +870,9 @@ options:
             - 例文中の語形：[{"text":"blossoms"}]
             - 意味：花；花朵（尤指果树的花）
             - 例文の翻訳：樱花短暂的美丽提醒我们珍惜每一刻。
+            - 覚え方のコツ：
+              词源：和 bloom（开花）同源，bl- 开头的 bloom、blossom 都和开花有关
+              近义词：bloom 多指花开的状态，blossom 常指果树（樱桃、苹果）的花
             - 難易度：B2
 
             ### 例 2
@@ -870,6 +886,9 @@ options:
             - 例文中の語形：[{"text":"感動"}]
             - 意味：Being deeply moved; emotional touch
             - 例文の翻訳：I thought this movie was boring, but the ending was moving.
+            - 覚え方のコツ：
+              Characters: 感 (feel) + 動 (move): your feelings are moved.
+              Collocation: 感動する = to be moved; 感動的 = moving, touching.
             - 難易度：B1
           prompt: |-
             ## 入力
@@ -890,6 +909,8 @@ options:
           fieldDefinitionDescription: "文脈に合った意味の簡潔な定義を 1 つ。"
           fieldSentenceTranslation: "例文の翻訳"
           fieldSentenceTranslationDescription: "例文だけの翻訳。"
+          fieldMemoryTips: "覚え方のコツ"
+          fieldMemoryTipsDescription: "語を覚えるためのコツ：最大 3 個、1 行に 1 つずつ、それぞれ技法名とコロンで始める（例：語の構成：…）。本当に役立つものがなければ空文字列。"
           fieldDifficulty: "難易度"
           fieldDifficultyDescription: "推定 CEFR 難易度：A1、A2、B1、B2、C1、C2。"
         sentenceAnalysis:
@@ -1134,6 +1155,9 @@ options:
         range:
           main: メインコンテンツ
           all: すべてのコンテンツ
+      translateTitle:
+        title: タブのタイトルを翻訳
+        description: ページを翻訳するときに、ブラウザのタブに表示されるタイトルも翻訳します。オフにすると元のタイトルのままです。
     hoverTranslation:
       title: ホバー翻訳
       enable:
@@ -1469,6 +1493,9 @@ options:
           description: すべてのキャッシュされたAI区切り結果が削除されます。次回AI区切りを有効にして動画を再生すると、字幕が再処理されます。
   whatsNew:
     title: 新機能
+    postType:
+      promotion: キャンペーン
+      update: アップデート
   rateUs:
     title: レビューを書く
   configMigration:
@@ -1510,6 +1537,8 @@ translation:
   autoModeSameLanguage: 検出された言語 '$1' はターゲット言語と同じです
   extensionContextInvalidated: 拡張機能が更新されました。このページを再読み込みしてからもう一度お試しください。
 speak:
+  languageDetectionFallback: ローカルの言語検出に切り替えました
+  languageDetectionSettingsHint: 設定で利用可能なLLMに変更するか、ローカル検出を選んでください。
   fetchingAudio: 音声を生成しています...
   playingAudio: 音声を再生しています...
   failedToGenerateSpeech: 音声生成に失敗しました
@@ -1562,6 +1591,7 @@ action:
   pinToToolbar: ツールバーに固定
   unpinFromToolbar: ツールバーから固定解除
   dragToReorder: ドラッグして並べ替え
+  addCustomAction: カスタム AI アクションを追加
 noteSuggestion:
   title: 保存におすすめ
   description: Notebase に保存したい単語を選んで、いつでも復習できます。

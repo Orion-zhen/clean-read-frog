@@ -9,6 +9,9 @@ const FORBIDDEN_SOURCE_MODULE_PATTERNS = [
   "/src/entrypoints/background/analytics-feature-cache.ts",
   "/src/utils/auth/",
   "/src/utils/orpc/",
+  "/src/utils/error-action.ts",
+  "/src/utils/blog.ts",
+  "/src/entrypoints/options/pages/custom-actions/action-config-form/notebase-connection-field.tsx",
   "/src/entrypoints/background/hosted-ai-status.ts",
   "/src/entrypoints/background/notebase-pending-save.ts",
   "/src/utils/subtitles/ai/",
@@ -16,6 +19,18 @@ const FORBIDDEN_SOURCE_MODULE_PATTERNS = [
 ] as const
 
 const PURE_GATEWAY_REPLACEMENTS = {
+  "/src/components/badges/plan-badge.tsx": `
+    export const PlanBadge = () => null;
+  `,
+  "/src/entrypoints/options/app-sidebar/whats-new-footer.tsx": `
+    export const WhatsNewFooter = () => null;
+  `,
+  "/src/entrypoints/popup/components/blog-notification.tsx": `
+    export default () => null;
+  `,
+  "/src/entrypoints/options/pages/custom-actions/components/intro-video-button.tsx": `
+    export const IntroVideoButton = () => null;
+  `,
   "/src/entrypoints/background/analytics.ts": `
     export const captureFeatureUsedEventInBackground = async () => {};
   `,
@@ -60,16 +75,22 @@ const PURE_GATEWAY_REPLACEMENTS = {
   "/src/utils/config/migration-scripts/v097-to-v098.ts": `
     export const migrate = (oldConfig) => oldConfig;
   `,
+  "/src/entrypoints/options/pages/custom-actions/action-config-form/notebase-connection-field.tsx": `
+    export const NotebaseConnectionField = () => null;
+  `,
+  "/src/utils/error-action.ts": `
+    const unavailable = () => {
+      throw new Error("Account and billing actions are unavailable in the pure distribution");
+    };
+    export const pricingUrl = unavailable;
+    export const billingUrl = unavailable;
+    export const logInUrl = unavailable;
+    export const upgradeAction = unavailable;
+    export const billingAction = unavailable;
+    export const logInAction = unavailable;
+  `,
   "/src/utils/subtitles/ai/entitlement.ts": `
-    const unavailableUrl = () => "about:blank";
-    const unavailableAction = () => ({ label: "", run: () => {} });
     export const LAUNCH_BONUS_CUTOFF_AT = "";
-    export const pricingUrl = unavailableUrl;
-    export const billingUrl = unavailableUrl;
-    export const logInUrl = unavailableUrl;
-    export const upgradeAction = unavailableAction;
-    export const billingAction = unavailableAction;
-    export const logInAction = unavailableAction;
     export const quotaResetAt = () => null;
     export const launchBonusCutoffLabel = () => null;
     export const formatQuotaDate = () => null;
@@ -80,6 +101,19 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
   keyof typeof PURE_GATEWAY_REPLACEMENTS,
   readonly string[]
 > = {
+  "/src/components/badges/plan-badge.tsx": [
+    "/src/components/llm-providers/provider-selector.tsx",
+    "/src/components/user-account-menu/shared.tsx",
+    "/src/entrypoints/options/pages/api-providers/providers-config/provider-editor.tsx",
+    "/src/entrypoints/translation-hub/components/translation-service-dropdown.tsx",
+  ],
+  "/src/entrypoints/options/app-sidebar/whats-new-footer.tsx": [
+    "/src/entrypoints/options/app-sidebar/index.tsx",
+  ],
+  "/src/entrypoints/popup/components/blog-notification.tsx": ["/src/entrypoints/popup/app.tsx"],
+  "/src/entrypoints/options/pages/custom-actions/components/intro-video-button.tsx": [
+    "/src/entrypoints/options/pages/custom-actions/custom-actions-config.tsx",
+  ],
   "/src/entrypoints/background/analytics.ts": ["/src/entrypoints/background/feature-used-event.ts"],
   "/src/utils/auth/auth-client.ts": [
     "/src/components/llm-providers/use-hosted-ai-status.ts",
@@ -87,7 +121,9 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
     "/src/utils/subtitles/ai/",
     "/src/entrypoints/options/pages/custom-actions/action-config-form/notebase-connection-field.tsx",
     "/src/entrypoints/options/pages/video-subtitles/ai-quota/",
-    "/src/entrypoints/selection.content/selection-toolbar/custom-action-button/",
+    "/src/components/custom-action/save-to-notebase-button.tsx",
+    "/src/components/custom-action/save-to-notebase-dialog-host.tsx",
+    "/src/components/custom-action/use-save-to-notebase.ts",
   ],
   "/src/utils/auth/host-permission.ts": ["/src/components/user-account-menu/"],
   "/src/utils/orpc/client.ts": [
@@ -96,7 +132,9 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
     "/src/utils/subtitles/ai/",
     "/src/entrypoints/options/pages/custom-actions/action-config-form/notebase-connection-field.tsx",
     "/src/entrypoints/options/pages/video-subtitles/ai-quota/",
-    "/src/entrypoints/selection.content/selection-toolbar/custom-action-button/",
+    "/src/components/custom-action/save-to-notebase-button.tsx",
+    "/src/components/custom-action/save-to-notebase-dialog-host.tsx",
+    "/src/components/custom-action/use-save-to-notebase.ts",
   ],
   "/src/utils/orpc/background-client.ts": ["/src/entrypoints/background/background-stream.ts"],
   "/src/utils/config/migration-scripts/v097-to-v098.ts": ["/src/utils/config/migration.ts"],
@@ -104,6 +142,14 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
     "/src/entrypoints/subtitles.content/ui/subtitles-settings-panel/components/request-ai-subtitles-item.tsx",
   ],
   "/src/utils/subtitles/ai/request-ai-subtitles.ts": ["/src/utils/subtitles/fetchers/ai/"],
+  "/src/entrypoints/options/pages/custom-actions/action-config-form/notebase-connection-field.tsx":
+    ["/src/entrypoints/options/pages/custom-actions/action-config-form/action-editor.tsx"],
+  "/src/utils/error-action.ts": [
+    "/src/entrypoints/background/background-stream.ts",
+    "/src/utils/subtitles/ai/access-guard.ts",
+    "/src/utils/subtitles/ai/request-ai-subtitles.ts",
+    "/src/entrypoints/options/pages/video-subtitles/ai-quota/index.tsx",
+  ],
   "/src/utils/subtitles/ai/entitlement.ts": [
     "/src/entrypoints/options/pages/video-subtitles/ai-quota/",
   ],

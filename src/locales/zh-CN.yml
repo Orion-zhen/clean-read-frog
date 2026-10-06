@@ -1,6 +1,6 @@
 name: 陪读蛙
-extName: 陪读蛙 - 翻译与学习
-extDescription: 陪读蛙是一款开放源代码的浏览器插件，旨在帮助您从任何网站深入学习语言。
+extName: "陪读蛙 - AI 双语翻译、视频字幕与背单词"
+extDescription: "用 AI 双语对照翻译网页，以及 YouTube、Netflix、X 的视频字幕。遇到生词一键保存，用闪卡复习。"
 uninstallSurveyUrl: https://tally.so/r/3E9XDL
 account:
   login: 登录
@@ -676,9 +676,12 @@ options:
       providerUnavailable: 所选提供商不可用
     customActions:
       title: 自定义 AI 指令
-      pageDescription: 编写自己的提示词，从划词工具栏对选中的文本运行。
+      pageDescription: 编写自己的提示词，从划词工具栏对选中的文本运行。指令生成结果的数据、样式和交互都可以自定义。
       description: 为划词添加你自己的结构化 AI 操作
       configTitle: 指令配置
+      introVideo:
+        trigger: "观看视频"
+        title: "30 秒了解自定义 AI 指令"
       builtIn: 内置
       badges:
         new: 新增
@@ -761,8 +764,10 @@ options:
           replay: 重放
           sampleData: 示例数据
           sampleDataHint: 仅用于此预览，不会保存。
+          sampleDataSavedHint: 仅用于此预览，随此指令一起保存。
           sampleDataReset: 重置示例
-          sampleValue: $1示例
+          sampleSelection: 选中的文本
+          sampleTargetLanguage: 目标语言
           insertField: 字段
           insertSpeak: 朗读按钮
           insertCondition: 有值时显示
@@ -883,6 +888,14 @@ options:
             9. 如果某个字段未知，返回空字符串而非猜测。
             10. 除非需要保留原文形式，所有文本字段均使用 {{targetLanguage}} 作答。
             11. “句中词形”字段标出选中词语在“句子”中的位置：它是一个字符串，内容是紧凑的 JSON 数组，每项为 {"text": ...}，逐字引用“句子”中的原文，例如 [{"text":"blossoms"}]。如果“句子”把词语拆成了几部分（例如德语 "anrufen" 在 "Er ruft seine Mutter an" 中），按顺序每部分一项：[{"text":"ruft"},{"text":"an"}]。注意正确转义内部的引号。
+            12. “记忆技巧”字段像一位好老师那样，针对这个词条本身的特点教学习者记住它（讲的是所选词语本身，不是它的译文）。最多给 3 条，每条一行，最有帮助的放在最前。只写真正有用的技巧，宁缺毋滥；如果没有真正有用的，就返回空字符串，不要硬凑。每行只讲一种技巧，以技巧名和冒号开头，技巧名和内容都用 {{targetLanguage}}。先从词的构成入手，再补充其他真正有用的：
+               - 词根词缀：词的组成部分（词根、前缀、后缀，或复合词里的各个词），以及它们如何合成词义。
+               - 拆字：用汉字书写的词（中文、日语汉字词、源自汉字的韩语词），每个字的意思，或一个字的部件。
+               - 词源：词的来源，或学习者可能认识的相关词（同源词、外来词、其他语言里写法相同的汉字词）。
+               - 近义词 / 反义词：一个近义词及两者的区别，或一个反义词。
+               - 易混词：形近或音近的词，以及如何区分。
+               - 搭配：它常用的固定搭配，值得整体记住。
+               不适用的技巧直接跳过，不要写一行说明它不适用。每条都要讲出“释义”没讲的东西：不要换个说法重复词义、复述“句子”或解释词的屈折变化。只写你确定的事实：不要编造词源、词根或汉字部件。有争议或属于民间传说的词源故事不要写，即使说成“只当趣味记”也不行（sincere 并非来自“无蜡”，posh 也不是首字母缩写）。只有当各部分或各个字确实组成词义时才拆开讲；“犹豫”“葡萄”这类不能按字拆开理解的词，换用其他技巧。不要用任何语言的谐音，也不要把一个词拆成不相干的词来记。
 
             ## 示例
 
@@ -897,6 +910,9 @@ options:
             - 句中词形：[{"text":"blossoms"}]
             - 释义：花；花朵（尤指果树的花）
             - 句子翻译：樱花短暂的美丽提醒我们珍惜每一刻。
+            - 记忆技巧：
+              词源：和 bloom（开花）同源，bl- 开头的 bloom、blossom 都和开花有关
+              近义词：bloom 多指花开的状态，blossom 常指果树（樱桃、苹果）的花
             - 难度：B2
 
             ### 示例 2
@@ -910,6 +926,9 @@ options:
             - 句中词形：[{"text":"感動"}]
             - 释义：Being deeply moved; emotional touch
             - 句子翻译：I thought this movie was boring, but the ending was moving.
+            - 记忆技巧：
+              Characters: 感 (feel) + 動 (move): your feelings are moved.
+              Collocation: 感動する = to be moved; 感動的 = moving, touching.
             - 难度：B1
           prompt: |-
             ## 输入
@@ -930,6 +949,8 @@ options:
           fieldDefinitionDescription: 针对语境含义的一条简洁释义。
           fieldSentenceTranslation: 句子翻译
           fieldSentenceTranslationDescription: 只翻译提取出的句子。
+          fieldMemoryTips: "记忆技巧"
+          fieldMemoryTipsDescription: "帮助记住词条的方法：最多 3 条，每条一行，以技巧名和冒号开头（如 词根词缀：…）；没有真正有用的就返回空字符串。"
           fieldDifficulty: 难度
           fieldDifficultyDescription: 预估 CEFR 难度等级：A1、A2、B1、B2、C1 或 C2。
         sentenceAnalysis:
@@ -1176,6 +1197,9 @@ options:
         range:
           main: 主要内容
           all: 全部内容
+      translateTitle:
+        title: 翻译标签页标题
+        description: 翻译网页时，同时翻译浏览器标签页上的标题。关闭后保留原标题。
     hoverTranslation:
       title: 悬停翻译
       enable:
@@ -1511,6 +1535,9 @@ options:
           description: 这将删除所有已缓存的 AI 断句结果。下次播放启用 AI 断句的视频时，将重新处理字幕。
   whatsNew:
     title: 最近更新
+    postType:
+      promotion: 优惠
+      update: 更新
   rateUs:
     title: 好评支持
   configMigration:
@@ -1552,6 +1579,8 @@ translation:
   autoModeSameLanguage: 检测到的语言 '$1' 与目标语言相同
   extensionContextInvalidated: 扩展已更新，请刷新此页面后重试。
 speak:
+  languageDetectionFallback: 已改用本地语言检测
+  languageDetectionSettingsHint: 可在设置中更换可用的大模型，或选择本地检测。
   fetchingAudio: 正在获取音频...
   playingAudio: 正在播放音频...
   failedToGenerateSpeech: 语音生成失败
@@ -1604,6 +1633,7 @@ action:
   pinToToolbar: 固定到工具栏
   unpinFromToolbar: 从工具栏取消固定
   dragToReorder: 拖动以排序
+  addCustomAction: 添加自定义 AI 指令
 noteSuggestion:
   title: 猜你想存
   description: 选择要存入笔记库的词，将来随时复习

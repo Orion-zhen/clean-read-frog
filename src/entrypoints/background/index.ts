@@ -54,10 +54,10 @@ export default defineBackground({
 
       await ensureInitializedConfig()
 
-      // Open tutorial page when extension is installed
+      // Only the official distribution opens the website's installation guide.
       if (details.reason === "install" && !__PURE_BUILD__) {
         await browser.tabs.create({
-          url: `${env.WXT_WEBSITE_URL}/guide/step-1`,
+          url: `${env.WXT_WEBSITE_URL}/guide/step-1?from=install`,
         })
       }
 

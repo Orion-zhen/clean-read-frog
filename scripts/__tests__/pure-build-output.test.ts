@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
-import { assertHtmlAssetReferences } from "../pure-build-output"
+import { assertHtmlAssetReferences, createPureServiceBoundaryPlugin } from "../pure-build-output"
 
 async function withOutputDir(run: (outputDir: string) => Promise<void>) {
   const outputDir = await mkdtemp(path.join(tmpdir(), "read-frog-pure-build-"))
@@ -12,6 +12,75 @@ async function withOutputDir(run: (outputDir: string) => Promise<void>) {
     await rm(outputDir, { recursive: true, force: true })
   }
 }
+
+function auditModules(modules: Record<string, { importers?: string[]; renderedLength?: number }>) {
+  const plugin = createPureServiceBoundaryPlugin("/repo")
+  const hook = plugin.generateBundle
+  if (typeof hook !== "function") throw new Error("Expected the Pure bundle audit hook")
+  const result = hook.call(
+    {
+      getModuleIds: () => Object.keys(modules),
+      getModuleInfo: (id: string) => ({
+        importers: modules[id]?.importers ?? [],
+        dynamicImporters: [],
+      }),
+    } as any,
+    {} as any,
+    { main: { type: "chunk", modules } } as any,
+    false,
+  )
+  expect(result).toBeUndefined()
+}
+
+describe("pure service boundary", () => {
+  it("accepts only the reviewed relocated Notebase gateway callers", () => {
+    expect(() =>
+      auditModules({
+        "/repo/src/utils/auth/auth-client.ts": {
+          importers: [
+            "/repo/src/components/custom-action/save-to-notebase-button.tsx",
+            "/repo/src/components/custom-action/save-to-notebase-dialog-host.tsx",
+            "/repo/src/components/custom-action/use-save-to-notebase.ts",
+          ],
+        },
+        "/repo/src/utils/orpc/client.ts": {
+          importers: ["/repo/src/components/custom-action/use-save-to-notebase.ts"],
+        },
+      }),
+    ).not.toThrow()
+  })
+
+  it("rejects a new account caller even inside the custom-action directory", () => {
+    expect(() =>
+      auditModules({
+        "/repo/src/utils/auth/auth-client.ts": {
+          importers: ["/repo/src/components/custom-action/new-account-feature.tsx"],
+        },
+      }),
+    ).toThrow("new account/cloud gateway importers")
+  })
+
+  it("rejects a new billing action caller", () => {
+    expect(() =>
+      auditModules({
+        "/repo/src/utils/error-action.ts": {
+          importers: ["/repo/src/components/new-upgrade-button.tsx"],
+        },
+      }),
+    ).toThrow("new account/cloud gateway importers")
+  })
+
+  it.each([
+    "/repo/src/utils/blog.ts",
+    "/repo/src/utils/orpc/client-context.ts",
+    "/repo/node_modules/posthog-js/dist/module.js",
+  ])("rejects rendered official code from %s", (id) => {
+    expect(() => auditModules({ [id]: { renderedLength: 1 } })).toThrow(
+      "rendered official service modules",
+    )
+    expect(() => auditModules({ [id]: { renderedLength: 0 } })).not.toThrow()
+  })
+})
 
 describe("pure build output", () => {
   it("accepts HTML whose local assets exist", async () => {

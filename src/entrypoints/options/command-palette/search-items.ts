@@ -244,6 +244,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     pageKey: "options.translation.title",
   },
   {
+    sectionId: "translate-title",
+    route: "/page-translation",
+    titleKey: "options.translation.preference.translateTitle.title",
+    descriptionKey: "options.translation.preference.translateTitle.description",
+    pageKey: "options.translation.title",
+  },
+  {
     // Titled with the section, so the row that reads "Enable" is still findable on its own.
     sectionId: "hover-translation",
     route: "/page-translation",

@@ -8,6 +8,7 @@ import type { SubtitlesFragment } from "@/utils/subtitles/types"
 import { toastManager } from "@/components/ui/base-ui/toast"
 import { ANALYTICS_FEATURE, ANALYTICS_SURFACE } from "@/types/analytics"
 import { createFeatureUsageContext, trackFeatureUsed } from "@/utils/analytics"
+import { classifyFailureReason } from "@/utils/analytics-failure-reason"
 import { classifyResolvedProvider, UNKNOWN_FEATURE_PROVIDER } from "@/utils/analytics-provider"
 import { getLocalConfig } from "@/utils/config/storage"
 import {
@@ -16,6 +17,7 @@ import {
   SUBTITLES_SOURCE,
   TRANSLATE_BUTTON_CONTAINER_ID,
 } from "@/utils/constants/subtitles"
+import { getSourceDocumentTitle } from "@/utils/content/document-title"
 import { getDocumentDescription } from "@/utils/content/metadata"
 import { resolveLanguageCodeFromLocale } from "@/utils/content/page-language"
 import { waitForElement } from "@/utils/dom/wait-for-element"
@@ -261,7 +263,7 @@ export class UniversalVideoAdapter implements SubtitlesProvidersAdapter {
 
     await downloadSubtitlesAsSrt({
       subtitles: this.sourceProcessedSubtitles,
-      pageTitle: document.title || "",
+      pageTitle: getSourceDocumentTitle(),
       videoId: this.config.getVideoId?.(),
     })
   }
@@ -844,6 +846,7 @@ export class UniversalVideoAdapter implements SubtitlesProvidersAdapter {
           ...providerAnalytics,
           target_language: targetLanguage,
           outcome: "failure",
+          failure_reason: classifyFailureReason(error),
         })
       }
 
@@ -950,7 +953,7 @@ export class UniversalVideoAdapter implements SubtitlesProvidersAdapter {
       providerRef && canProviderRefGenerateText(providerRef) ? providerRef : null
 
     const videoContext: SubtitlesVideoContext = {
-      videoTitle: document.title || "",
+      videoTitle: getSourceDocumentTitle(),
       videoDescription: getDocumentDescription(document),
       subtitlesTextContent: this.sessionSubtitles.map((f) => f.text).join(""),
     }
