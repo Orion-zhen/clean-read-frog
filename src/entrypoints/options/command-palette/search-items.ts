@@ -122,6 +122,7 @@ const SEARCH_ITEM_DEFINITIONS = [
   },
   {
     sectionId: "analytics",
+    requiredCapabilities: ["analytics"],
     route: "/preference",
     titleKey: "options.preference.userExperience.analytics.title",
     descriptionKey: "options.preference.userExperience.analytics.description",

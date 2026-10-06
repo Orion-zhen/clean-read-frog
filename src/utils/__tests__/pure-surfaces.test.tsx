@@ -14,6 +14,11 @@ async function loadPureAdapter(modulePath: string) {
 
 describe("pure gateway adapters", () => {
   it.each([
+    ["/src/entrypoints/options/pages/preference/user-experience/analytics.tsx", "AnalyticsItem"],
+    [
+      "/src/entrypoints/options/pages/selection-toolbar/actions/note-suggestion-items.tsx",
+      "NoteSuggestionItems",
+    ],
     ["/src/components/badges/plan-badge.tsx", "PlanBadge"],
     ["/src/entrypoints/options/app-sidebar/whats-new-footer.tsx", "WhatsNewFooter"],
     ["/src/entrypoints/popup/components/blog-notification.tsx", "default"],

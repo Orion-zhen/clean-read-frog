@@ -43,6 +43,15 @@ describe("provider distribution policy", () => {
   })
 })
 
+describe.skipIf(IS_PURE_BUILD)("official distribution", () => {
+  it("keeps note suggestion and analytics settings available", () => {
+    expect(AVAILABLE_FEATURE_KEYS).toContain("noteSuggestion")
+    expect(SEARCH_ITEMS.map((item) => item.sectionId)).toEqual(
+      expect.arrayContaining(["selection-toolbar-note-suggestion", "analytics"]),
+    )
+  })
+})
+
 describe.skipIf(!IS_PURE_BUILD)("pure distribution", () => {
   it("contains only neutral provider catalog entries", () => {
     expect(
@@ -83,6 +92,7 @@ describe.skipIf(!IS_PURE_BUILD)("pure distribution", () => {
     expect(SEARCH_ITEMS.map((item) => item.sectionId)).not.toContain(
       "selection-toolbar-note-suggestion",
     )
+    expect(SEARCH_ITEMS.map((item) => item.sectionId)).not.toContain("analytics")
     expect(SEARCH_ITEMS.map((item) => item.sectionId)).not.toContain("subtitles-ai-quota")
     expect(SEARCH_ITEMS.map((item) => item.sectionId)).not.toContain(
       CUSTOM_ACTION_NOTEBASE_SECTION_ID,

@@ -19,6 +19,12 @@ const FORBIDDEN_SOURCE_MODULE_PATTERNS = [
 ] as const
 
 const PURE_GATEWAY_REPLACEMENTS = {
+  "/src/entrypoints/options/pages/preference/user-experience/analytics.tsx": `
+    export const AnalyticsItem = () => null;
+  `,
+  "/src/entrypoints/options/pages/selection-toolbar/actions/note-suggestion-items.tsx": `
+    export const NoteSuggestionItems = () => null;
+  `,
   "/src/components/badges/plan-badge.tsx": `
     export const PlanBadge = () => null;
   `,
@@ -101,6 +107,12 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
   keyof typeof PURE_GATEWAY_REPLACEMENTS,
   readonly string[]
 > = {
+  "/src/entrypoints/options/pages/preference/user-experience/analytics.tsx": [
+    "/src/entrypoints/options/pages/preference/user-experience/index.tsx",
+  ],
+  "/src/entrypoints/options/pages/selection-toolbar/actions/note-suggestion-items.tsx": [
+    "/src/entrypoints/options/pages/selection-toolbar/actions/index.tsx",
+  ],
   "/src/components/badges/plan-badge.tsx": [
     "/src/components/llm-providers/provider-selector.tsx",
     "/src/components/user-account-menu/shared.tsx",

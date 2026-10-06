@@ -15,6 +15,7 @@ export type DistributionCapability =
   | "notebase"
   | "aiSubtitles"
   | "noteSuggestion"
+  | "analytics"
 
 /** Every distribution-aware capability must declare its availability explicitly. */
 export const DISTRIBUTION_CAPABILITY_POLICIES: Record<
@@ -27,6 +28,7 @@ export const DISTRIBUTION_CAPABILITY_POLICIES: Record<
   notebase: "officialOnly",
   aiSubtitles: "officialOnly",
   noteSuggestion: "officialOnly",
+  analytics: "officialOnly",
 }
 
 export function isDistributionCapabilityEnabled(capability: DistributionCapability): boolean {
