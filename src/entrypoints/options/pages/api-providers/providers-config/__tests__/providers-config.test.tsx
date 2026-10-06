@@ -128,7 +128,7 @@ vi.mock("@/utils/config/helpers", () => ({
 }))
 
 vi.mock("@/utils/constants/feature-providers", () => ({
-  FEATURE_KEYS: [
+  AVAILABLE_FEATURE_KEYS: [
     "pageTranslation",
     "videoSubtitles",
     "selectionTranslation",

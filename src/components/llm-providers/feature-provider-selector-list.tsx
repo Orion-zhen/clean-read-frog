@@ -2,7 +2,10 @@ import type { ComponentProps } from "react"
 import type { FeatureKey } from "@/utils/constants/feature-providers"
 import ProviderSelector from "@/components/llm-providers/provider-selector"
 import { Field, FieldGroup, FieldTitle } from "@/components/ui/base-ui/field"
-import { FEATURE_KEYS, getFeatureLabelI18nKey } from "@/utils/constants/feature-providers"
+import {
+  AVAILABLE_FEATURE_KEYS as FEATURE_KEYS,
+  getFeatureLabelI18nKey,
+} from "@/utils/constants/feature-providers"
 import { i18n } from "@/utils/i18n"
 import { cn } from "@/utils/styles/utils"
 import { SetApiKeyWarning } from "./set-api-key-warning"

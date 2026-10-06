@@ -19,7 +19,7 @@ import { configAtom, configFieldsAtomMap } from "@/utils/atoms/config"
 import { patchProviderConfigAtom } from "@/utils/atoms/entity-config"
 import { getAPIProvidersConfig, getProviderConfigById } from "@/utils/config/helpers"
 import {
-  FEATURE_KEYS,
+  AVAILABLE_FEATURE_KEYS as FEATURE_KEYS,
   FEATURE_PROVIDER_DEFS,
   getFeatureLabelI18nKey,
 } from "@/utils/constants/feature-providers"

@@ -32,7 +32,7 @@ import { isLLMProvider } from "@/types/config/provider"
 import { configAtom, configFieldsAtomMap, writeConfigAtom } from "@/utils/atoms/config"
 import {
   buildFeatureProviderPatch,
-  FEATURE_KEYS,
+  AVAILABLE_FEATURE_KEYS as FEATURE_KEYS,
   FEATURE_PROVIDER_DEFS,
   getFeatureLabelI18nKey,
 } from "@/utils/constants/feature-providers"
