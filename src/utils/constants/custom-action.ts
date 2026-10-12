@@ -29,6 +29,17 @@ export function isBuiltInActionId(id: string): id is BuiltInActionId {
   return Object.hasOwn(BUILT_IN_ACTION_KEYS, id)
 }
 
+// The keys the built-in actions start with; a custom action starts with none.
+// Alt+Shift because a bare Alt+<letter> is what the reading shortcuts use, and
+// these letters because Chrome, Edge and ChromeOS keep Alt+Shift+A, B, I, L,
+// M, N, S and T for themselves, and the translation mode and the Translation
+// Hub already have M and H.
+export const BUILT_IN_ACTION_DEFAULT_SHORTCUTS: Record<BuiltInActionId, string> = {
+  [BUILT_IN_DICTIONARY_ACTION_ID]: "Alt+Shift+D",
+  [BUILT_IN_SENTENCE_ANALYSIS_ACTION_ID]: "Alt+Shift+G",
+  [BUILT_IN_IMPROVE_WRITING_ACTION_ID]: "Alt+Shift+W",
+}
+
 export function createOutputSchemaField(
   name: string,
   type: SelectionToolbarCustomActionOutputType = "string",
@@ -41,6 +52,43 @@ export function createOutputSchemaField(
     type,
     description,
   }
+}
+
+// A field holding the text the reader selected (see the schema's `source`).
+export function createSelectionOutputField(
+  name: string,
+  id?: string,
+): SelectionToolbarCustomActionOutputField {
+  return { ...createOutputSchemaField(name, "string", "", id), source: "selection" }
+}
+
+export function isSelectionOutputField(field: SelectionToolbarCustomActionOutputField) {
+  return field.source === "selection"
+}
+
+// The fields the model writes: the request's output schema and contract.
+export function getModelOutputFields(outputSchema: SelectionToolbarCustomActionOutputField[]) {
+  return outputSchema.filter((field) => !isSelectionOutputField(field))
+}
+
+// Each selection field's value, by field name, as an answer is keyed.
+export function getSelectionOutputValues(
+  outputSchema: readonly SelectionToolbarCustomActionOutputField[],
+  selection: string,
+): Record<string, string> {
+  return Object.fromEntries(
+    outputSchema.filter(isSelectionOutputField).map((field) => [field.name, selection]),
+  )
+}
+
+// An answer with its selection fields filled in. Nothing (no answer yet, or
+// a failed run) stays nothing: an answer is what shows a result and lets it
+// be saved.
+export function withSelectionOutputValues(
+  value: Record<string, unknown> | null,
+  selectionValues: Readonly<Record<string, string>>,
+): Record<string, unknown> | null {
+  return value === null ? null : { ...value, ...selectionValues }
 }
 
 export function getNextOutputFieldName(

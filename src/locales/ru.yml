@@ -521,7 +521,7 @@ options:
         description: Улучшайте Read Frog, помогая находить ошибки, дорабатывать интерфейс и не только
   shortcuts:
     title: Горячие клавиши
-    pageDescription: Задайте клавиши, которые запускают перевод во время чтения.
+    pageDescription: Задайте клавиши, которые запускают перевод, озвучивание и AI-действия во время чтения.
     setShortcut: Настроить горячую клавишу
     pageTranslation:
       title: Перевод страницы
@@ -541,6 +541,15 @@ options:
     translationHub:
       title: Центр переводов
       description: Открывает Центр переводов в новой вкладке.
+    selectionSpeak:
+      title: "Озвучивание выделения"
+      description: "Прочитать выделенный текст вслух. Нажмите ещё раз, чтобы остановить."
+    actions:
+      title: "AI-действия"
+      description: "Запустить AI-действие для выделенного текста. У пользовательских действий нет сочетания клавиш, пока вы не зададите его здесь."
+    turnedOff: "Функция выключена, поэтому сочетание ничего не делает, пока вы её снова не включите."
+    clash: "То же сочетание, что у «$1». Измените одно из них."
+    taken: "$1 уже используется для «$2»."
   overlayTools:
     title: Инструменты наложения
   inputTranslation:
@@ -696,6 +705,8 @@ options:
         save: Сохранить
         defaultFieldName: результат
         fieldNamePlaceholder: имя_поля
+        selectionField: "Выделенный текст"
+        selectionFieldDescription: "Выделенный вами текст сохраняется как есть. ИИ его не пишет."
         autoFieldPrefix: поле
         addFieldDialog:
           title: Добавить поле вывода
@@ -750,6 +761,8 @@ options:
             condition: Показывает содержимое, только если у поля есть значение.
             loop: Повторяется для каждого поля по порядку. Доступны f.name, f.value и f.type.
             speak: Любой элемент с data-speak озвучивает значение (или собственный текст, если значение пустое), когда ответ готов.
+            speakLang: data-speak-lang задаёт язык озвучки (код вроде es или en-US), чтобы читал голос этого языка. Без него язык определяется автоматически, что для отдельного слова часто даёт ошибку.
+            speakAutoplay: Элемент с data-speak-autoplay озвучивается сам, когда ответ готов. Звучит только первый такой элемент.
             status: Стили по состоянию. data-status контейнера — streaming, done или error.
             filters: newline_to_br сохраняет переносы строк (ставьте последним); lines разбивает текст на список строк.
             styles: CSS в блоке <style> действует только внутри этого результата. Цвета --rf-* следуют светлой и тёмной теме.
@@ -916,6 +929,7 @@ options:
         sentenceAnalysis:
           name: "Разбор предложения"
           description: "Размечает длинное предложение, как учитель: основа, все придаточные и трудные места"
+          fieldSentence: "Предложение"
           fieldAnnotations: "Разметка"
           fieldTranslation: "Перевод"
           roles:
@@ -981,6 +995,7 @@ options:
         improveWriting:
           name: "Улучшить текст"
           description: "Отмечает ошибки и неудачные фразы, как учитель, и исправляет текст под ситуацию"
+          fieldOriginal: "Исходный текст"
           fieldSetting: "Ситуация"
           fieldAnnotations: "Пометки"
           fieldImproved: "Исправленный текст"
@@ -1377,7 +1392,7 @@ options:
       title: Основное
       enable:
         title: Включить видеосубтитры
-        description: Добавляет кнопку перевода в панель управления плеера. Пока поддерживается только YouTube.
+        description: Добавляет кнопку перевода в панель управления плеера на YouTube, X и Netflix.
       autoStart:
         title: Переводить сразу при открытии
         description: Начинать перевод субтитров, как только видео загрузилось, без нажатия кнопки.
@@ -1582,6 +1597,8 @@ action:
   updatePayment: Обновить оплату
   openCustomActions: Открыть Custom AI Actions
   openNotebase: Открыть Notebase
+  reviewDueOne: "Карточек к повторению: $1"
+  reviewDueOther: "Карточек к повторению: $1"
   contextDetailsTitleLabel: Заголовок
   contextDetailsParagraphsLabel: Абзацы
   translation: Перевод
@@ -1650,9 +1667,10 @@ subtitles:
     httpUnknown: Ошибка HTTP $1
     invalidResponse: Неверный формат ответа субтитров YouTube
     networkError: Произошла сетевая ошибка при получении субтитров
-    fetchSubTimeout: Получение субтитров YouTube завершилось с ошибкой
+    fetchSubTimeout: Истекло время ожидания при получении субтитров
     buttonNotFound: Кнопка субтитров не найдена
     noSubtitlesFound: Для этого видео нет субтитров
+    trackFileNotLoaded: Не удалось загрузить субтитры, попробуйте обновить страницу
     videoNotFound: Видео элемент не найден
     controlsBarNotFound: Панель управления не найдена
     aiRateLimited: Слишком много запросов, пожалуйста, повторите позже

@@ -25,6 +25,9 @@ const PURE_GATEWAY_REPLACEMENTS = {
   "/src/entrypoints/options/pages/selection-toolbar/actions/note-suggestion-items.tsx": `
     export const NoteSuggestionItems = () => null;
   `,
+  "/src/entrypoints/selection.content/selection-toolbar/review-due-tab.tsx": `
+    export const ReviewDueTab = () => null;
+  `,
   "/src/components/badges/plan-badge.tsx": `
     export const PlanBadge = () => null;
   `,
@@ -112,6 +115,10 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
   ],
   "/src/entrypoints/options/pages/selection-toolbar/actions/note-suggestion-items.tsx": [
     "/src/entrypoints/options/pages/selection-toolbar/actions/index.tsx",
+  ],
+  "/src/entrypoints/selection.content/selection-toolbar/review-due-tab.tsx": [
+    "/src/entrypoints/selection.content/selection-toolbar/custom-action-button/provider.tsx",
+    "/src/entrypoints/selection.content/selection-toolbar/translate-button/provider.tsx",
   ],
   "/src/components/badges/plan-badge.tsx": [
     "/src/components/llm-providers/provider-selector.tsx",

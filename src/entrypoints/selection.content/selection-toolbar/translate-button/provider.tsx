@@ -1,4 +1,3 @@
-import type { Hotkey } from "@tanstack/hotkeys"
 import type { ComponentProps, ReactNode } from "react"
 import type {
   NoteSuggestionProviderRef,
@@ -12,7 +11,6 @@ import type { LLMProviderConfig, TranslateProviderConfig } from "@/types/config/
 import type { PromptableProviderRef } from "@/utils/providers/provider-ref"
 import type { ResolvedProviderRef, SystemProviderRef } from "@/utils/providers/provider-registry"
 import { LANG_CODE_TO_EN_NAME } from "@read-frog/definitions"
-import { HotkeyManager } from "@tanstack/hotkeys"
 import { useAtomValue, useSetAtom } from "jotai"
 import {
   createContext,
@@ -53,10 +51,6 @@ import { translateTextCore } from "@/utils/host/translate/translate-text"
 import { getOrCreateWebPageContext } from "@/utils/host/translate/webpage-context"
 import { getOrGenerateWebPageSummary } from "@/utils/host/translate/webpage-summary"
 import { onMessage } from "@/utils/message"
-import {
-  isPageTranslationShortcutEmpty,
-  isValidConfiguredPageTranslationShortcut,
-} from "@/utils/page-translation-shortcut"
 import { getTranslatePromptFromConfig } from "@/utils/prompts/translate"
 import { resolveModelId } from "@/utils/providers/model-id"
 import { getProviderOptionsWithOverride } from "@/utils/providers/options"
@@ -64,6 +58,7 @@ import { checkProviderAvailability } from "@/utils/providers/provider-ref"
 import { getSelectableProvidersForCapability } from "@/utils/providers/provider-registry"
 import { getTopLevelReasoning } from "@/utils/providers/reasoning"
 import { shadowWrapper } from "../.."
+import { normalizeSelectedText } from "../../utils"
 import {
   isSelectionToolbarOpenAtom,
   noteSuggestionProviderAtom,
@@ -72,7 +67,9 @@ import {
 } from "../atoms"
 import { NoteSuggestionCard } from "../note-suggestion/note-suggestion-card"
 import { useNoteSuggestion } from "../note-suggestion/use-note-suggestion"
+import { ReviewDueTab } from "../review-due-tab"
 import { useSelectionOpenRequestResolver } from "../use-selection-open-request"
+import { useSelectionShortcuts } from "../use-selection-shortcuts"
 import { TargetLanguageSelector } from "./target-language-selector"
 import { TranslationContent } from "./translation-content"
 
@@ -418,6 +415,9 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
       maybeFireNoteSuggestion({
         sessionKey: noteSuggestionSessionKey,
         selectionText: preparedText,
+        // Kept in the note's selection fields as a custom action run keeps it,
+        // not as prepared for translation.
+        savedSelectionText: normalizeSelectedText(selectionText),
         paragraphsText: paragraphsText ?? preparedText,
         targetLangName: LANG_CODE_TO_EN_NAME[translateRequest.language.targetCode],
         webTitle: titleText ?? "",
@@ -775,18 +775,21 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
     }
   }, [resolveContextMenuOpenRequest])
 
-  const resolveShortcutRequest = useCallback((): SelectionTranslatePendingOpenRequest | null => {
-    const request = resolveShortcutOpenRequest()
-    if (!request) {
-      return null
-    }
+  const resolveShortcutRequest = useCallback(
+    (session: SelectionSession | null): SelectionTranslatePendingOpenRequest | null => {
+      const request = resolveShortcutOpenRequest(session)
+      if (!request) {
+        return null
+      }
 
-    return {
-      anchor: request.anchor,
-      session: request.session,
-      surface: ANALYTICS_SURFACE.SHORTCUT,
-    }
-  }, [resolveShortcutOpenRequest])
+      return {
+        anchor: request.anchor,
+        session: request.session,
+        surface: ANALYTICS_SURFACE.SHORTCUT,
+      }
+    },
+    [resolveShortcutOpenRequest],
+  )
 
   const openSelectionTranslationRequest = useCallback(
     (
@@ -829,35 +832,17 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
     })
   }, [openSelectionTranslationRequest, resolveContextMenuRequest])
 
-  const openFromShortcut = useCallback(() => {
-    openSelectionTranslationRequest(resolveShortcutRequest())
-  }, [openSelectionTranslationRequest, resolveShortcutRequest])
-
-  useEffect(() => {
-    const shortcut = selectionToolbar.features.translate.shortcut
-    if (
-      isPageTranslationShortcutEmpty(shortcut) ||
-      !isValidConfiguredPageTranslationShortcut(shortcut)
-    ) {
-      return undefined
-    }
-
-    const registration = HotkeyManager.getInstance().register(
-      shortcut as Hotkey,
-      () => {
-        openFromShortcut()
-      },
-      {
-        ignoreInputs: true,
-        preventDefault: true,
-        stopPropagation: true,
-      },
-    )
-
-    return () => {
-      registration.unregister()
-    }
-  }, [openFromShortcut, selectionToolbar.features.translate.shortcut])
+  useSelectionShortcuts(
+    { translate: selectionToolbar.features.translate.shortcut },
+    (_, session) => {
+      const request = resolveShortcutRequest(session)
+      if (!request) {
+        return false
+      }
+      openSelectionTranslationRequest(request)
+      return true
+    },
+  )
 
   useEffect(() => {
     return onMessage("openSelectionTranslationFromContextMenu", () => {
@@ -919,6 +904,7 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
               )}
             <SelectionToolbarErrorAlert error={error} className="-mt-3" />
           </SelectionPopover.Body>
+          <ReviewDueTab source="extension_selection_translation" />
           <TranslateFooterContent
             paragraphsText={paragraphsText}
             providers={translateProviders}

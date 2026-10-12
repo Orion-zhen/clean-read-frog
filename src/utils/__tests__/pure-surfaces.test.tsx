@@ -19,6 +19,7 @@ describe("pure gateway adapters", () => {
       "/src/entrypoints/options/pages/selection-toolbar/actions/note-suggestion-items.tsx",
       "NoteSuggestionItems",
     ],
+    ["/src/entrypoints/selection.content/selection-toolbar/review-due-tab.tsx", "ReviewDueTab"],
     ["/src/components/badges/plan-badge.tsx", "PlanBadge"],
     ["/src/entrypoints/options/app-sidebar/whats-new-footer.tsx", "WhatsNewFooter"],
     ["/src/entrypoints/popup/components/blog-notification.tsx", "default"],

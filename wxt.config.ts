@@ -13,6 +13,7 @@ import {
   createExtensionClientEnvSchema,
   getExtensionDistribution,
   isLocalPackagesEnabled,
+  LOCAL_PACKAGES_DEDUPE,
   resolveExtensionEnv,
 } from "./src/env/shared"
 
@@ -165,9 +166,7 @@ export default defineConfig({
         // @codemirror/lang-liquid's parser and highlighting share these with the other languages.
         "@lezer/highlight",
         "@lezer/lr",
-        // The aliased layout engine source lives in the monorepo: resolve its
-        // dependencies from here, or the bundle gets a second React.
-        ...(useLocalPackages ? ["react", "react-dom", "liquidjs", "dompurify", "morphdom"] : []),
+        ...(useLocalPackages ? LOCAL_PACKAGES_DEDUPE : []),
       ],
     },
     plugins: [

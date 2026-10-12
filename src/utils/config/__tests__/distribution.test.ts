@@ -2,14 +2,55 @@ import { describe, expect, it } from "vitest"
 import { configSchema } from "@/types/config/config"
 import { normalizeConfigForDistribution } from "@/utils/config/distribution"
 import { migrateConfig } from "@/utils/config/migration"
-import { DEFAULT_CONFIG } from "@/utils/constants/config"
+import { buildFreshDefaultConfig, DEFAULT_CONFIG } from "@/utils/constants/config"
 import { DEFAULT_PROVIDER_CONFIG } from "@/utils/constants/providers"
+import { getBuiltInActions } from "@/utils/custom-actions"
 import { IS_PURE_BUILD, isProviderConfigAvailableInDistribution } from "@/utils/distribution"
 import { BUILT_IN_AI_PROVIDER_ID } from "@/utils/providers/provider-registry"
 import { testSeries as v101Fixtures } from "./example/v101"
 import { testSeries as v107Fixtures } from "./example/v107"
+import { testSeries as v109Fixtures } from "./example/v109"
 
 describe.skipIf(!IS_PURE_BUILD)("pure config normalization", () => {
+  it("keeps fresh AI action shortcuts on local providers", () => {
+    const config = configSchema.parse(buildFreshDefaultConfig())
+    const actions = getBuiltInActions(config.selectionToolbar)
+    expect(actions.map((action) => action.shortcut)).toEqual([
+      "Alt+Shift+D",
+      "Alt+Shift+G",
+      "Alt+Shift+W",
+    ])
+    for (const action of actions) {
+      expect(action.providerId).toBe(DEFAULT_PROVIDER_CONFIG.openai.id)
+    }
+    expect(config.selectionToolbar.features.speak.shortcut).toBe("Alt+Shift+R")
+    expect(normalizeConfigForDistribution(config).changed).toBe(false)
+  })
+
+  it("migrates v109 without restoring cloud providers or taking an existing shortcut", async () => {
+    const oldConfig = normalizeConfigForDistribution(
+      structuredClone(v109Fixtures["custom-action-with-custom-layout"]!.config),
+    ).config
+    oldConfig.pageTranslation.page.shortcut = "Alt+Shift+D"
+    const migrated = await migrateConfig(oldConfig, 109)
+    const normalized = configSchema.parse(normalizeConfigForDistribution(migrated).config)
+    expect(normalized.pageTranslation.page.shortcut).toBe("Alt+Shift+D")
+    expect(normalized.selectionToolbar.builtInActions.dictionary.shortcut).toBe("")
+    expect(normalized.selectionToolbar.builtInActions.sentenceAnalysis.shortcut).toBe("Alt+Shift+G")
+    expect(normalized.selectionToolbar.builtInActions.improveWriting.shortcut).toBe("Alt+Shift+W")
+    expect(normalized.selectionToolbar.features.speak.shortcut).toBe("Alt+Shift+R")
+    expect(normalized.providersConfig).toEqual(oldConfig.providersConfig)
+    expect(normalized.selectionToolbar.customActions).toEqual(
+      oldConfig.selectionToolbar.customActions,
+    )
+    for (const action of Object.values(normalized.selectionToolbar.builtInActions)) {
+      expect(action.providerId).not.toBe(BUILT_IN_AI_PROVIDER_ID)
+      expect(action.notebaseConnection).toBeUndefined()
+    }
+    expect(normalized.selectionToolbar.noteSuggestion.enabled).toBe(false)
+    expect(normalizeConfigForDistribution(normalized).changed).toBe(false)
+  })
+
   it("normalizes newly defaulted actions when the UI reads a v101 config before migration", () => {
     const oldConfig = structuredClone(v101Fixtures["complex-config-from-v020"]!.config)
     const result = normalizeConfigForDistribution(oldConfig)

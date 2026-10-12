@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/base-ui/textarea"
 import { ANALYTICS_SURFACE } from "@/types/analytics"
 import { MAX_CUSTOM_ACTION_SAMPLE_TEXT_LENGTH } from "@/types/config/selection-toolbar"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
+import { isSelectionOutputField } from "@/utils/constants/custom-action"
 import { i18n } from "@/utils/i18n"
 import {
   buildStreamingFrames,
@@ -209,19 +210,24 @@ function SampleDataEditor({
               className="w-full"
             />
           </div>
-          {outputSchema.map((field) => (
-            <SampleTextField
-              key={field.id}
-              id={`layout-sample-${field.id}`}
-              label={field.name}
-              value={Object.hasOwn(sampleData.values, field.id) ? sampleData.values[field.id]! : ""}
-              editing={editing}
-              withText={(text) => ({
-                ...sampleData,
-                values: { ...sampleData.values, [field.id]: text },
-              })}
-            />
-          ))}
+          {/* A selection field shows the sample selection above. */}
+          {outputSchema
+            .filter((field) => !isSelectionOutputField(field))
+            .map((field) => (
+              <SampleTextField
+                key={field.id}
+                id={`layout-sample-${field.id}`}
+                label={field.name}
+                value={
+                  Object.hasOwn(sampleData.values, field.id) ? sampleData.values[field.id]! : ""
+                }
+                editing={editing}
+                withText={(text) => ({
+                  ...sampleData,
+                  values: { ...sampleData.values, [field.id]: text },
+                })}
+              />
+            ))}
         </div>
         <Button
           type="button"
@@ -243,11 +249,7 @@ function RenderNotices({ info }: { info: CustomActionLayoutRenderInfo | null }) 
   const notices: React.ReactNode[] = []
   if (info.fellBack) {
     notices.push(
-      <p
-        key="fallback"
-        role="status"
-        className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-300"
-      >
+      <p key="fallback" role="status" className="flex items-start gap-1.5 text-xs text-warning">
         <IconAlertTriangle className="mt-px size-3.5 shrink-0" />
         <span className="min-w-0 break-words">
           {i18n.t("options.selectionToolbar.customActions.form.layout.fallbackBanner", [

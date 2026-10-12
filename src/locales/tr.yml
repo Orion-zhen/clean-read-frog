@@ -521,7 +521,7 @@ options:
         description: Hataları bulmamıza, arayüzü iyileştirmemize ve daha fazlasına yardım ederek Read Frog'u geliştirin
   shortcuts:
     title: Kısayollar
-    pageDescription: Okurken çeviriyi başlatan tuşları belirleyin.
+    pageDescription: Okurken çeviri, sesli okuma ve AI eylemlerini başlatan tuşları belirleyin.
     setShortcut: Kısayolu ayarla
     pageTranslation:
       title: Sayfa çevirisi
@@ -541,6 +541,15 @@ options:
     translationHub:
       title: Çeviri Merkezi
       description: Çeviri Merkezini yeni bir sekmede açar.
+    selectionSpeak:
+      title: "Seçimi sesli okuma"
+      description: "Seçili metni sesli okur. Durdurmak için tekrar basın."
+    actions:
+      title: "AI eylemleri"
+      description: "Seçili metin üzerinde bir AI eylemi çalıştırır. Özel eylemlerin, burada atayana kadar kısayolu yoktur."
+    turnedOff: "Kapalı olduğu için bu kısayol, tekrar açılana kadar hiçbir şey yapmaz."
+    clash: "“$1” ile aynı kısayol. Birini değiştirin."
+    taken: "$1 zaten “$2” tarafından kullanılıyor."
   overlayTools:
     title: Kaplama Araçları
   inputTranslation:
@@ -696,6 +705,8 @@ options:
         save: Kaydet
         defaultFieldName: sonuç
         fieldNamePlaceholder: alan_adı
+        selectionField: "Seçilen metin"
+        selectionFieldDescription: "Seçtiğiniz metin olduğu gibi kaydedilir. Yapay zekâ yazmaz."
         autoFieldPrefix: alan
         addFieldDialog:
           title: Çıktı alanı ekle
@@ -750,6 +761,8 @@ options:
             condition: İçeriği yalnızca alanın bir değeri olduğunda gösterir.
             loop: Her alan için sırayla tekrarlanır. f.name, f.value ve f.type kullanılabilir.
             speak: data-speak içeren her öğe, yanıt tamamlandığında değeri (değer boşsa kendi metnini) sesli okur.
+            speakLang: data-speak-lang okuma dilini belirtir (es veya en-US gibi bir kod), böylece o dilin sesi kullanılır. Belirtilmezse dil otomatik algılanır; tek bir kelimede bu çoğu zaman yanılır.
+            speakAutoplay: data-speak-autoplay içeren öğe, yanıt tamamlandığında kendiliğinden sesli okunur. Yalnızca ilk böyle öğe çalınır.
             status: Duruma göre stil verir. Kapsayıcının data-status değeri streaming, done veya error olur.
             filters: newline_to_br satır sonlarını korur (en sona koyun); lines metni satır listesine böler.
             styles: <style> bloğundaki CSS yalnızca bu sonucun içinde geçerlidir. --rf-* renkleri açık ve koyu temayı izler.
@@ -916,6 +929,7 @@ options:
         sentenceAnalysis:
           name: "Cümle Analizi"
           description: "Uzun bir cümleyi öğretmen gibi işaretler: çekirdeği, her yan cümleyi ve zor noktaları"
+          fieldSentence: "Cümle"
           fieldAnnotations: "Açıklamalar"
           fieldTranslation: "Çeviri"
           roles:
@@ -981,6 +995,7 @@ options:
         improveWriting:
           name: "Yazıyı iyileştir"
           description: "Bir öğretmen gibi hataları ve doğal olmayan ifadeleri işaretler, metni duruma göre düzeltir"
+          fieldOriginal: "Orijinal metin"
           fieldSetting: "Bağlam"
           fieldAnnotations: "İşaretler"
           fieldImproved: "Düzeltilmiş metin"
@@ -1377,7 +1392,7 @@ options:
       title: Temel ayarlar
       enable:
         title: Video altyazılarını aç
-        description: Oynatıcı kontrollerine bir çeviri düğmesi ekler. Şimdilik yalnızca YouTube destekleniyor.
+        description: YouTube, X ve Netflix'te oynatıcı kontrollerine bir çeviri düğmesi ekler.
       autoStart:
         title: Video açılınca çevir
         description: Video yüklenir yüklenmez, düğmeye basmadan altyazıları çevirmeye başlar.
@@ -1582,6 +1597,8 @@ action:
   updatePayment: Ödemeyi güncelle
   openCustomActions: Custom AI Actions'ı aç
   openNotebase: Notebase'i aç
+  reviewDueOne: "$1 kart tekrar bekliyor"
+  reviewDueOther: "$1 kart tekrar bekliyor"
   contextDetailsTitleLabel: Başlık
   contextDetailsParagraphsLabel: Paragraflar
   translation: Çeviri
@@ -1650,9 +1667,10 @@ subtitles:
     httpUnknown: HTTP hatası $1
     invalidResponse: YouTube altyazı yanıt biçimi geçersiz
     networkError: YouTube altyazılar alınırken ağ hatası oluştu.
-    fetchSubTimeout: YouTube altyazılar alınırken zaman aşımı oluştu.
+    fetchSubTimeout: Altyazılar alınırken zaman aşımı oluştu.
     buttonNotFound: Altyazı butonu bulunamadı
     noSubtitlesFound: Bu video için altyazı bulunmuyor
+    trackFileNotLoaded: Altyazılar yüklenemedi, lütfen sayfayı yenilemeyi deneyin
     videoNotFound: Video öğesi bulunamadı
     controlsBarNotFound: Kontrol çubuğu bulunamadı
     aiRateLimited: Çok fazla istek, lütfen daha sonra tekrar deneyin

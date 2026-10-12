@@ -522,7 +522,7 @@ options:
         description: Xətaları tapmaqda, görünüşü təkmilləşdirməkdə və digər işlərdə bizə kömək edərək Read Frog təcrübəsini yaxşılaşdırın
   shortcuts:
     title: Qısayollar
-    pageDescription: Oxuyarkən tərcüməni başladan düymələri təyin edin.
+    pageDescription: Oxuyarkən tərcümə, səsləndirmə və süni intellekt əməliyyatlarını başladan düymələri təyin edin.
     setShortcut: Qısayol təyin et
     pageTranslation:
       title: Səhifə tərcüməsi
@@ -542,6 +542,15 @@ options:
     translationHub:
       title: Tərcümə mərkəzi
       description: Tərcümə mərkəzini yeni vərəqdə açın.
+    selectionSpeak:
+      title: "Seçilmiş mətnin səsləndirilməsi"
+      description: "Seçilmiş mətni ucadan oxuyun. Dayandırmaq üçün yenidən basın."
+    actions:
+      title: "Süni intellekt əməliyyatları"
+      description: "Seçilmiş mətn üzərində süni intellekt əməliyyatı işə salın. Fərdi əməliyyatların burada təyin edənə qədər qısayolu olmur."
+    turnedOff: "Bu funksiya söndürülüb, yenidən yandırana qədər bu qısayol heç nə etmir."
+    clash: "“$1” ilə eyni qısayol. Birini dəyişin."
+    taken: "$1 artıq “$2” tərəfindən istifadə olunur."
   overlayTools:
     title: Səhifəüstü alətlər
   inputTranslation:
@@ -697,6 +706,8 @@ options:
         save: Yadda saxla
         defaultFieldName: Nəticə
         fieldNamePlaceholder: Sahənin adı
+        selectionField: "Seçilmiş mətn"
+        selectionFieldDescription: "Seçdiyiniz mətn olduğu kimi saxlanılır. Süni intellekt onu yazmır."
         autoFieldPrefix: Sahə
         addFieldDialog:
           title: Nəticə sahəsi əlavə et
@@ -751,6 +762,8 @@ options:
             condition: Məzmunu yalnız sahənin dəyəri olduqda göstərir.
             loop: Hər sahə üçün ardıcıl təkrarlanır. f.name, f.value və f.type istifadə edilə bilər.
             speak: data-speak olan istənilən element cavab hazır olduqda dəyəri (dəyər boşdursa, öz mətnini) səsli oxuyur.
+            speakLang: data-speak-lang oxunuş dilini göstərir (es və ya en-US kimi kod), beləliklə həmin dilin səsi istifadə olunur. Göstərilməsə, dil avtomatik təyin edilir; tək söz üçün bu çox vaxt səhv olur.
+            speakAutoplay: data-speak-autoplay olan element cavab hazır olduqda özü səsli oxunur. Yalnız ilk belə element səslənir.
             status: Vəziyyətə görə üslub verir. Konteynerin data-status dəyəri streaming, done və ya error olur.
             filters: newline_to_br sətir keçidlərini saxlayır (sonda istifadə edin); lines mətni sətir siyahısına bölür.
             styles: <style> blokundakı CSS yalnız bu nəticənin daxilində tətbiq olunur. --rf-* rəngləri açıq və tünd temaya uyğunlaşır.
@@ -919,6 +932,7 @@ options:
         sentenceAnalysis:
           name: "Cümlə təhlili"
           description: "Uzun cümləni müəllim kimi işarələyir: əsası, hər budaq cümləni və çətin yerləri"
+          fieldSentence: "Cümlə"
           fieldAnnotations: "Annotasiyalar"
           fieldTranslation: "Tərcümə"
           roles:
@@ -984,6 +998,7 @@ options:
         improveWriting:
           name: "Yazını təkmilləşdir"
           description: "Müəllim kimi səhvləri və qeyri-təbii ifadələri işarələyir, mətni vəziyyətə uyğun düzəldir"
+          fieldOriginal: "Orijinal mətn"
           fieldSetting: "Kontekst"
           fieldAnnotations: "Qeydlər"
           fieldImproved: "Düzəldilmiş mətn"
@@ -1382,7 +1397,7 @@ options:
       title: Əsas parametrlər
       enable:
         title: Video subtitrlərini aktiv et
-        description: Video pleyerin idarəetmə panelinə tərcümə düyməsi əlavə edir. Hələlik yalnız YouTube üçün.
+        description: YouTube, X və Netflix-də video pleyerin idarəetmə panelinə tərcümə düyməsi əlavə edir.
       autoStart:
         title: Açılan kimi tərcümə et
         description: Düyməyə basmadan video yüklənən kimi tərcüməyə başlayın.
@@ -1587,6 +1602,8 @@ action:
   updatePayment: Ödənişi yenilə
   openCustomActions: Fərdi süni intellekt əməliyyatlarını aç
   openNotebase: Notebase səhifəsini aç
+  reviewDueOne: "$1 kart təkrar gözləyir"
+  reviewDueOther: "$1 kart təkrar gözləyir"
   contextDetailsTitleLabel: Başlıq
   contextDetailsParagraphsLabel: Abzaslar
   translation: Tərcümə
@@ -1648,9 +1665,10 @@ subtitles:
     httpUnknown: HTTP xətası $1
     invalidResponse: YouTube subtitr cavabının formatı yanlışdır
     networkError: Subtitrlər gətirilərkən şəbəkə xətası baş verdi
-    fetchSubTimeout: YouTube subtitrlərinin gətirilməsi üçün vaxt bitdi
+    fetchSubTimeout: Subtitrlərin gətirilməsi üçün vaxt bitdi
     buttonNotFound: Subtitr düyməsi tapılmadı
     noSubtitlesFound: Bu video üçün subtitr yoxdur
+    trackFileNotLoaded: Subtitrləri yükləmək mümkün olmadı, səhifəni yeniləməyə cəhd edin
     videoNotFound: Video elementi tapılmadı
     controlsBarNotFound: İdarəetmə paneli tapılmadı
     aiRateLimited: Həddindən artıq sorğu var, daha sonra yenidən cəhd edin

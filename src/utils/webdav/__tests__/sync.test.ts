@@ -119,7 +119,7 @@ describe("WebDAV sync", () => {
   })
 
   it.runIf(IS_PURE_BUILD)(
-    "migrates a v107 WebDAV config and preserves v109 fields on upload",
+    "migrates a v107 WebDAV config and preserves current fields on upload",
     async () => {
       const oldConfig = structuredClone(v107Fixtures["custom-action-with-custom-layout"]!.config)
       expect(oldConfig.selectionToolbar.customActions.length).toBeGreaterThan(0)
@@ -150,7 +150,7 @@ describe("WebDAV sync", () => {
         .mockResolvedValueOnce(uploaded())
       expect(await syncWebDavConfig(settings)).toEqual({ status: "success", action: "uploaded" })
       const uploadedConfig = JSON.parse(fetchMock.mock.lastCall?.[1]?.body as string)
-      expect(uploadedConfig.meta.schemaVersion).toBe(109)
+      expect(uploadedConfig.meta.schemaVersion).toBe(CONFIG_SCHEMA_VERSION)
       expect(uploadedConfig.value.pageTranslation.page.translateTitle).toBe(false)
       expect(uploadedConfig.value.selectionToolbar.customActions).toEqual(
         local.value.selectionToolbar.customActions,

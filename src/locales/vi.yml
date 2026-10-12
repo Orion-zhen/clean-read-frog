@@ -521,7 +521,7 @@ options:
         description: Cải thiện Read Frog bằng cách giúp chúng tôi tìm lỗi, tinh chỉnh giao diện và hơn thế nữa
   shortcuts:
     title: Phím tắt
-    pageDescription: Đặt các phím kích hoạt bản dịch khi bạn đọc.
+    pageDescription: Đặt các phím để dịch, đọc to và chạy hành động AI khi bạn đọc.
     setShortcut: Đặt phím tắt
     pageTranslation:
       title: Dịch trang
@@ -541,6 +541,15 @@ options:
     translationHub:
       title: Trung tâm Dịch thuật
       description: Mở Trung tâm Dịch thuật trong tab mới.
+    selectionSpeak:
+      title: "Đọc vùng chọn"
+      description: "Đọc to văn bản đã chọn. Nhấn lần nữa để dừng."
+    actions:
+      title: "Hành động AI"
+      description: "Chạy một hành động AI trên văn bản đã chọn. Hành động tùy chỉnh chưa có phím tắt cho đến khi bạn đặt ở đây."
+    turnedOff: "Tính năng đang tắt nên phím tắt này không có tác dụng cho đến khi bạn bật lại."
+    clash: "Trùng phím tắt với “$1”. Hãy đổi một trong hai."
+    taken: "$1 đã được dùng cho “$2”."
   overlayTools:
     title: Công cụ nổi
   inputTranslation:
@@ -696,6 +705,8 @@ options:
         save: Lưu
         defaultFieldName: kết quả
         fieldNamePlaceholder: tên_trường
+        selectionField: "Văn bản đã chọn"
+        selectionFieldDescription: "Văn bản bạn đã chọn, được lưu nguyên văn. AI không viết phần này."
         autoFieldPrefix: trường
         addFieldDialog:
           title: Thêm trường đầu ra
@@ -750,6 +761,8 @@ options:
             condition: Chỉ hiển thị nội dung khi trường có giá trị.
             loop: Lặp lại cho từng trường theo thứ tự. Có thể dùng f.name, f.value và f.type.
             speak: Mọi phần tử có data-speak sẽ đọc to giá trị (hoặc văn bản của chính nó nếu giá trị trống) khi câu trả lời hoàn tất.
+            speakLang: data-speak-lang chỉ định ngôn ngữ đọc (mã như es hoặc en-US) để dùng giọng của ngôn ngữ đó. Nếu không có, ngôn ngữ được tự động nhận diện, thường sai với một từ đơn lẻ.
+            speakAutoplay: Phần tử có data-speak-autoplay sẽ tự đọc to khi câu trả lời hoàn tất. Chỉ phần tử đầu tiên như vậy được phát.
             status: Tạo kiểu theo trạng thái. data-status của phần tử chứa là streaming, done hoặc error.
             filters: newline_to_br giữ ngắt dòng (đặt ở cuối); lines tách văn bản thành danh sách dòng.
             styles: CSS trong khối <style> chỉ áp dụng bên trong kết quả này. Các màu --rf-* theo giao diện sáng và tối.
@@ -916,6 +929,7 @@ options:
         sentenceAnalysis:
           name: "Phân tích câu"
           description: "Đánh dấu câu dài như giáo viên: nòng cốt, từng mệnh đề và chỗ khó"
+          fieldSentence: "Câu"
           fieldAnnotations: "Chú thích"
           fieldTranslation: "Bản dịch"
           roles:
@@ -981,6 +995,7 @@ options:
         improveWriting:
           name: "Cải thiện bài viết"
           description: "Chấm như giáo viên: đánh dấu lỗi và cách diễn đạt chưa tự nhiên, sửa lại cho hợp hoàn cảnh"
+          fieldOriginal: "Bản gốc"
           fieldSetting: "Ngữ cảnh"
           fieldAnnotations: "Chú thích"
           fieldImproved: "Bản đã sửa"
@@ -1377,7 +1392,7 @@ options:
       title: Cơ bản
       enable:
         title: Bật phụ đề video
-        description: Thêm nút dịch vào thanh điều khiển của trình phát. Hiện chỉ hỗ trợ YouTube.
+        description: Thêm nút dịch vào thanh điều khiển của trình phát trên YouTube, X và Netflix.
       autoStart:
         title: Mở video là dịch
         description: Bắt đầu dịch ngay khi video tải xong, không cần bấm nút.
@@ -1582,6 +1597,8 @@ action:
   updatePayment: Cập nhật thanh toán
   openCustomActions: Mở Custom AI Actions
   openNotebase: Mở Notebase
+  reviewDueOne: "$1 thẻ cần ôn tập"
+  reviewDueOther: "$1 thẻ cần ôn tập"
   contextDetailsTitleLabel: Tiêu đề
   contextDetailsParagraphsLabel: Các đoạn văn
   translation: Dịch
@@ -1650,9 +1667,10 @@ subtitles:
     httpUnknown: Lỗi HTTP $1
     invalidResponse: Định dạng phản hồi phụ đề Youtube không hợp lệ
     networkError: Xảy ra lỗi mạng khi lấy phụ đề
-    fetchSubTimeout: Quá thời gian lấy phụ đề Youtube
+    fetchSubTimeout: Quá thời gian lấy phụ đề
     buttonNotFound: Không tìm thấy nút phụ đề
     noSubtitlesFound: Video hiện tại không có phụ đề
+    trackFileNotLoaded: Không tải được phụ đề, vui lòng thử tải lại trang
     videoNotFound: Không tìm thấy phần tử video
     controlsBarNotFound: Không tìm thấy thanh điều khiển
     aiRateLimited: Quá nhiều yêu cầu, vui lòng thử lại sau

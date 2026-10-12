@@ -33,6 +33,38 @@ function auditModules(modules: Record<string, { importers?: string[]; renderedLe
 }
 
 describe("pure service boundary", () => {
+  it("limits the review adapter to the two reviewed selection popovers", () => {
+    const id = "/repo/src/entrypoints/selection.content/selection-toolbar/review-due-tab.tsx"
+    expect(() =>
+      auditModules({
+        [id]: {
+          importers: [
+            "/repo/src/entrypoints/selection.content/selection-toolbar/custom-action-button/provider.tsx",
+            "/repo/src/entrypoints/selection.content/selection-toolbar/translate-button/provider.tsx",
+          ],
+        },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      auditModules({
+        [id]: {
+          importers: [
+            "/repo/src/entrypoints/selection.content/selection-toolbar/new-review-feature.tsx",
+          ],
+        },
+      }),
+    ).toThrow("new account/cloud gateway importers")
+  })
+
+  it("does not allow the review component to query account or cloud gateways", () => {
+    const importer = "/repo/src/entrypoints/selection.content/selection-toolbar/review-due-tab.tsx"
+    for (const id of ["/repo/src/utils/auth/auth-client.ts", "/repo/src/utils/orpc/client.ts"]) {
+      expect(() => auditModules({ [id]: { importers: [importer] } })).toThrow(
+        "new account/cloud gateway importers",
+      )
+    }
+  })
+
   it("accepts only the reviewed relocated Notebase gateway callers", () => {
     expect(() =>
       auditModules({

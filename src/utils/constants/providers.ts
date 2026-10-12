@@ -82,7 +82,7 @@ export const DEFAULT_LLM_PROVIDER_MODELS: LLMProviderModels = {
     customModel: null,
   },
   anthropic: {
-    model: "claude-haiku-4-5",
+    model: "claude-haiku-5-5",
     isCustomModel: false,
     customModel: null,
   },

@@ -3,6 +3,7 @@ import { langCodeISO6393Schema } from "@read-frog/definitions"
 import { z } from "zod"
 import { isBuiltInActionId } from "@/utils/constants/custom-action"
 import { BUILT_IN_AI_PROVIDER_ID } from "@/utils/constants/provider-ids"
+import { shortcutSchema } from "./shortcut"
 
 // Upper bound (UTF-16 code units) of a custom action's HTML layout. NEVER lower
 // it: an older build that reads a config holding a longer layout fails schema
@@ -25,6 +26,13 @@ export const selectionToolbarCustomActionOutputFieldSchema = z.object({
   name: z.string().trim().min(1),
   type: selectionToolbarCustomActionOutputTypeSchema,
   description: z.string(),
+  // Where the value comes from: the model, unless this is "selection", the
+  // text the reader selected, which then rides along with the answer (so
+  // "save to notebase" keeps it next to what the model wrote about it). A
+  // selection field is never asked of the model; it is always text. Added in
+  // v111, which older builds refuse rather than drop it and turn the field
+  // into one the model writes.
+  source: z.literal("selection").optional(),
 })
 
 // What the layout preview renders an action's result with: the text the
@@ -62,6 +70,9 @@ export const selectionToolbarBuiltInActionStateSchema = z.object({
   enabled: z.boolean(),
   providerId: z.string().nonempty(),
   notebaseConnection: selectionToolbarCustomActionNotebaseConnectionSchema.optional(),
+  // Missing means the action's default key (BUILT_IN_ACTION_DEFAULT_SHORTCUTS);
+  // empty means the user cleared it.
+  shortcut: shortcutSchema.optional(),
 })
 
 export const selectionToolbarBuiltInActionsSchema = z.object({
@@ -93,6 +104,9 @@ export const selectionToolbarCustomActionSchema = z
     prompt: z.string(),
     outputSchema: z.array(selectionToolbarCustomActionOutputFieldSchema).min(1),
     notebaseConnection: selectionToolbarCustomActionNotebaseConnectionSchema.optional(),
+    // Runs the action on the selection. Missing or empty: no key. A custom
+    // action starts with none; a built-in one reads its key from its state.
+    shortcut: shortcutSchema.optional(),
     // HTML + Liquid template for the result. Optional, not defaulted, and never
     // syntax-checked here: a missing or blank layout renders the default field
     // list, and a template error must not fail the whole config parse (which

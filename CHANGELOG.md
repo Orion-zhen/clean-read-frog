@@ -1,5 +1,67 @@
 # @read-frog/extension
 
+## 1.51.0
+
+### Minor Changes
+
+- [#2335](https://github.com/mengxi-ream/read-frog/pull/2335) [`6bb2e0a`](https://github.com/mengxi-ream/read-frog/commit/6bb2e0a19566628a00fa8785c6ce8c2528e57191) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - feat(selection-toolbar): add keyboard shortcuts for speak and AI actions, managed on the Shortcuts page
+
+### Patch Changes
+
+- [#2337](https://github.com/mengxi-ream/read-frog/pull/2337) [`eab2f3c`](https://github.com/mengxi-ream/read-frog/commit/eab2f3caf04353f8f37efea7fbea3dd04c83947a) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - fix(translation): stop React 19 articles like ISC2 from flickering and jumping after translation
+
+- [#2338](https://github.com/mengxi-ream/read-frog/pull/2338) [`4bf7398`](https://github.com/mengxi-ream/read-frog/commit/4bf739875d0f37f0c0feb096eac9c437633c0d3d) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - feat(selection-toolbar): show field references as pills in the custom action layout editor
+
+- [#2341](https://github.com/mengxi-ream/read-frog/pull/2341) [`8783d83`](https://github.com/mengxi-ream/read-frog/commit/8783d838e13369591be1599b9c3c9ce8fcc92c0a) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - feat(selection-toolbar): read custom action layout triggers in the language data-speak-lang names, and support data-speak-autoplay
+
+- [#2343](https://github.com/mengxi-ream/read-frog/pull/2343) [`49f0db1`](https://github.com/mengxi-ream/read-frog/commit/49f0db1c8862e3223dc4a9d05ee29549b4b83ea8) Thanks [@taiiiyang](https://github.com/taiiiyang)! - fix(page-context): keep long pages like Wikipedia responsive while AI features read them
+
+- [#2336](https://github.com/mengxi-ream/read-frog/pull/2336) [`3f8a2ac`](https://github.com/mengxi-ream/read-frog/commit/3f8a2acf7cd4a7a1ceae76b30b14af2534b55929) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(selection-toolbar): use input and textarea values as AI action context
+
+  Text selected inside an `<input>` or `<textarea>` now uses the field's current value as its paragraph context instead of the page title and stylesheet text. For a textarea, only the paragraphs that contain the selection are used. Password field values are never read. Text inside `<head>`, `<style>`, `<script>`, `<noscript>` and `<title>` is no longer collected as page context.
+
+- [#2334](https://github.com/mengxi-ream/read-frog/pull/2334) [`ea7eab2`](https://github.com/mengxi-ream/read-frog/commit/ea7eab204757f5531911fd97f2e6ff68aade90d3) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(analytics): record text-to-speech usage from the Translation Hub instead of silently dropping it in the background whitelist
+
+- [#2342](https://github.com/mengxi-ream/read-frog/pull/2342) [`fab8144`](https://github.com/mengxi-ream/read-frog/commit/fab8144da96076edda44e5dfc5440c83f56b057c) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - feat(selection-toolbar): keep the selected sentence in Sentence Analysis and Improve Writing answers
+
+  Both built-in AI actions now start with a field that holds the text you selected. The AI never writes it: it travels with the answer, so a notebase these actions create saves the sentence in a column of its own, and the website can turn those notes into review cards.
+
+- [#2330](https://github.com/mengxi-ream/read-frog/pull/2330) [`2651576`](https://github.com/mengxi-ream/read-frog/commit/265157686f3d2140343b8f660ff5ba332688492b) Thanks [@1thomasdavison](https://github.com/1thomasdavison)! - fix(page-translation): keep arXiv and ar5iv inline code identifiers untranslated in bilingual and translation-only modes while continuing to skip standalone code listings.
+
+  Apply the same prose-only paragraph filters in both modes, avoiding unnecessary translation requests for code-only content.
+
+## 1.50.3
+
+### Patch Changes
+
+- [#2323](https://github.com/mengxi-ream/read-frog/pull/2323) [`411fb44`](https://github.com/mengxi-ream/read-frog/commit/411fb44feeacf8c1ca25deb92e6cb85f92056a26) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - feat(providers): add Claude Haiku, Sonnet, and Opus 5.5 models for Anthropic and Bedrock, default new Anthropic configurations to Haiku 5.5, and update the SDK adapters for their thinking modes.
+
+- [#2324](https://github.com/mengxi-ream/read-frog/pull/2324) [`50842cf`](https://github.com/mengxi-ream/read-frog/commit/50842cf205267b15e19e28b4c8ccb2882e5dd043) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - fix(translation): prevent translated text from overlapping on Kaggle Learn guides
+
+- [#2304](https://github.com/mengxi-ream/read-frog/pull/2304) [`490221d`](https://github.com/mengxi-ream/read-frog/commit/490221d734d2d4ce9848bc4007ef00843615ae39) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(subtitles): stop cutting off slow Netflix subtitle loads and misreporting failed ones
+
+- [#2305](https://github.com/mengxi-ream/read-frog/pull/2305) [`83eb7a2`](https://github.com/mengxi-ream/read-frog/commit/83eb7a2de219ec6a87cc9bb5f9b10ea4e2b04afb) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(subtitles): keep Netflix subtitle errors on screen instead of retrying every second
+
+- [#2303](https://github.com/mengxi-ream/read-frog/pull/2303) [`9494f75`](https://github.com/mengxi-ream/read-frog/commit/9494f753d17b99115773218e00e23c8bd2b1f189) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(subtitles): stop blaming YouTube when Netflix subtitles time out
+
+- [#2316](https://github.com/mengxi-ream/read-frog/pull/2316) [`56f29ed`](https://github.com/mengxi-ream/read-frog/commit/56f29eddb13ff5b8b31b17667cbcf862144a507d) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - style(ui): raise the corner radius base to 10px and frame tables with rounded-lg, matching the website
+
+- [#2302](https://github.com/mengxi-ream/read-frog/pull/2302) [`5456e4b`](https://github.com/mengxi-ream/read-frog/commit/5456e4b709f9d2b1f9afc4c92d14d2f5623a56e1) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(subtitles): name YouTube, X and Netflix in the video subtitles setting
+
+## 1.50.2
+
+### Patch Changes
+
+- [#2313](https://github.com/mengxi-ream/read-frog/pull/2313) [`51f9d67`](https://github.com/mengxi-ream/read-frog/commit/51f9d67beb599dd30ab0b7ab5f7b201dec4d7ef3) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - feat(selection-toolbar): show how many cards are due in the most recently used notebase and open its review page
+
+- [#2315](https://github.com/mengxi-ream/read-frog/pull/2315) [`e779fe1`](https://github.com/mengxi-ream/read-frog/commit/e779fe174d442f6284cbed3202f2ecd369abf32a) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - style(ui): shimmer the status text of long waits in subtitles and provider settings
+
+- [#2312](https://github.com/mengxi-ream/read-frog/pull/2312) [`484af18`](https://github.com/mengxi-ream/read-frog/commit/484af18db81d70421ce5140c7ac5d3a834dc05a4) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - style(ui): redraw the success, warning and destructive colors to match brand and accent and read at Lc 60
+
+- [#2306](https://github.com/mengxi-ream/read-frog/pull/2306) [`001e0b2`](https://github.com/mengxi-ream/read-frog/commit/001e0b2984fbdb267e7dd68dd1b1b32e170d7310) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - i18n(manifest): name what Read Frog does in the extension name and description in every language, and use the Read Frog name in Japanese
+
+- [#2311](https://github.com/mengxi-ream/read-frog/pull/2311) [`0f81543`](https://github.com/mengxi-ream/read-frog/commit/0f815436ec7170845635f3b1599b8a4465a75827) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - style(ui): add success and warning status colors and use them for status dots, checks and toast icons
+
 ## 1.50.1
 
 ### Patch Changes

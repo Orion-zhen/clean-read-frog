@@ -554,7 +554,7 @@ options:
         description: Improve Read Frog by helping us locate bugs, refine layouts, and more
   shortcuts:
     title: Shortcuts
-    pageDescription: Set the keys that trigger translation while you read.
+    pageDescription: Set the keys that translate, read aloud and run AI actions while you read.
     setShortcut: Set shortcut
     pageTranslation:
       title: Page translation
@@ -574,6 +574,15 @@ options:
     translationHub:
       title: Translation Hub
       description: Open the Translation Hub in a new tab.
+    selectionSpeak:
+      title: "Read aloud"
+      description: "Read the text you selected aloud. Press again to stop."
+    actions:
+      title: "AI actions"
+      description: "Run an AI action on the text you selected. Custom actions have no key until you set one here."
+    turnedOff: "Turned off, so this key does nothing until you turn it back on."
+    clash: "Same key as “$1”. Change one of them."
+    taken: "$1 is already used by “$2”."
   overlayTools:
     title: Overlay Tools
   inputTranslation:
@@ -734,6 +743,8 @@ options:
         save: Save
         defaultFieldName: Result
         fieldNamePlaceholder: Field name
+        selectionField: "Selected text"
+        selectionFieldDescription: "The text you selected, saved as it is. The AI doesn't write it."
         autoFieldPrefix: Field
         addFieldDialog:
           title: Add output field
@@ -788,6 +799,8 @@ options:
             condition: Shows the content only when the field has a value.
             loop: Repeats for every field, in order. f.name, f.value and f.type are available.
             speak: Any element with data-speak reads the value aloud (or its own text if the value is empty) once the answer is done.
+            speakLang: data-speak-lang names the language to read in (a code such as es or en-US), so it gets that language's voice. Without it the language is detected, which often fails for a single word.
+            speakAutoplay: An element with data-speak-autoplay is read aloud on its own once the answer is done. Only the first such element plays.
             status: Styles by state. The host's data-status is streaming, done or error.
             filters: newline_to_br keeps line breaks (use it last); lines splits text into a list of lines.
             styles: CSS in a <style> block only applies inside this result. The --rf-* colors follow the light and dark themes.
@@ -1009,6 +1022,7 @@ options:
             Selection: {{selection}}
             Paragraphs: {{paragraphs}}
             Target language: {{targetLanguage}}
+          fieldSentence: "Sentence"
           fieldAnnotations: "Annotations"
           fieldAnnotationsDescription: 'A compact JSON array serialized as a string. Each item has "text" and "type", plus only the optional keys that apply ("form", "sense", "head", "obstacle", "restore", "note", "occurrence").'
           fieldTranslation: "Translation"
@@ -1154,6 +1168,7 @@ options:
             Page title: {{webTitle}}
             Page URL: {{webUrl}}
             Target language: {{targetLanguage}}
+          fieldOriginal: "Original"
           fieldSetting: "Setting"
           fieldSettingDescription: 'How formal the setting is and what the text is, in {{targetLanguage}}: "<formality> · <what it is>", at most 16 characters.'
           fieldAnnotations: "Annotations"
@@ -1556,7 +1571,7 @@ options:
       title: Basics
       enable:
         title: Enable video subtitles
-        description: Puts a translate button in the video player's controls. YouTube only, for now.
+        description: Puts a translate button in the video player's controls on YouTube, X and Netflix.
       autoStart:
         title: Translate on open
         description: Start translating as soon as a video loads, without pressing the button.
@@ -1761,6 +1776,8 @@ action:
   updatePayment: Update payment
   openCustomActions: Open Custom AI Actions
   openNotebase: Open Notebase
+  reviewDueOne: "$1 card to review"
+  reviewDueOther: "$1 cards to review"
   contextDetailsTitleLabel: Title
   contextDetailsParagraphsLabel: Paragraphs
   translation: Translation
@@ -1829,9 +1846,10 @@ subtitles:
     httpUnknown: HTTP error $1
     invalidResponse: Invalid Youtube subtitle response format
     networkError: Network error occurred when fetching captions
-    fetchSubTimeout: Fetching youtube captions timed out
+    fetchSubTimeout: Fetching captions timed out
     buttonNotFound: Subtitle button not found
     noSubtitlesFound: No subtitles available for this video
+    trackFileNotLoaded: Subtitles failed to load, please try refreshing the page
     videoNotFound: Video element not found
     controlsBarNotFound: Controls bar not found
     aiRateLimited: Too many requests, please try again later

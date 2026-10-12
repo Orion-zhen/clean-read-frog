@@ -152,6 +152,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     pageKey: "options.shortcuts.title",
   },
   {
+    sectionId: "selection-speak-shortcut",
+    route: "/shortcuts",
+    titleKey: "options.shortcuts.selectionSpeak.title",
+    descriptionKey: "options.shortcuts.selectionSpeak.description",
+    pageKey: "options.shortcuts.title",
+  },
+  {
     sectionId: "subtitles-toggle-shortcut",
     route: "/shortcuts",
     titleKey: "options.shortcuts.subtitlesToggle.title",
@@ -170,6 +177,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     route: "/shortcuts",
     titleKey: "options.shortcuts.translationHub.title",
     descriptionKey: "options.shortcuts.translationHub.description",
+    pageKey: "options.shortcuts.title",
+  },
+  {
+    sectionId: "selection-action-shortcuts",
+    route: "/shortcuts",
+    titleKey: "options.shortcuts.actions.title",
+    descriptionKey: "options.shortcuts.actions.description",
     pageKey: "options.shortcuts.title",
   },
 

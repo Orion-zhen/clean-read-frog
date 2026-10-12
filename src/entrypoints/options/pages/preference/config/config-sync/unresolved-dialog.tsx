@@ -51,7 +51,7 @@ function DialogContent({ isConfirming, onConfirm, onCancelled }: DialogContentPr
     <AlertDialogContent className="flex max-h-[90vh] flex-col overflow-hidden data-[size=default]:max-w-[calc(100vw-2rem)] data-[size=default]:md:max-w-2xl data-[size=default]:lg:max-w-4xl data-[size=default]:xl:max-w-5xl">
       <AlertDialogHeader>
         <AlertDialogTitle className="flex items-center gap-2">
-          <Icon icon="mdi:alert" className="size-5 text-yellow-500" />
+          <Icon icon="mdi:alert" className="size-5 text-warning" />
           {i18n.t("options.preference.config.googleDrive.unresolved.title")}
         </AlertDialogTitle>
         <AlertDialogDescription>
@@ -64,12 +64,12 @@ function DialogContent({ isConfirming, onConfirm, onCancelled }: DialogContentPr
         <div className="flex items-center gap-4 text-xs">
           {status.allResolved ? (
             !status.isValid ? (
-              <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+              <span className="flex items-center gap-1 text-destructive">
                 <Icon icon="tabler:alert-circle-filled" className="size-4" />
                 {i18n.t("options.preference.config.googleDrive.unresolved.configInvalid")}
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+              <span className="flex items-center gap-1 text-success">
                 <Icon icon="tabler:circle-check-filled" className="size-4" />
                 {i18n.t("options.preference.config.googleDrive.unresolved.configValid")}
               </span>
@@ -153,9 +153,13 @@ function DialogContent({ isConfirming, onConfirm, onCancelled }: DialogContentPr
             onConfirm()
           }}
         >
-          {isConfirming
-            ? i18n.t("options.preference.config.googleDrive.syncing")
-            : i18n.t("options.preference.config.googleDrive.unresolved.confirm")}
+          {isConfirming ? (
+            <span className="shimmer">
+              {i18n.t("options.preference.config.googleDrive.syncing")}
+            </span>
+          ) : (
+            i18n.t("options.preference.config.googleDrive.unresolved.confirm")
+          )}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
