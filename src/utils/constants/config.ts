@@ -25,6 +25,7 @@ import {
   createSentenceAnalysisDefinition,
 } from "./custom-action-templates"
 import { DEFAULT_GLOSSARY_CONFIG } from "./glossary"
+import { DEFAULT_NODE_TRANSLATION_SHORTCUT_KEY } from "./hotkeys"
 import {
   DEFAULT_SUBTITLE_TRANSLATE_PROMPTS_CONFIG,
   DEFAULT_TRANSLATE_PROMPTS_CONFIG,
@@ -74,7 +75,7 @@ export const GOOGLE_DRIVE_TOKEN_STORAGE_KEY = "__googleDriveToken"
 
 export const THEME_STORAGE_KEY = "theme"
 export const DEFAULT_DETECTED_CODE = "eng" as const
-export const CONFIG_SCHEMA_VERSION = 111
+export const CONFIG_SCHEMA_VERSION = 113
 
 export const DEFAULT_FLOATING_BUTTON_POSITION = 0.66
 export const DEFAULT_FLOATING_BUTTON_SIDE: FloatingButtonSide = "right"
@@ -181,6 +182,7 @@ export const DEFAULT_CONFIG: Config = {
     node: {
       enabled: false,
       hotkey: "control",
+      shortcut: DEFAULT_NODE_TRANSLATION_SHORTCUT_KEY,
       forceRetranslation: false,
     },
     page: {
@@ -290,7 +292,7 @@ export const DEFAULT_CONFIG: Config = {
   },
   videoSubtitles: {
     enabled: true,
-    autoStart: false,
+    autoStart: { youtube: false, xcom: false, netflix: false },
     toggleShortcut: DEFAULT_SUBTITLES_TOGGLE_SHORTCUT_KEY,
     providerId: MICROSOFT_TRANSLATE_PROVIDER_ID,
     style: {
