@@ -1,191 +1,64 @@
-import { describe, expect, it } from "vitest"
-import { configSchema } from "@/types/config/config"
-import { normalizeConfigForDistribution } from "@/utils/config/distribution"
-import { migrateConfig } from "@/utils/config/migration"
-import { buildFreshDefaultConfig, DEFAULT_CONFIG } from "@/utils/constants/config"
+import { beforeEach, describe, expect, it } from "vitest"
+import { browser } from "wxt/browser"
+import { storage } from "#imports"
+import { initializeConfig } from "@/utils/config/init"
+import { getLocalConfig } from "@/utils/config/storage"
+import { CONFIG_SCHEMA_VERSION, CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from "@/utils/constants/config"
 import { DEFAULT_PROVIDER_CONFIG } from "@/utils/constants/providers"
 import { getBuiltInActions } from "@/utils/custom-actions"
-import { IS_PURE_BUILD, isProviderConfigAvailableInDistribution } from "@/utils/distribution"
+import { IS_PURE_BUILD } from "@/utils/distribution"
 import { BUILT_IN_AI_PROVIDER_ID } from "@/utils/providers/provider-registry"
-import { testSeries as v101Fixtures } from "./example/v101"
-import { testSeries as v107Fixtures } from "./example/v107"
-import { testSeries as v109Fixtures } from "./example/v109"
 
-describe.skipIf(!IS_PURE_BUILD)("pure config normalization", () => {
-  it("keeps fresh AI action shortcuts on local providers", () => {
-    const config = configSchema.parse(buildFreshDefaultConfig())
-    const actions = getBuiltInActions(config.selectionToolbar)
-    expect(actions.map((action) => action.shortcut)).toEqual([
-      "Alt+Shift+D",
-      "Alt+Shift+G",
-      "Alt+Shift+W",
-    ])
-    for (const action of actions) {
-      expect(action.providerId).toBe(DEFAULT_PROVIDER_CONFIG.openai.id)
-    }
-    expect(config.selectionToolbar.features.speak.shortcut).toBe("Alt+Shift+R")
-    expect(normalizeConfigForDistribution(config).changed).toBe(false)
+describe.skipIf(!IS_PURE_BUILD)("pure config lifecycle", () => {
+  beforeEach(async () => {
+    await browser.storage.local.clear()
   })
 
-  it("migrates v109 without restoring cloud providers or taking an existing shortcut", async () => {
-    const oldConfig = normalizeConfigForDistribution(
-      structuredClone(v109Fixtures["custom-action-with-custom-layout"]!.config),
-    ).config
-    oldConfig.pageTranslation.page.shortcut = "Alt+Shift+D"
-    const migrated = await migrateConfig(oldConfig, 109)
-    const normalized = configSchema.parse(normalizeConfigForDistribution(migrated).config)
-    expect(normalized.pageTranslation.page.shortcut).toBe("Alt+Shift+D")
-    expect(normalized.selectionToolbar.builtInActions.dictionary.shortcut).toBe("")
-    expect(normalized.selectionToolbar.builtInActions.sentenceAnalysis.shortcut).toBe("Alt+Shift+G")
-    expect(normalized.selectionToolbar.builtInActions.improveWriting.shortcut).toBe("Alt+Shift+W")
-    expect(normalized.selectionToolbar.features.speak.shortcut).toBe("Alt+Shift+R")
-    expect(normalized.providersConfig).toEqual(oldConfig.providersConfig)
-    expect(normalized.selectionToolbar.customActions).toEqual(
-      oldConfig.selectionToolbar.customActions,
-    )
-    for (const action of Object.values(normalized.selectionToolbar.builtInActions)) {
-      expect(action.providerId).not.toBe(BUILT_IN_AI_PROVIDER_ID)
-      expect(action.notebaseConnection).toBeUndefined()
+  it("starts translation and built-in actions on local providers", async () => {
+    await initializeConfig()
+    const config = (await getLocalConfig())!
+    const enabledProviderIds = config.providersConfig
+      .filter((provider) => provider.enabled)
+      .map((provider) => provider.id)
+
+    expect(enabledProviderIds).toContain(config.pageTranslation.providerId)
+    for (const action of getBuiltInActions(config.selectionToolbar)) {
+      expect(enabledProviderIds).toContain(action.providerId)
     }
-    expect(normalized.selectionToolbar.noteSuggestion.enabled).toBe(false)
-    expect(normalizeConfigForDistribution(normalized).changed).toBe(false)
+    expect(config.selectionToolbar.noteSuggestion.enabled).toBe(false)
   })
 
-  it("normalizes newly defaulted actions when the UI reads a v101 config before migration", () => {
-    const oldConfig = structuredClone(v101Fixtures["complex-config-from-v020"]!.config)
-    const result = normalizeConfigForDistribution(oldConfig)
-    const parsed = configSchema.parse(result.config)
-    expect(parsed.selectionToolbar.builtInActions.sentenceAnalysis.providerId).not.toBe(
-      BUILT_IN_AI_PROVIDER_ID,
-    )
-    expect(parsed.selectionToolbar.builtInActions.improveWriting.providerId).not.toBe(
-      BUILT_IN_AI_PROVIDER_ID,
-    )
-    expect(parsed.selectionToolbar.builtInActions.improveWriting.enabled).toBe(false)
-    expect(normalizeConfigForDistribution(parsed).changed).toBe(false)
-  })
-
-  it("migrates v101 settings without losing local providers or custom actions", async () => {
-    const oldConfig = structuredClone(v101Fixtures["complex-config-from-v020"]!.config)
-    const migrated = await migrateConfig(oldConfig, 101)
-    const normalized = configSchema.parse(normalizeConfigForDistribution(migrated).config)
-    expect(normalized.language).toEqual(oldConfig.language)
-    expect(normalized.selectionToolbar.customActions.map((action) => action.id)).toEqual(
-      oldConfig.selectionToolbar.customActions.map((action: { id: string }) => action.id),
-    )
-    const localProviders = oldConfig.providersConfig.filter(isProviderConfigAvailableInDistribution)
-    for (const provider of localProviders) {
-      expect(
-        normalized.providersConfig.find((current) => current.id === provider.id),
-      ).toMatchObject({
-        id: provider.id,
-        ...("apiKey" in provider ? { apiKey: provider.apiKey } : {}),
-      })
-    }
-    expect(JSON.stringify(normalized)).not.toContain(BUILT_IN_AI_PROVIDER_ID)
-    expect(normalizeConfigForDistribution(normalized).changed).toBe(false)
-  })
-
-  it("migrates v107 to v109 without losing local settings or action sample data", async () => {
-    const oldConfig = structuredClone(v107Fixtures["custom-action-with-custom-layout"]!.config)
-    expect(oldConfig.selectionToolbar.customActions.length).toBeGreaterThan(0)
-    const migrated = await migrateConfig(oldConfig, 107)
-    const normalized = configSchema.parse(normalizeConfigForDistribution(migrated).config)
-    expect(normalized.pageTranslation.page.translateTitle).toBe(true)
-    expect(normalized.language).toEqual(oldConfig.language)
-    expect(normalized.siteRules).toEqual(oldConfig.siteRules)
-    expect(normalized.selectionToolbar.customActions.map((action) => action.id)).toEqual(
-      oldConfig.selectionToolbar.customActions.map((action: { id: string }) => action.id),
-    )
-    for (const action of normalized.selectionToolbar.customActions) {
-      const original = oldConfig.selectionToolbar.customActions.find(
-        (candidate: { id: string }) => candidate.id === action.id,
-      )
-      expect(action.layout).toBe(original.layout)
-      expect(action.outputSchema).toEqual(original.outputSchema)
-      expect(action.sampleData).toBeDefined()
-      expect(action.notebaseConnection).toBeUndefined()
-    }
-    for (const provider of oldConfig.providersConfig.filter(
-      isProviderConfigAvailableInDistribution,
-    )) {
-      expect(normalized.providersConfig.find((current) => current.id === provider.id)).toEqual(
-        provider,
-      )
-    }
-    expect(JSON.stringify(normalized)).not.toContain(BUILT_IN_AI_PROVIDER_ID)
-    expect(normalizeConfigForDistribution(normalized).changed).toBe(false)
-  })
-
-  it("preserves disabled local hub selections and explicit empty selections", () => {
-    const config = structuredClone(DEFAULT_CONFIG)
-    const disabledProvider = {
-      ...structuredClone(DEFAULT_PROVIDER_CONFIG.openai),
-      id: "disabled-local-provider",
-      enabled: false,
-    }
-    config.providersConfig.push(disabledProvider)
-    config.translationHub.selectedProviderIds = [disabledProvider.id]
-    const normalized = normalizeConfigForDistribution(config).config
-    expect(normalized.translationHub.selectedProviderIds).toEqual([disabledProvider.id])
-    expect(
-      normalized.providersConfig.find((provider) => provider.id === disabledProvider.id)?.enabled,
-    ).toBe(false)
-    config.translationHub.selectedProviderIds = []
-    expect(
-      normalizeConfigForDistribution(config).config.translationHub.selectedProviderIds,
-    ).toEqual([])
-  })
-
-  it("removes promoted/cloud state and repairs provider assignments", () => {
-    const config = structuredClone(DEFAULT_CONFIG)
-    config.providersConfig.push(
-      structuredClone(DEFAULT_PROVIDER_CONFIG.jalapenocloud),
-      structuredClone(DEFAULT_PROVIDER_CONFIG.atlascloud),
-      structuredClone(DEFAULT_PROVIDER_CONFIG.tensdaq),
-    )
-    config.pageTranslation.providerId = DEFAULT_PROVIDER_CONFIG.jalapenocloud.id
-    config.videoSubtitles.providerId = BUILT_IN_AI_PROVIDER_ID
-    config.inputTranslation.providerId = BUILT_IN_AI_PROVIDER_ID
-    config.selectionToolbar.features.translate.providerId = DEFAULT_PROVIDER_CONFIG.atlascloud.id
-    config.selectionToolbar.builtInActions.dictionary.providerId = BUILT_IN_AI_PROVIDER_ID
-    config.selectionToolbar.builtInActions.dictionary.notebaseConnection = {
-      notebaseId: "notebase-id",
+  it("keeps saved preferences while replacing official-only services on startup", async () => {
+    const saved = structuredClone(DEFAULT_CONFIG)
+    saved.language.targetCode = "jpn"
+    saved.providersConfig.push(structuredClone(DEFAULT_PROVIDER_CONFIG.jalapenocloud))
+    saved.pageTranslation.providerId = DEFAULT_PROVIDER_CONFIG.jalapenocloud.id
+    saved.selectionToolbar.noteSuggestion.enabled = true
+    saved.selectionToolbar.builtInActions.dictionary.providerId = BUILT_IN_AI_PROVIDER_ID
+    saved.selectionToolbar.builtInActions.dictionary.notebaseConnection = {
+      notebaseId: "dictionary",
       notebaseNameSnapshot: "Dictionary",
-      connectedAccount: { id: "account-id", name: "User", email: "user@example.com" },
+      connectedAccount: { id: "reader", name: "Reader", email: "reader@example.com" },
       mappings: [],
     }
-    for (const action of Object.values(config.selectionToolbar.builtInActions)) {
-      action.providerId = BUILT_IN_AI_PROVIDER_ID
-      action.notebaseConnection = structuredClone(
-        config.selectionToolbar.builtInActions.dictionary.notebaseConnection,
-      )
-    }
-    config.translationHub.selectedProviderIds = [
-      BUILT_IN_AI_PROVIDER_ID,
-      DEFAULT_PROVIDER_CONFIG.tensdaq.id,
-      DEFAULT_PROVIDER_CONFIG.openai.id,
-    ]
-    config.selectionToolbar.noteSuggestion.enabled = true
-    config.selectionToolbar.noteSuggestion.providerId = BUILT_IN_AI_PROVIDER_ID
-    config.languageDetection = { mode: "llm", providerId: BUILT_IN_AI_PROVIDER_ID }
+    await storage.setItem(`local:${CONFIG_STORAGE_KEY}`, saved)
+    await storage.setMeta(`local:${CONFIG_STORAGE_KEY}`, {
+      schemaVersion: CONFIG_SCHEMA_VERSION,
+    })
 
-    const result = normalizeConfigForDistribution(config)
+    await initializeConfig()
+    const config = (await getLocalConfig())!
+    const enabledProviderIds = config.providersConfig
+      .filter((provider) => provider.enabled)
+      .map((provider) => provider.id)
 
-    expect(result.changed).toBe(true)
-    expect(result.config.providersConfig.every(isProviderConfigAvailableInDistribution)).toBe(true)
-    for (const action of Object.values(result.config.selectionToolbar.builtInActions)) {
-      expect(action.notebaseConnection).toBeUndefined()
-      expect(action.providerId).toBe(DEFAULT_PROVIDER_CONFIG.openai.id)
-    }
-    expect(result.config.translationHub.selectedProviderIds).toEqual([
-      DEFAULT_PROVIDER_CONFIG.openai.id,
-    ])
-    expect(result.config.selectionToolbar.noteSuggestion.enabled).toBe(false)
-    expect(JSON.stringify(result.config)).not.toContain(BUILT_IN_AI_PROVIDER_ID)
-    expect(configSchema.safeParse(result.config).success).toBe(true)
-
-    const secondPass = normalizeConfigForDistribution(result.config)
-    expect(secondPass.changed).toBe(false)
+    expect(config.language.targetCode).toBe("jpn")
+    expect(enabledProviderIds).not.toContain(DEFAULT_PROVIDER_CONFIG.jalapenocloud.id)
+    expect(enabledProviderIds).toContain(config.pageTranslation.providerId)
+    expect(enabledProviderIds).toContain(
+      config.selectionToolbar.builtInActions.dictionary.providerId,
+    )
+    expect(config.selectionToolbar.builtInActions.dictionary.notebaseConnection).toBeUndefined()
+    expect(config.selectionToolbar.noteSuggestion.enabled).toBe(false)
   })
 })

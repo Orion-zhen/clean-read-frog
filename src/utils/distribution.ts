@@ -1,4 +1,4 @@
-import type { APIProviderTypes, ProviderConfig } from "@/types/config/provider"
+import type { ProviderConfig } from "@/types/config/provider"
 import { API_PROVIDER_COMMERCIAL_POLICIES, isAPIProvider } from "@/types/config/provider"
 
 /**
@@ -34,11 +34,6 @@ export const DISTRIBUTION_CAPABILITY_POLICIES: Record<
 export function isDistributionCapabilityEnabled(capability: DistributionCapability): boolean {
   return !IS_PURE_BUILD || DISTRIBUTION_CAPABILITY_POLICIES[capability] === "all"
 }
-
-/** Derived rather than maintained separately from the exhaustive provider policy table. */
-export const PURE_EXCLUDED_PROVIDER_TYPES = Object.entries(API_PROVIDER_COMMERCIAL_POLICIES)
-  .filter(([, policy]) => policy !== "neutral")
-  .map(([providerType]) => providerType as APIProviderTypes)
 
 export function isProviderTypeAvailableInDistribution(providerType: string): boolean {
   if (!IS_PURE_BUILD || !isAPIProvider(providerType)) {

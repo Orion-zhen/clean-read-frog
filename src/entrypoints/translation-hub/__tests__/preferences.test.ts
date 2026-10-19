@@ -4,7 +4,7 @@
 import type { Config } from "@/types/config/config"
 import { createStore } from "jotai"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { configAtom } from "@/utils/atoms/config"
+import { configAtom, configFieldsAtomMap } from "@/utils/atoms/config"
 import { storageAdapter } from "@/utils/atoms/storage-adapter"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import {
@@ -54,23 +54,17 @@ describe("Translation Hub preferences", () => {
     expect(persisted.value.language).toEqual(DEFAULT_CONFIG.language)
   })
 
-  it("keeps an explicitly empty selection and filters unavailable providers", async () => {
+  it("keeps an empty selection and stops selecting a provider after it is disabled", async () => {
     const first = openHub()
+    const providerId = first.get(selectedProviderIdsAtom)[0]!
     await first.set(selectedProviderIdsAtom, [])
     expect(openHub().get(selectedProviderIdsAtom)).toEqual([])
 
-    await first.set(selectedProviderIdsAtom, ["removed-provider", "read-frog-free-ai"])
-    expect(openHub().get(selectedProviderIdsAtom)).toEqual(
-      __PURE_BUILD__ ? [] : ["read-frog-free-ai"],
-    )
-
-    const localId = DEFAULT_CONFIG.providersConfig.find(
-      (provider) => provider.enabled && provider.provider === "microsoft-translate",
-    )?.id
-    expect(localId).toBeDefined()
-    await first.set(selectedProviderIdsAtom, [localId!])
-    persisted.value.providersConfig = persisted.value.providersConfig.map((provider) =>
-      provider.id === localId ? { ...provider, enabled: false } : provider,
+    await first.set(selectedProviderIdsAtom, [providerId])
+    await first.set(configFieldsAtomMap.providersConfig, (providers) =>
+      providers.map((provider) =>
+        provider.id === providerId ? { ...provider, enabled: false } : provider,
+      ),
     )
     expect(openHub().get(selectedProviderIdsAtom)).toEqual([])
   })

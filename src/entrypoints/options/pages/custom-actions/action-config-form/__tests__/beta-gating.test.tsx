@@ -11,7 +11,7 @@ import { configAtom } from "@/utils/atoms/config"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import { i18n } from "@/utils/i18n"
 import { CustomActionConfigForm } from ".."
-import { customActionEditorTabAtom, selectedCustomActionIdAtom } from "../../atoms"
+import { selectedCustomActionIdAtom } from "../../atoms"
 
 vi.mock("@/components/form/quick-insertable-textarea-field-auto-save", () => ({
   QuickInsertableTextareaFieldAutoSave: ({
@@ -340,7 +340,6 @@ describe.skipIf(!__PURE_BUILD__)("pure custom action editor", () => {
       selectedCustomActionIdAtom,
       kind === "built-in" ? "default-dictionary" : "local-action",
     )
-    store.set(customActionEditorTabAtom, "notebase")
 
     render(
       <Provider store={store}>

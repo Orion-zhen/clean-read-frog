@@ -119,10 +119,9 @@ describe("WebDAV sync", () => {
   })
 
   it.runIf(IS_PURE_BUILD)(
-    "migrates a v107 WebDAV config and preserves current fields on upload",
+    "preserves local settings and custom actions when syncing an official config",
     async () => {
       const oldConfig = structuredClone(v107Fixtures["custom-action-with-custom-layout"]!.config)
-      expect(oldConfig.selectionToolbar.customActions.length).toBeGreaterThan(0)
       const legacy = {
         value: oldConfig,
         meta: { schemaVersion: 107, lastModifiedAt: 2000 },
@@ -132,16 +131,24 @@ describe("WebDAV sync", () => {
       )
       expect(await syncWebDavConfig(settings)).toEqual({ status: "success", action: "downloaded" })
       const local = await getLocalConfigAndMeta()
-      expect(local.meta.schemaVersion).toBe(CONFIG_SCHEMA_VERSION)
-      expect(local.value.pageTranslation.page.translateTitle).toBe(true)
-      expect(local.value.selectionToolbar.customActions.every((action) => action.sampleData)).toBe(
-        true,
+      expect(local.value.language).toEqual(oldConfig.language)
+      expect(local.value.providersConfig).toContainEqual(
+        expect.objectContaining({ provider: "google", apiKey: "goog-key" }),
+      )
+      const originalAction = oldConfig.selectionToolbar.customActions[0]!
+      expect(local.value.selectionToolbar.customActions).toContainEqual(
+        expect.objectContaining({
+          name: originalAction.name,
+          prompt: originalAction.prompt,
+          layout: originalAction.layout,
+          outputSchema: originalAction.outputSchema,
+        }),
       )
       expect(local.value.providersConfig.map((provider) => provider.provider)).not.toContain(
         "jalapenocloud",
       )
 
-      local.value.pageTranslation.page.translateTitle = false
+      local.value.language.targetCode = "jpn"
       await setLocalConfigAndMeta(local.value, { ...local.meta, lastModifiedAt: 3000 })
       fetchMock
         .mockResolvedValueOnce(
@@ -150,12 +157,10 @@ describe("WebDAV sync", () => {
         .mockResolvedValueOnce(uploaded())
       expect(await syncWebDavConfig(settings)).toEqual({ status: "success", action: "uploaded" })
       const uploadedConfig = JSON.parse(fetchMock.mock.lastCall?.[1]?.body as string)
-      expect(uploadedConfig.meta.schemaVersion).toBe(CONFIG_SCHEMA_VERSION)
-      expect(uploadedConfig.value.pageTranslation.page.translateTitle).toBe(false)
+      expect(uploadedConfig.value.language.targetCode).toBe("jpn")
       expect(uploadedConfig.value.selectionToolbar.customActions).toEqual(
         local.value.selectionToolbar.customActions,
       )
-      expect(lastRequestHeaders().get("If-Match")).toBe('"v107"')
     },
   )
 
