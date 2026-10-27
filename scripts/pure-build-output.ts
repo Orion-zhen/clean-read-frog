@@ -25,8 +25,14 @@ const PURE_GATEWAY_REPLACEMENTS = {
   "/src/entrypoints/options/pages/selection-toolbar/actions/note-suggestion-items.tsx": `
     export const NoteSuggestionItems = () => null;
   `,
-  "/src/entrypoints/selection.content/selection-toolbar/review-due-tab.tsx": `
+  "/src/components/ui/selection-popover/review-due-tab.tsx": `
     export const ReviewDueTab = () => null;
+  `,
+  "/src/components/custom-action/save-to-notebase-button.tsx": `
+    export const SaveToNotebaseButton = () => null;
+  `,
+  "/src/components/custom-action/save-to-notebase-dialog-host.tsx": `
+    export const SaveToNotebaseDialogHost = () => null;
   `,
   "/src/components/badges/plan-badge.tsx": `
     export const PlanBadge = () => null;
@@ -116,15 +122,20 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
   "/src/entrypoints/options/pages/selection-toolbar/actions/note-suggestion-items.tsx": [
     "/src/entrypoints/options/pages/selection-toolbar/actions/index.tsx",
   ],
-  "/src/entrypoints/selection.content/selection-toolbar/review-due-tab.tsx": [
-    "/src/entrypoints/selection.content/selection-toolbar/custom-action-button/provider.tsx",
-    "/src/entrypoints/selection.content/selection-toolbar/translate-button/provider.tsx",
+  "/src/components/ui/selection-popover/review-due-tab.tsx": [
+    "/src/components/custom-action/custom-action-panel.tsx",
+    "/src/entrypoints/content-runtime/selection/selection-toolbar/translate-button/provider.tsx",
+  ],
+  "/src/components/custom-action/save-to-notebase-button.tsx": [
+    "/src/components/custom-action/custom-action-panel.tsx",
+  ],
+  "/src/components/custom-action/save-to-notebase-dialog-host.tsx": [
+    "/src/entrypoints/content-runtime/selection/selection-toolbar/custom-action-button/provider.tsx",
+    "/src/entrypoints/subtitles.content/learning/word-lookup-card.tsx",
   ],
   "/src/components/badges/plan-badge.tsx": [
-    "/src/components/llm-providers/provider-selector.tsx",
+    "/src/components/badges/upgrade-plan-badge.tsx",
     "/src/components/user-account-menu/shared.tsx",
-    "/src/entrypoints/options/pages/api-providers/providers-config/provider-editor.tsx",
-    "/src/entrypoints/translation-hub/components/translation-service-dropdown.tsx",
   ],
   "/src/entrypoints/options/app-sidebar/whats-new-footer.tsx": [
     "/src/entrypoints/options/app-sidebar/index.tsx",

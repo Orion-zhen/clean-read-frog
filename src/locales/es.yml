@@ -157,6 +157,8 @@ options:
       resetsAt: "Se restablece el $1"
       daily: Cuota diaria
       weekly: Cuota semanal
+      oneTime: Crédito de regalo
+      expiresAt: "Caduca el $1"
       features:
         pageTranslation: Traducción de página
         customAction: Acciones de IA personalizadas
@@ -815,16 +817,16 @@ options:
           schemaErrorDescription: Intenta actualizar el esquema de nuevo en un momento.
           schemaLoading: Cargando esquema de la Notebase...
           mappingsLabel: Asignaciones de campos
-          mappingsEmpty: Aún no hay asignaciones. Añade una cuando estés listo para guardar campos.
-          addMappingAction: Añadir asignación
-          removeMappingAction: Eliminar asignación
           localFieldLabel: Campo de acción
-          localFieldPlaceholder: Selecciona un campo de acción
           remoteFieldLabel: Campo de Notebase
-          remoteFieldPlaceholder: Selecciona un campo de Notebase
           columnUnavailableOption: eliminado
           invalidMappingsTitle: Algunas asignaciones requieren atención
           invalidMappingsDescription: Las asignaciones no válidas se conservan. Corrígelas antes de guardar en Notebase.
+          noFieldSavedTitle: "Ningún campo se guarda en esta Notebase"
+          noFieldSavedDescription: "Elige un campo de Notebase para al menos un campo y así poder guardar notas."
+          mappingSummary: "Se guardan $1 · Omitidos $2 · Sin decidir $3"
+          skipFieldOption: "No guardar"
+          undecidedFieldPlaceholder: "Elige un campo de Notebase o no guardar"
           mappingMissingLocal: El campo de acción asignado ya no existe.
           mappingMissingRemote: El campo de Notebase asignado ya no existe.
           mappingMissingSchema: Actualiza el esquema de la Notebase para validar esta asignación.
@@ -1405,7 +1407,10 @@ options:
         description: Empieza a traducir en cuanto se carga el video, sin pulsar el botón.
       aiSegmentation:
         title: Segmentación inteligente de IA
-        description: La IA vuelve a cortar los subtítulos en líneas que se leen como frases. También fija sus tiempos, así que pueden desajustarse. Requiere un proveedor de traducción LLM.
+        description: La IA vuelve a cortar los subtítulos en frases. Las traducciones tardan más. Requiere un LLM potente; los modelos más débiles pueden omitir o desalinear líneas.
+      wordLookupAction:
+        title: Acción al buscar una palabra
+        description: La acción de IA que responde al hacer clic en una palabra de los subtítulos. Diccionario, salvo que elijas una tuya.
     aiQuota:
       title: Cuota de subtítulos con IA
       description: El reconocimiento de voz con IA te da subtítulos precisos para cualquier vídeo
@@ -1583,6 +1588,10 @@ action:
   saveToNotebaseLimitExceeded: Se requiere una mejora para guardar más notas de Notebase
   saveToNotebaseTableUnavailable: La Notebase seleccionada ya no está disponible
   saveToNotebaseConnectionInvalid: Esta conexión de Notebase está desactualizada. Actualízala en Acciones AI personalizadas y corrige las asignaciones.
+  saveToNotebaseInvalidContent: "La respuesta de la IA tiene un valor con un formato incorrecto, así que no se guardó. Vuelve a ejecutar la acción y luego guarda."
+  saveToNotebaseNoFieldSaved: "No se guardó: esta acción no guarda ningún campo en la Notebase. Elige al menos uno en su configuración."
+  saveToNotebaseUndecidedTitle: "Guardado. Aún no has decidido si guardar estos campos"
+  saveToNotebaseSkipUndecided: "No guardarlos"
   saveToNotebaseNoMappings: Añade al menos una asignación válida antes de guardar
   saveToNotebaseCreateTitle: ¿Crear una Notebase?
   saveToNotebaseCreateDescription: Crea una Notebase con columnas que coinciden con esta acción personalizada y guarda este resultado como la primera nota.
@@ -1697,11 +1706,13 @@ subtitles:
     translatedExportIncomplete: No se pudieron traducir todas las líneas de subtítulos
     translatedExportSameLanguage: El idioma de origen y el de destino son iguales
 hostedAi:
-  ultraBadge:
-    tooltip: Requiere el plan Ultra · Haz clic en la insignia para obtenerlo
+  planBadge:
+    pro: Requiere el plan Pro o Ultra · Haz clic en la insignia para obtenerlo
+    ultra: Requiere el plan Ultra · Haz clic en la insignia para obtenerlo
   availability:
     authenticationRequired: Inicia sesión para usar este proveedor
     ultraRequired: Se requiere el plan Ultra
+    proRequired: Se requiere el plan Pro o Ultra
     quotaExhausted: Cuota agotada
     serviceUnavailable: No disponible temporalmente
     usedPercent: "Cuota utilizada: $1%"

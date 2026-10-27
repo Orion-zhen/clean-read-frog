@@ -1,5 +1,70 @@
 # @read-frog/extension
 
+## 1.54.0
+
+### Minor Changes
+
+- [#2410](https://github.com/mengxi-ream/read-frog/pull/2410) [`d0e3eae`](https://github.com/mengxi-ream/read-frog/commit/d0e3eae48f8e5c7874d55e53b9dbe06c07600a29) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - feat(hover-translation): hold the hover translation key or custom shortcut to ring the block it will translate, then let go to translate it; the ring follows the pointer and glides between blocks, a tap still translates on release, and the first tap after another key no longer gets lost
+
+- [#2404](https://github.com/mengxi-ream/read-frog/pull/2404) [`6dba257`](https://github.com/mengxi-ream/read-frog/commit/6dba2570f0807b39000fbf390a17e6eac959fd7b) Thanks [@taiiiyang](https://github.com/taiiiyang)! - feat(subtitles): pick the AI action a click on a subtitle word runs
+
+- [#2403](https://github.com/mengxi-ream/read-frog/pull/2403) [`e622f80`](https://github.com/mengxi-ream/read-frog/commit/e622f8041e87fa7ea8517126a2387dc57d7b739b) Thanks [@taiiiyang](https://github.com/taiiiyang)! - feat(subtitles): pause on hover and click a subtitle word to look it up
+
+### Patch Changes
+
+- [#2407](https://github.com/mengxi-ream/read-frog/pull/2407) [`16e3441`](https://github.com/mengxi-ream/read-frog/commit/16e34417c495fc9564a5722b9b3555047f211065) Thanks [@taiiiyang](https://github.com/taiiiyang)! - fix(subtitles): stay quiet when auto-started subtitles find none on an X video
+
+- [#2412](https://github.com/mengxi-ream/read-frog/pull/2412) [`543683a`](https://github.com/mengxi-ream/read-frog/commit/543683a70adc5af7d77861d98e4ad0ef618ea3fa) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(site-rules): translate header menus that open with pure CSS
+  
+  Page translation skips content hidden with `display: none` or
+  `visibility: hidden` and only comes back to it when the site changes the DOM
+  to reveal it. Menus that open through CSS alone (`li:hover .dropdown`, or a
+  `:checked` checkbox) change nothing, so their content stayed untranslated,
+  like The North Face Korea's header dropdowns. A new `walkHiddenSelectors`
+  site-rule family names hidden regions the walk enters anyway; their content
+  translates when the menu opens, so closed menus cost nothing up front. The
+  North Face Korea ships with a built-in rule.
+
+## 1.53.0
+
+### Minor Changes
+
+- [#2395](https://github.com/mengxi-ream/read-frog/pull/2395) [`f7be60f`](https://github.com/mengxi-ream/read-frog/commit/f7be60f7944ea6362614687f9d309da8639e6446) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - feat(built-in-ai): show bonus Built-in AI quota on the usage page, with how much is left and when it expires
+
+- [#2406](https://github.com/mengxi-ream/read-frog/pull/2406) [`91dd9be`](https://github.com/mengxi-ream/read-frog/commit/91dd9bed125c0e3ea2b52775a5e5b52bfd766d88) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - feat(built-in-ai): badge a Built-in AI option only with the plan this account still needs: Pro (read as "Pro or Ultra") or Ultra, and none once its plan or bonus quota already covers it
+
+### Patch Changes
+
+- [#2375](https://github.com/mengxi-ream/read-frog/pull/2375) [`a49fa37`](https://github.com/mengxi-ream/read-frog/commit/a49fa37849f1a9c2f2a50cf04bdd08407b5083eb) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - fix(subtitles): keep YouTube lyric lines wrapped in ♪ instead of dropping them as noise
+
+- [#2388](https://github.com/mengxi-ream/read-frog/pull/2388) [`2352384`](https://github.com/mengxi-ream/read-frog/commit/23523841690ff640cd55be973495f4deec17bac6) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(notebase): give every field a row to pick its column or "don't save", keep the mappings when the connected Notebase is picked again, and remind about fields still undecided on each save until they are decided
+
+- [#2389](https://github.com/mengxi-ream/read-frog/pull/2389) [`8548cc7`](https://github.com/mengxi-ream/read-frog/commit/8548cc7bcc8c2cb4a9b62ee191c04532d143e744) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(content): show each page toast once instead of three stacked copies
+
+## 1.52.1
+
+### Patch Changes
+
+- [#2372](https://github.com/mengxi-ream/read-frog/pull/2372) [`6195b4e`](https://github.com/mengxi-ream/read-frog/commit/6195b4e04f534789ebd7d0af7ee189442b27f52e) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - i18n(subtitles): clarify AI smart segmentation needs a strong LLM and slows translations
+
+- [#2380](https://github.com/mengxi-ream/read-frog/pull/2380) [`3f34aea`](https://github.com/mengxi-ream/read-frog/commit/3f34aea94a63fe4bc098e0cb081243773470694b) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - perf(content): load pages faster by injecting a small loader instead of 8 MB of content scripts; it loads one shared runtime that runs page translation, the selection toolbar and the floating button
+
+- [#2384](https://github.com/mengxi-ream/read-frog/pull/2384) [`78dccd9`](https://github.com/mengxi-ream/read-frog/commit/78dccd928f3ca05b76ebeab44405bd564824101d) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - fix(translation): hide echoed translations that only add or drop spaces between Chinese and English
+
+- [#2378](https://github.com/mengxi-ream/read-frog/pull/2378) [`0f26b21`](https://github.com/mengxi-ream/read-frog/commit/0f26b2132407d71607c1f3581c55519ba0cfade6) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(popup): open the review page of the store Read Frog was installed from
+
+- [#2377](https://github.com/mengxi-ream/read-frog/pull/2377) [`44dad29`](https://github.com/mengxi-ream/read-frog/commit/44dad29c3dd52d1b4220f5ecf1c26bd854be5a27) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - fix(selection): keep the translation card and floating button out of what Cmd/Ctrl+A selects and copies
+
+- [#2377](https://github.com/mengxi-ream/read-frog/pull/2377) [`44dad29`](https://github.com/mengxi-ream/read-frog/commit/44dad29c3dd52d1b4220f5ecf1c26bd854be5a27) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - fix(selection): keep the text you select right after the translation card closes, instead of clearing it and hiding the toolbar
+
+- [#2374](https://github.com/mengxi-ream/read-frog/pull/2374) [`2966a5f`](https://github.com/mengxi-ream/read-frog/commit/2966a5f89bb9a74c837c8a565ebad1ce0aeffc51) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - fix(selection): stop reading furigana twice when speaking or translating a selection
+
+- [#2376](https://github.com/mengxi-ream/read-frog/pull/2376) [`d3c16e0`](https://github.com/mengxi-ream/read-frog/commit/d3c16e0f970b4f27d035e94509d44babf802e44e) Thanks [@ananaBMaster](https://github.com/ananaBMaster)! - fix(selection): keep the toolbar and floating button visible in SimpRead reader mode
+
+- [#2379](https://github.com/mengxi-ream/read-frog/pull/2379) [`68bba6e`](https://github.com/mengxi-ream/read-frog/commit/68bba6ec35d91e398c80109c216b42b817e92f76) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(subtitles): show a readable error instead of a JSON parser message when YouTube returns empty captions
+
+- [#2379](https://github.com/mengxi-ream/read-frog/pull/2379) [`68bba6e`](https://github.com/mengxi-ream/read-frog/commit/68bba6ec35d91e398c80109c216b42b817e92f76) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(subtitles): stop reporting "no subtitles" on YouTube videos that have captions
+
 ## 1.52.0
 
 ### Minor Changes

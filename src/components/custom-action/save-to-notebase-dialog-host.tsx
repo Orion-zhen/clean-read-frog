@@ -15,11 +15,11 @@ import {
   DialogTitle,
 } from "@/components/ui/base-ui/dialog"
 import { toastManager } from "@/components/ui/base-ui/toast"
-import { SELECTION_CONTENT_OVERLAY_LAYERS } from "@/entrypoints/selection.content/overlay-layers"
 import { env } from "@/env"
 import { classifyFailureReason } from "@/utils/analytics-failure-reason"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
 import { authClient } from "@/utils/auth/auth-client"
+import { SELECTION_CONTENT_OVERLAY_LAYERS } from "@/utils/constants/selection-overlay-layers"
 import { patchSelectionToolbarAction } from "@/utils/custom-actions"
 import { i18n } from "@/utils/i18n"
 import { logger } from "@/utils/logger"
@@ -41,6 +41,7 @@ import {
   buildNotebaseCreateInputFromPending,
   getNotebaseDetailUrl,
   getPendingNotebaseSaveContext,
+  getPendingNoteSaveAnalyticsSurface,
   setPendingNotebaseSave,
 } from "@/utils/notebase/pending-save"
 import { orpc, orpcClient } from "@/utils/orpc/client"
@@ -134,6 +135,7 @@ export function SaveToNotebaseDialogHost() {
 
     const context = getPendingNotebaseSaveContext(pendingCreateSave)
     trackNoteSaveCompleted({
+      surface: getPendingNoteSaveAnalyticsSurface(pendingCreateSave),
       saveSource: context.surface,
       isGuide: context.isGuide,
       noteCount: pendingCreateSave.rows.length,
@@ -229,10 +231,12 @@ export function SaveToNotebaseDialogHost() {
         return
       }
 
+      // The Notebase was just created from the action, so a rejected cell is
+      // the answer's value, not the connection.
       if (isORPCValidationError(error)) {
         toastManager.add({
           type: "error",
-          title: i18n.t("action.saveToNotebaseConnectionInvalid"),
+          title: i18n.t("action.saveToNotebaseInvalidContent"),
         })
         return
       }
@@ -352,9 +356,9 @@ export function SaveToNotebaseDialogHost() {
     >
       <DialogContent
         container={shadowWrapper ?? document.body}
-        className={`${SELECTION_CONTENT_OVERLAY_LAYERS.popoverOverlay} sm:max-w-lg`}
+        className={`${SELECTION_CONTENT_OVERLAY_LAYERS.popoverOverlay} pointer-events-auto sm:max-w-lg`}
         forceRenderOverlay
-        overlayClassName={SELECTION_CONTENT_OVERLAY_LAYERS.popoverOverlay}
+        overlayClassName={`${SELECTION_CONTENT_OVERLAY_LAYERS.popoverOverlay} pointer-events-auto`}
         showCloseButton={false}
       >
         <DialogHeader>

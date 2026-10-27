@@ -69,13 +69,13 @@ import { DEFAULT_TRANSLATION_HUB_SHORTCUT_KEY } from "./translation-hub"
 import { TRANSLATION_NODE_STYLE_ON_INSTALLED } from "./translation-node-style"
 import { DEFAULT_TTS_CONFIG } from "./tts"
 
-export const CONFIG_STORAGE_KEY = "config"
+export { CONFIG_STORAGE_KEY } from "./config-storage-key"
 export const LAST_SYNCED_CONFIG_STORAGE_KEY = "lastSyncedConfig"
 export const GOOGLE_DRIVE_TOKEN_STORAGE_KEY = "__googleDriveToken"
 
 export const THEME_STORAGE_KEY = "theme"
 export const DEFAULT_DETECTED_CODE = "eng" as const
-export const CONFIG_SCHEMA_VERSION = 113
+export const CONFIG_SCHEMA_VERSION = 115
 
 export const DEFAULT_FLOATING_BUTTON_POSITION = 0.66
 export const DEFAULT_FLOATING_BUTTON_SIDE: FloatingButtonSide = "right"
@@ -316,6 +316,7 @@ export const DEFAULT_CONFIG: Config = {
       customCSS: null,
     },
     aiSegmentation: false,
+    wordLookupActionId: BUILT_IN_DICTIONARY_ACTION_ID,
     requestQueueConfig: {
       capacity: DEFAULT_REQUEST_CAPACITY,
       rate: DEFAULT_REQUEST_RATE,

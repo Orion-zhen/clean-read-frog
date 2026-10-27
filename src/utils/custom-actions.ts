@@ -78,6 +78,20 @@ export function findSelectionToolbarAction(
   return selectionToolbar.customActions.find((action) => action.id === actionId)
 }
 
+/**
+ * The action a click on a subtitle word runs: the one picked in settings, or
+ * the built-in Dictionary once that one is turned off or deleted.
+ */
+export function resolveWordLookupAction(config: Config): SelectionToolbarCustomAction {
+  const action = findSelectionToolbarAction(
+    config.selectionToolbar,
+    config.videoSubtitles.wordLookupActionId,
+  )
+  return action && action.enabled !== false
+    ? action
+    : getBuiltInDictionaryAction(config.selectionToolbar)
+}
+
 export function resolveNoteSuggestionAction(
   selectionToolbar: SelectionToolbarConfig,
 ): SelectionToolbarCustomAction {
@@ -105,7 +119,12 @@ function toBuiltInState(
   return {
     enabled: action.enabled !== false,
     providerId: action.providerId,
-    notebaseConnection: action.notebaseConnection,
+    // Written whole: an update merges into the stored connection key by key,
+    // so a list this one leaves out would outlive the Notebase it was for.
+    notebaseConnection: action.notebaseConnection && {
+      skippedFieldIds: undefined,
+      ...action.notebaseConnection,
+    },
     ...(keepsDefaultKey ? {} : { shortcut: action.shortcut }),
   }
 }
