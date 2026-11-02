@@ -115,6 +115,7 @@ options:
     product: 製品
   tools:
     translationHub: 翻訳ハブ
+    pdfTranslation: PDF 翻訳
   product:
     roadmap: ロードマップ
   helpAndCommunity:
@@ -168,13 +169,13 @@ options:
         inputTranslation: 入力翻訳
         languageDetection: 言語検出
     sponsorCta: 高速で高コスパのAIを入手
-    sponsorCtaJalapenoCloud: GLM 5.2 を 50% オフで入手
+    sponsorCtaJalapenoCloud: GLM 5.3 を 50% オフで入手
     setApiKeyWarning:
       message: API キーは $1 ページで設定してください
     badges:
       featureCount: $1 件の機能
       sponsor: スポンサー
-      sponsorJalapenoCloud: $$2 無料
+      sponsorJalapenoCloud: $$1 無料
     dialog:
       title: 新しいプロバイダーを追加
       groups:
@@ -253,7 +254,7 @@ options:
         customChatComplete: カスタム Chat Complete
         customResponses: カスタム Responses
       attribution:
-        builtInAi: Read Frog がホストする標準モデル。Ultra 以外のユーザーはカスタム AI アクションでのみ利用でき、Ultra ユーザーはより多くの機能で利用できます。
+        builtInAi: Read Frog がホストする標準モデル。Pro と Ultra のユーザーは週間クォータの範囲ですべての機能で利用でき、無料プランではカスタム AI アクションでのみ利用できます。
         builtInAiAdvance: Read Frog がホストする高性能モデルで、Ultra メンバー専用です。ページ翻訳やカスタム AI アクションなど、すべての組み込み AI 機能で利用でき、週間クォータを共有します。標準モデルよりクォータの消費が速くなります。
       description:
         openai: GPT-4oなどのモデルを提供
@@ -309,7 +310,7 @@ options:
         noteSuggestion: ノートの提案
       descriptions:
         pageTranslation: ページ全体を対訳または置き換えで翻訳します。
-        selectionTranslation: 選択ツールバーから、選択したテキストを翻訳します。
+        selectionTranslation: "選択したテキストを翻訳します。単語注釈の意味にも使われます。"
         inputTranslation: 入力欄に書いた文章を、送信する前に翻訳します。
         videoSubtitles: 動画プレーヤーに表示される字幕を翻訳します。
         noteSuggestion: 選択テキストを翻訳した後、Notebase に保存する価値のある単語を提案します。
@@ -547,6 +548,9 @@ options:
     selectionSpeak:
       title: "選択範囲の読み上げ"
       description: "選択したテキストを読み上げます。もう一度押すと停止します。"
+    selectionAnnotation:
+      title: "注釈"
+      description: "選択したテキストに下線を引き、行間に意味を表示します。"
     actions:
       title: "AI アクション"
       description: "選択したテキストに AI アクションを実行します。カスタムアクションには最初はショートカットがないので、ここで設定してください。"
@@ -619,6 +623,14 @@ options:
     enable:
       title: 選択ツールバーを有効化
       description: ウェブページでテキストを選択したときにツールバーを表示し、すばやく翻訳・読み上げ・AIアクションを実行します
+    annotation:
+      title: "単語注釈"
+      enable:
+        title: "有効にする"
+        description: "選択した単語やフレーズに下線を引き、行間に意味を書き込みます"
+      provider:
+        title: "プロバイダー"
+        description: "意味を生成します。「翻訳」と同じ設定です"
     actions:
       title: アクション
       translate:
@@ -1558,6 +1570,19 @@ translation:
   sameLanguage: ソース言語とターゲット言語は異なる必要があります
   autoModeSameLanguage: 検出された言語 '$1' はターゲット言語と同じです
   extensionContextInvalidated: 拡張機能が更新されました。このページを再読み込みしてからもう一度お試しください。
+annotation:
+  annotate: "注釈を付ける"
+  enterMode: "注釈モード"
+  exitMode: "注釈モードを終了"
+  modeLabel: "注釈モード"
+  noTextSelected: "テキストが選択されていません"
+  tooLong: "注釈を付けるには単語か短いフレーズを選択してください"
+  multipleParagraphs: "注釈を付けるには同じ段落内のテキストを選択してください"
+  translatedTextUnsupported: "翻訳文には注釈を付けられません"
+  unsupportedPlace: "ここのテキストには注釈を付けられません"
+  markOnly: "マークしました。この行間には意味を表示する余白がありません。"
+  failed: "意味を取得できませんでした"
+  remove: "注釈を削除"
 speak:
   languageDetectionFallback: ローカルの言語検出に切り替えました
   languageDetectionSettingsHint: 設定で利用可能なLLMに変更するか、ローカル検出を選んでください。
@@ -1657,10 +1682,12 @@ subtitles:
   aiSubtitlesHint: 先進的なAI音声認識により正確な字幕を生成。公式字幕がない動画でも利用できます。
   requestAiSubtitles: AI字幕をリクエスト
   usingAiSubtitles: AI字幕を使用中
+  settings: 字幕設定
   toggle:
     enabled: 字幕翻訳をオンにしました
     disabled: 字幕翻訳をオフにしました
   actions:
+    download: 字幕をダウンロード
     downloadTranslated: 翻訳字幕をダウンロード
     downloadTranslatedPreparing: 字幕を準備中。長い動画は時間がかかる場合があります
     downloadTranslatedTranslating: 字幕を翻訳中

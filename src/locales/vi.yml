@@ -115,6 +115,7 @@ options:
     product: Sản phẩm
   tools:
     translationHub: Trung tâm Dịch thuật
+    pdfTranslation: Dịch PDF
   product:
     roadmap: Lộ trình
   helpAndCommunity:
@@ -168,13 +169,13 @@ options:
         inputTranslation: Dịch đầu vào
         languageDetection: Phát hiện ngôn ngữ
     sponsorCta: Nhận AI nhanh, tiết kiệm chi phí
-    sponsorCtaJalapenoCloud: Nhận ưu đãi giảm 50% GLM 5.2
+    sponsorCtaJalapenoCloud: Nhận ưu đãi giảm 50% GLM 5.3
     setApiKeyWarning:
       message: Hãy đặt API Key ở trang $1
     badges:
       featureCount: $1 tính năng
       sponsor: Tài trợ
-      sponsorJalapenoCloud: Miễn phí $$2
+      sponsorJalapenoCloud: Miễn phí $$1
     dialog:
       title: Thêm nhà cung cấp mới
       groups:
@@ -253,7 +254,7 @@ options:
         customChatComplete: Tùy chỉnh Chat Complete
         customResponses: Tùy chỉnh Responses
       attribution:
-        builtInAi: Mô hình tiêu chuẩn do Read Frog lưu trữ. Người dùng không có Ultra chỉ dùng được trong hành động AI tùy chỉnh; người dùng Ultra dùng được ở nhiều tính năng hơn.
+        builtInAi: Mô hình tiêu chuẩn do Read Frog lưu trữ. Người dùng Pro và Ultra dùng được ở mọi tính năng trong hạn mức tuần; ở gói miễn phí chỉ dùng được trong hành động AI tùy chỉnh.
         builtInAiAdvance: Mô hình nâng cao do Read Frog lưu trữ, dành riêng cho thành viên Ultra. Dùng được ở mọi tính năng AI tích hợp — dịch trang, hành động AI tùy chỉnh và hơn nữa — với hạn mức tuần dùng chung. Tiêu hao hạn mức nhanh hơn mô hình tiêu chuẩn.
       description:
         openai: Cung cấp các mô hình như GPT-4o
@@ -309,7 +310,7 @@ options:
         noteSuggestion: Gợi ý ghi chú
       descriptions:
         pageTranslation: Dịch toàn bộ trang ở chế độ song ngữ hoặc thay thế bản gốc.
-        selectionTranslation: Dịch đoạn văn bản bạn chọn từ thanh công cụ bôi đen.
+        selectionTranslation: "Dịch văn bản bạn chọn; nghĩa của chú thích từ cũng lấy từ đây."
         inputTranslation: Dịch nội dung bạn gõ trong ô nhập trước khi gửi.
         videoSubtitles: Dịch phụ đề hiện ra trong trình phát video.
         noteSuggestion: Gợi ý các từ đáng lưu vào Notebase sau khi dịch vùng chọn.
@@ -547,6 +548,9 @@ options:
     selectionSpeak:
       title: "Đọc vùng chọn"
       description: "Đọc to văn bản đã chọn. Nhấn lần nữa để dừng."
+    selectionAnnotation:
+      title: "Chú thích"
+      description: "Gạch chân văn bản đã chọn và ghi nghĩa của nó giữa các dòng."
     actions:
       title: "Hành động AI"
       description: "Chạy một hành động AI trên văn bản đã chọn. Hành động tùy chỉnh chưa có phím tắt cho đến khi bạn đặt ở đây."
@@ -619,6 +623,14 @@ options:
     enable:
       title: Bật thanh công cụ chọn văn bản
       description: Hiển thị thanh công cụ khi chọn văn bản trên trang web để dịch nhanh, đọc to và dùng các hành động AI
+    annotation:
+      title: "Chú thích từ"
+      enable:
+        title: "Bật"
+        description: "Gạch chân từ hoặc cụm từ đã chọn và ghi nghĩa của nó giữa các dòng"
+      provider:
+        title: "Nhà cung cấp"
+        description: "Tạo ra nghĩa; dùng chung cài đặt với Dịch"
     actions:
       title: Hành động
       translate:
@@ -1558,6 +1570,19 @@ translation:
   sameLanguage: Ngôn ngữ nguồn và đích phải khác nhau
   autoModeSameLanguage: Ngôn ngữ phát hiện '$1' giống với ngôn ngữ đích
   extensionContextInvalidated: Tiện ích đã được cập nhật. Hãy tải lại trang này rồi thử lại.
+annotation:
+  annotate: "Chú thích"
+  enterMode: "Chế độ chú thích"
+  exitMode: "Thoát chế độ chú thích"
+  modeLabel: "Chế độ chú thích"
+  noTextSelected: "Chưa chọn văn bản"
+  tooLong: "Hãy chọn một từ hoặc cụm từ ngắn để chú thích"
+  multipleParagraphs: "Hãy chọn văn bản trong cùng một đoạn để chú thích"
+  translatedTextUnsupported: "Không thể chú thích văn bản đã dịch"
+  unsupportedPlace: "Không thể chú thích văn bản ở đây"
+  markOnly: "Đã đánh dấu. Giữa các dòng này không có chỗ cho nghĩa."
+  failed: "Không lấy được nghĩa"
+  remove: "Xóa chú thích"
 speak:
   languageDetectionFallback: Đã chuyển sang phát hiện ngôn ngữ cục bộ
   languageDetectionSettingsHint: Trong Cài đặt, chọn LLM khả dụng hoặc phát hiện cục bộ.
@@ -1657,10 +1682,12 @@ subtitles:
   aiSubtitlesHint: Phụ đề chính xác được tạo bằng công nghệ nhận dạng giọng nói AI tiên tiến, dùng được ngay cả khi không có phụ đề chính thức.
   requestAiSubtitles: Yêu cầu phụ đề AI
   usingAiSubtitles: Đang dùng phụ đề AI
+  settings: Cài đặt phụ đề
   toggle:
     enabled: Đã bật dịch phụ đề
     disabled: Đã tắt dịch phụ đề
   actions:
+    download: Tải phụ đề
     downloadTranslated: Tải phụ đề đã dịch
     downloadTranslatedPreparing: Đang chuẩn bị phụ đề, video dài có thể mất nhiều thời gian hơn
     downloadTranslatedTranslating: Đang dịch phụ đề

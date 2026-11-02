@@ -115,6 +115,7 @@ options:
     product: Məhsul
   tools:
     translationHub: Tərcümə mərkəzi
+    pdfTranslation: PDF tərcüməsi
   product:
     roadmap: İnkişaf planı
   helpAndCommunity:
@@ -168,13 +169,13 @@ options:
         inputTranslation: Daxil edilən mətnin tərcüməsi
         languageDetection: Dilin aşkarlanması
     sponsorCta: Sürətli və sərfəli süni intellekt əldə et
-    sponsorCtaJalapenoCloud: GLM 5.2 üçün 50% endirim əldə et
+    sponsorCtaJalapenoCloud: GLM 5.3 üçün 50% endirim əldə et
     setApiKeyWarning:
       message: API açarını $1 səhifəsində təyin edin
     badges:
       featureCount: $1 funksiya
       sponsor: Dəstəkçi
-      sponsorJalapenoCloud: $$2 hədiyyə
+      sponsorJalapenoCloud: $$1 hədiyyə
     dialog:
       title: Yeni provayder əlavə et
       groups:
@@ -254,7 +255,7 @@ options:
         customChatComplete: Fərdi Chat Complete
         customResponses: Fərdi Responses
       attribution:
-        builtInAi: Read Frog serverlərində işləyən standart model. Ultra abunəliyi olmayan istifadəçilər ondan yalnız fərdi süni intellekt əməliyyatlarında, Ultra üzvləri isə daha çox funksiyada istifadə edə bilər.
+        builtInAi: Read Frog serverlərində işləyən standart model. Pro və Ultra üzvləri ondan həftəlik kvota ilə bütün funksiyalarda istifadə edə bilər; pulsuz planda isə yalnız fərdi süni intellekt əməliyyatlarında işləyir.
         builtInAiAdvance: Yalnız Ultra üzvləri üçün Read Frog serverlərində işləyən təkmil model. Səhifə tərcüməsini, fərdi süni intellekt əməliyyatlarını və bütün digər daxili süni intellekt funksiyalarını ortaq həftəlik kvota ilə icra edir. Kvotanı standart modeldən daha sürətli sərf edir.
       description:
         openai: GPT-4o kimi modellər təqdim edir
@@ -310,7 +311,7 @@ options:
         noteSuggestion: Qeyd təklifləri
       descriptions:
         pageTranslation: Bütün səhifəni ikidilli və ya əvəzetmə rejimində tərcümə edir.
-        selectionTranslation: Seçdiyiniz mətni seçim alətlər paneli vasitəsilə tərcümə edir.
+        selectionTranslation: "Seçdiyiniz mətni tərcümə edir; söz qeydlərinin mənası da buradan gəlir."
         inputTranslation: Mətn sahəsinə yazdığınızı göndərməzdən əvvəl tərcümə edir.
         videoSubtitles: Subtitrləri video pleyerdə göründükcə tərcümə edir.
         noteSuggestion: Seçilmiş mətn tərcümə edildikdən sonra Notebase daxilində saxlamağa dəyər sözlər təklif edir.
@@ -548,6 +549,9 @@ options:
     selectionSpeak:
       title: "Seçilmiş mətnin səsləndirilməsi"
       description: "Seçilmiş mətni ucadan oxuyun. Dayandırmaq üçün yenidən basın."
+    selectionAnnotation:
+      title: "Qeyd əlavə et"
+      description: "Seçilmiş mətnin altını cızır və mənasını sətirlər arasına yazır."
     actions:
       title: "Süni intellekt əməliyyatları"
       description: "Seçilmiş mətn üzərində süni intellekt əməliyyatı işə salın. Fərdi əməliyyatların burada təyin edənə qədər qısayolu olmur."
@@ -620,6 +624,14 @@ options:
     enable:
       title: Seçim alətlər panelini aktiv et
       description: Sürətli tərcümə, səsləndirmə və süni intellekt əməliyyatları üçün veb səhifələrdə mətn seçərkən alətlər panelini göstərin
+    annotation:
+      title: "Söz qeydləri"
+      enable:
+        title: "Aktivləşdir"
+        description: "Seçilmiş sözün və ya ifadənin altını cızır və mənasını sətirlər arasına yazır"
+      provider:
+        title: "Provayder"
+        description: "Mənanı yaradır; Tərcümə ilə eyni ayardır"
     actions:
       title: Əməliyyatlar
       translate:
@@ -1563,6 +1575,19 @@ translation:
   sameLanguage: Mənbə və hədəf dilləri fərqli olmalıdır
   autoModeSameLanguage: Aşkarlanan '$1' dili hədəf dili ilə eynidir
   extensionContextInvalidated: Genişlənmə yeniləndi. Bu səhifəni yeniləyib yenidən cəhd edin.
+annotation:
+  annotate: "Qeyd əlavə et"
+  enterMode: "Qeyd rejimi"
+  exitMode: "Qeyd rejimindən çıx"
+  modeLabel: "Qeyd rejimi"
+  noTextSelected: "Mətn seçilməyib"
+  tooLong: "Qeyd əlavə etmək üçün bir söz və ya qısa ifadə seçin"
+  multipleParagraphs: "Qeyd əlavə etmək üçün eyni abzas daxilində mətn seçin"
+  translatedTextUnsupported: "Tərcümə olunmuş mətnə qeyd əlavə etmək olmaz"
+  unsupportedPlace: "Buradakı mətnə qeyd əlavə etmək olmaz"
+  markOnly: "İşarələndi. Bu sətirlər arasında mənası üçün yer yoxdur."
+  failed: "Mənanı almaq mümkün olmadı"
+  remove: "Qeydi sil"
 speak:
   languageDetectionFallback: Yerli dil aşkarlanmasına keçildi
   languageDetectionSettingsHint: Ayarlarda işlək LLM seçin və ya yerli aşkarlamaya keçin.
@@ -1655,10 +1680,12 @@ subtitles:
   aiSubtitlesHint: Təkmil süni intellektlə nitqin tanınması dəqiq subtitrlər yaradır. Rəsmi subtitrlər olmadıqda da əlçatandır.
   requestAiSubtitles: Süni intellekt subtitrləri istə
   usingAiSubtitles: Süni intellekt subtitrlərindən istifadə olunur
+  settings: Subtitr ayarları
   toggle:
     enabled: Subtitr tərcüməsi aktivdir
     disabled: Subtitr tərcüməsi deaktivdir
   actions:
+    download: Subtitrləri endir
     downloadTranslated: Tərcümə edilmiş subtitrləri endir
     downloadTranslatedPreparing: Subtitrlər hazırlanır, uzun videolar bir qədər vaxt apara bilər
     downloadTranslatedTranslating: Subtitrlər tərcümə edilir

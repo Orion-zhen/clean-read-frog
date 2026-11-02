@@ -115,6 +115,7 @@ options:
     product: 產品
   tools:
     translationHub: 翻譯中心
+    pdfTranslation: PDF 翻譯
   product:
     roadmap: 產品路線圖
   helpAndCommunity:
@@ -168,13 +169,13 @@ options:
         inputTranslation: 輸入翻譯
         languageDetection: 語言偵測
     sponsorCta: 取得高速高性價比 AI
-    sponsorCtaJalapenoCloud: 取得 GLM 5.2 五折優惠
+    sponsorCtaJalapenoCloud: 取得 GLM 5.3 五折優惠
     setApiKeyWarning:
       message: 請在 $1 頁面設定 API 金鑰
     badges:
       featureCount: $1 個功能
       sponsor: 贊助
-      sponsorJalapenoCloud: $$2 免費額度
+      sponsorJalapenoCloud: $$1 免費額度
     dialog:
       title: 新增提供者
       groups:
@@ -254,7 +255,7 @@ options:
         customChatComplete: 自訂 Chat Complete
         customResponses: 自訂 Responses
       attribution:
-        builtInAi: 由 Read Frog 託管的普通模型。非 Ultra 使用者僅支援在自訂 AI 指令使用，Ultra 使用者支援在更多功能上使用。
+        builtInAi: 由 Read Frog 託管的普通模型。Pro 和 Ultra 使用者可在全部功能上使用，消耗每週額度；免費使用者僅支援在自訂 AI 指令使用。
         builtInAiAdvance: 由 Read Frog 託管的進階模型，Ultra 會員專屬。網頁翻譯、自訂 AI 指令等全部內建 AI 功能均可使用，共享每週額度，額度消耗比標準模型更快。
       description:
         openai: 提供 GPT-4o 等模型
@@ -310,7 +311,7 @@ options:
         noteSuggestion: 猜你想存
       descriptions:
         pageTranslation: 翻譯整個網頁，雙語對照或直接取代原文。
-        selectionTranslation: 透過劃詞工具列翻譯你選取的文字。
+        selectionTranslation: "翻譯你選取的文字；劃詞標註的釋義也由它產生。"
         inputTranslation: 在送出前翻譯你寫在輸入框裡的內容。
         videoSubtitles: 翻譯影片播放器中隨播放出現的字幕。
         noteSuggestion: 選取文字翻譯後，推薦值得存入筆記庫的詞條。
@@ -580,6 +581,9 @@ options:
     selectionSpeak:
       title: "選取文字朗讀"
       description: "朗讀選取的文字，再按一次停止。"
+    selectionAnnotation:
+      title: "劃詞標註"
+      description: "為選取的文字加上底線，並在行間顯示釋義。"
     actions:
       title: "AI 指令"
       description: "對選取的文字執行 AI 指令。自訂指令預設沒有快速鍵，在這裡設定即可。"
@@ -652,6 +656,14 @@ options:
     enable:
       title: 啟用選取工具列
       description: 在網頁上選取文字時顯示工具列，快速翻譯、朗讀和使用 AI 指令
+    annotation:
+      title: "劃詞標註"
+      enable:
+        title: "啟用"
+        description: "為選取的詞或短語加上底線，並在行間寫出釋義"
+      provider:
+        title: "提供者"
+        description: "產生釋義；與「翻譯」共用同一個設定"
     actions:
       title: 操作
       translate:
@@ -1467,14 +1479,14 @@ options:
       description: 顯示模式、位置、字型、顏色和背景，都對著預覽調
       customizeStyle: 自訂樣式
       displayMode:
-        title: 顯示模式
-        bilingual: 雙語模式
+        title: 字幕顯示類型
+        bilingual: 雙語字幕
         originalOnly: 僅原文
         translationOnly: 僅譯文
       translationPosition:
         title: 譯文位置
-        above: 上方
-        below: 下方
+        above: 原文上方
+        below: 原文下方
       generalSettings: 通用設定
       mainSubtitle: 主字幕
       translationSubtitle: 翻譯字幕
@@ -1600,6 +1612,19 @@ translation:
   sameLanguage: 來源語言和目標語言必須不同
   autoModeSameLanguage: 偵測到的語言「$1」與目標語言相同
   extensionContextInvalidated: 擴充功能已更新，請重新整理此頁面後再試一次。
+annotation:
+  annotate: "劃詞標註"
+  enterMode: "進入劃詞模式"
+  exitMode: "退出劃詞模式"
+  modeLabel: "劃詞模式"
+  noTextSelected: "沒有選取文字"
+  tooLong: "請選擇一個詞或短語來標註"
+  multipleParagraphs: "請在同一段落內選取文字來標註"
+  translatedTextUnsupported: "譯文無法標註"
+  unsupportedPlace: "這裡的文字無法標註"
+  markOnly: "已標記。這幾行之間放不下釋義。"
+  failed: "無法取得釋義"
+  remove: "移除標註"
 speak:
   languageDetectionFallback: 已改用本機語言偵測
   languageDetectionSettingsHint: 可在設定中更換可用的大型語言模型，或選擇本機偵測。
@@ -1699,10 +1724,12 @@ subtitles:
   aiSubtitlesHint: 透過先進 AI 辨識語音生成準確字幕，無官方字幕時依然可用。
   requestAiSubtitles: 請求 AI 字幕
   usingAiSubtitles: 正在使用 AI 字幕
+  settings: 字幕設定
   toggle:
     enabled: 字幕翻譯已開啟
     disabled: 字幕翻譯已關閉
   actions:
+    download: 下載字幕
     downloadTranslated: 下載翻譯字幕
     downloadTranslatedPreparing: 正在準備字幕，長影片可能需要更久
     downloadTranslatedTranslating: 正在翻譯字幕
