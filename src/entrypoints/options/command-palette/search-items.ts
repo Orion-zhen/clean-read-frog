@@ -434,6 +434,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     requiredCapabilities: ["noteSuggestion"],
   },
   {
+    sectionId: "selection-toolbar-annotation",
+    route: "/selection-toolbar",
+    titleKey: "options.selectionToolbar.annotation.title",
+    descriptionKey: "options.selectionToolbar.annotation.enable.description",
+    pageKey: "options.selectionToolbar.title",
+  },
+  {
     sectionId: "selection-toolbar-opacity",
     route: "/selection-toolbar",
     titleKey: "options.selectionToolbar.display.opacity.title",
