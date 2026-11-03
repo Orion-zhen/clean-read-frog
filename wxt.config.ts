@@ -8,6 +8,7 @@ import {
   assertPureBuildOutput,
   createPureServiceBoundaryPlugin,
   createPureUnusedAssetPruner,
+  PURE_EXCLUDED_ENTRYPOINTS,
 } from "./scripts/pure-build-output"
 import {
   createExtensionClientEnvSchema,
@@ -130,7 +131,7 @@ export default defineConfig({
       if (!isPureBuild) return
 
       for (const entrypoint of entrypoints) {
-        if (entrypoint.name === "guide" || entrypoint.name === "partner-bridge") {
+        if (PURE_EXCLUDED_ENTRYPOINTS.has(entrypoint.name)) {
           entrypoint.skipped = true
         }
       }

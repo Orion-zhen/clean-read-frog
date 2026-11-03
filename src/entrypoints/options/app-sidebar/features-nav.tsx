@@ -104,20 +104,22 @@ export function FeaturesNav() {
                       <span>{i18n.t("options.inputTranslation.title")}</span>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      render={
-                        <a
-                          href={`${env.WXT_WEBSITE_URL}/pdf-translation`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        />
-                      }
-                    >
-                      <span className="truncate">{i18n.t("options.tools.pdfTranslation")}</span>
-                      <NewBadge size="sm" className="ml-auto" />
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
+                  {!__PURE_BUILD__ && (
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        render={
+                          <a
+                            href={`${env.WXT_WEBSITE_URL}/pdf-translation`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          />
+                        }
+                      >
+                        <span className="truncate">{i18n.t("options.tools.pdfTranslation")}</span>
+                        <NewBadge size="sm" className="ml-auto" />
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  )}
                 </SidebarMenuSub>
               </CollapsibleContent>
             </SidebarMenuItem>

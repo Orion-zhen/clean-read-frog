@@ -1,9 +1,10 @@
+import type { BuildOutput } from "wxt"
 import assert from "node:assert/strict"
 import path from "node:path"
 import { runInNewContext } from "node:vm"
 import { build } from "vite"
 import { describe, expect, it } from "vitest"
-import { createPureServiceBoundaryPlugin } from "../pure-build-output"
+import { assertPureBuildOutput, createPureServiceBoundaryPlugin } from "../pure-build-output"
 
 const root = path.resolve(import.meta.dirname, "../..")
 const customActionPanel = "/src/components/custom-action/custom-action-panel.tsx"
@@ -85,6 +86,26 @@ describe("Pure account UI build boundaries", () => {
     ).toEqual([root + importer, root + gateway].sort())
   })
 
+  it("removes the Notebase quota promotion without loading pricing or messaging code", async () => {
+    const importer = "/src/components/custom-action/use-save-to-notebase.ts"
+    const gateway = "/src/components/custom-action/notebase-limit-toast.ts"
+    const chunk = await buildGateway(importer, gateway, "showNotebaseLimitExceededToast")
+    const context = { PureGateway: {} as Record<string, () => unknown> }
+    runInNewContext(chunk.code, context)
+    expect(context.PureGateway.showNotebaseLimitExceededToast!()).toBeUndefined()
+    expect(Object.keys(chunk.modules).sort()).toEqual([root + importer, root + gateway].sort())
+  })
+
+  it("rejects an unreviewed quota promotion caller", async () => {
+    await expect(
+      buildGateway(
+        "/src/entrypoints/popup/app.tsx",
+        "/src/components/custom-action/notebase-limit-toast.ts",
+        "showNotebaseLimitExceededToast",
+      ),
+    ).rejects.toThrow("new account/cloud gateway importers")
+  })
+
   it("rejects an unreviewed caller instead of expanding the account gateway allowlist", async () => {
     await expect(
       buildGateway(
@@ -93,5 +114,40 @@ describe("Pure account UI build boundaries", () => {
         "SaveToNotebaseDialogHost",
       ),
     ).rejects.toThrow("new account/cloud gateway importers")
+  })
+})
+
+function buildOutput(scripts: string[], permissions: string[] = []): BuildOutput {
+  return {
+    manifest: {
+      manifest_version: 3,
+      name: "Pure test",
+      version: "1.0.0",
+      permissions,
+      content_scripts: [{ matches: ["<all_urls>"], js: scripts }],
+    },
+  } as BuildOutput
+}
+
+describe("Pure manifest audit", () => {
+  it.each(["guide", "partner-bridge", "ebook-section"])(
+    "rejects the official-only %s content script",
+    (name) => {
+      expect(() => assertPureBuildOutput(buildOutput([`content-scripts/${name}.js`]))).toThrow(
+        "official-only content script",
+      )
+    },
+  )
+
+  it("keeps ordinary page and subtitle translation scripts", () => {
+    expect(() =>
+      assertPureBuildOutput(
+        buildOutput(["content-scripts/loader.js", "content-scripts/subtitles.js"]),
+      ),
+    ).not.toThrow()
+  })
+
+  it("rejects the account cookie permission", () => {
+    expect(() => assertPureBuildOutput(buildOutput([], ["cookies"]))).toThrow("cookies permission")
   })
 })

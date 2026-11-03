@@ -3,6 +3,8 @@ import type { BuildOutput } from "wxt"
 import { access, readFile, readdir } from "node:fs/promises"
 import path from "node:path"
 
+export const PURE_EXCLUDED_ENTRYPOINTS = new Set(["guide", "partner-bridge", "ebook-section"])
+
 const FORBIDDEN_SOURCE_MODULE_PATTERNS = [
   "/node_modules/posthog-js/",
   "/src/entrypoints/background/analytics.ts",
@@ -33,6 +35,9 @@ const PURE_GATEWAY_REPLACEMENTS = {
   `,
   "/src/components/custom-action/save-to-notebase-dialog-host.tsx": `
     export const SaveToNotebaseDialogHost = () => null;
+  `,
+  "/src/components/custom-action/notebase-limit-toast.ts": `
+    export const showNotebaseLimitExceededToast = () => {};
   `,
   "/src/components/badges/plan-badge.tsx": `
     export const PlanBadge = () => null;
@@ -132,6 +137,10 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
   "/src/components/custom-action/save-to-notebase-dialog-host.tsx": [
     "/src/entrypoints/content-runtime/selection/selection-toolbar/custom-action-button/provider.tsx",
     "/src/entrypoints/subtitles.content/learning/word-lookup-card.tsx",
+  ],
+  "/src/components/custom-action/notebase-limit-toast.ts": [
+    "/src/components/custom-action/use-save-to-notebase.ts",
+    "/src/components/custom-action/save-to-notebase-dialog-host.tsx",
   ],
   "/src/components/badges/plan-badge.tsx": [
     "/src/components/badges/upgrade-plan-badge.tsx",
@@ -368,7 +377,11 @@ export function assertPureBuildOutput(output: BuildOutput): void {
   const contentScriptFiles = (output.manifest.content_scripts ?? []).flatMap(
     (contentScript) => contentScript.js ?? [],
   )
-  if (contentScriptFiles.some((file) => /(?:guide|partner-bridge)/i.test(file))) {
+  if (
+    contentScriptFiles.some((file) =>
+      PURE_EXCLUDED_ENTRYPOINTS.has(path.posix.basename(file, ".js")),
+    )
+  ) {
     throw new Error("Pure build unexpectedly contains an official-only content script")
   }
 }
