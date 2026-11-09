@@ -159,6 +159,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     pageKey: "options.shortcuts.title",
   },
   {
+    sectionId: "selection-annotation-mode-shortcut",
+    route: "/shortcuts",
+    titleKey: "options.shortcuts.selectionAnnotationMode.title",
+    descriptionKey: "options.shortcuts.selectionAnnotationMode.description",
+    pageKey: "options.shortcuts.title",
+  },
+  {
     sectionId: "subtitles-toggle-shortcut",
     route: "/shortcuts",
     titleKey: "options.shortcuts.subtitlesToggle.title",

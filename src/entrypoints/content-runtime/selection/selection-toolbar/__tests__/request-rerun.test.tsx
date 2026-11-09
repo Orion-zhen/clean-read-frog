@@ -10,10 +10,12 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { createStore, Provider } from "jotai"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { fakeBrowser } from "wxt/testing/fake-browser"
+import { customActionRequestAtom } from "@/components/custom-action/atoms"
 import { TooltipProvider } from "@/components/ui/base-ui/tooltip"
 import { isLLMProviderConfig } from "@/types/config/provider"
 import { configAtom } from "@/utils/atoms/config"
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from "@/utils/constants/config"
+import { GOOGLE_TRANSLATE_PROVIDER_ID } from "@/utils/constants/providers"
 import { getBuiltInDictionaryAction } from "@/utils/custom-actions"
 import { prepareTranslationText } from "@/utils/host/translate/text-preparation"
 import { buildContextSnapshot, createRangeSnapshot, normalizeSelectedText } from "../../utils"
@@ -1083,6 +1085,38 @@ describe("selection toolbar requests", () => {
     expect(screen.getByTestId("translation-result").textContent).toBe("Selected text")
   })
 
+  // #2466: Google collapsed the newlines of a multi-paragraph selection, and
+  // its zh-TW model then cut the run-on text short after the second paragraph.
+  it("asks translate providers to keep a multi-paragraph selection's line breaks", async () => {
+    translateTextCoreMock.mockResolvedValue("第一段。\n\n第二段。")
+    getOrCreateWebPageContextMock.mockResolvedValue(null)
+
+    const config = cloneConfig(DEFAULT_CONFIG)
+    setSelectionToolbarTranslateProvider(config, GOOGLE_TRANSLATE_PROVIDER_ID)
+    const store = createStore()
+    store.set(configAtom, config)
+    setSelectionState(store, { text: "First paragraph.\n\nSecond paragraph." })
+    renderWithProviders(<TranslateButton />, store)
+
+    fireEvent.click(screen.getByRole("button", { name: "action.translation" }))
+
+    await waitFor(() => {
+      expect(translateTextCoreMock).toHaveBeenCalledTimes(1)
+    })
+    expect(translateTextCoreMock.mock.calls[0]?.[0]).toMatchObject({
+      text: "First paragraph.\n\nSecond paragraph.",
+      providerConfig: {
+        kind: "local",
+        config: expect.objectContaining({ provider: "google-translate" }),
+      },
+      preserveLineBreaks: true,
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId("translation-status").textContent).toBe("false")
+    })
+  })
+
   // A note keeps the selection as a custom action run keeps it. Translation
   // prepares its own copy, which drops invisible joiners such as the one that
   // holds an emoji sequence together.
@@ -1896,6 +1930,48 @@ describe("selection toolbar requests", () => {
         action_name: action.name,
       }),
     )
+  })
+
+  it("carries the note origin recorded with the selection into the custom action request", async () => {
+    streamBackgroundStructuredObjectMock.mockResolvedValue(
+      createStructuredObjectSnapshot({ summary: "Context menu result" }),
+    )
+    const paragraph = document.createElement("p")
+    paragraph.textContent = "Selected text inside a paragraph."
+    document.body.appendChild(paragraph)
+    const store = createStore()
+    store.set(configAtom, cloneConfig(DEFAULT_CONFIG))
+    const selection = {
+      text: "Selected text",
+      ranges: [createRangeSnapshot(createRangeFor(paragraph))],
+    }
+    const noteOrigin = {
+      kind: "ebook",
+      ebookId: "55555555-5555-4555-8555-555555555555",
+      cfi: "epubcfi(/6/2)",
+    } as const
+    store.set(setSelectionStateAtom, {
+      selection,
+      context: buildContextSnapshot(selection),
+      noteOrigin,
+    })
+    renderWithProviders(<SelectionToolbarPinnedItems />, store)
+
+    act(() => {
+      paragraph.dispatchEvent(
+        new MouseEvent("contextmenu", { bubbles: true, button: 2, clientX: 140, clientY: 180 }),
+      )
+    })
+    await act(async () => {
+      getRegisteredMessageHandler("openSelectionCustomActionFromContextMenu")({
+        data: { actionId: DEFAULT_DICTIONARY_ACTION.id, selectionText: "Selected text" },
+      })
+      await Promise.resolve()
+    })
+
+    await waitFor(() => {
+      expect(store.get(customActionRequestAtom)?.noteOrigin).toEqual(noteOrigin)
+    })
   })
 
   it("opens a custom action from its shortcut and tracks the shortcut surface", async () => {

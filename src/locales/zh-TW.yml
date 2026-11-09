@@ -168,6 +168,7 @@ options:
         videoSubtitles: 影片字幕
         inputTranslation: 輸入翻譯
         languageDetection: 語言偵測
+        pdfTranslation: PDF 翻譯
     sponsorCta: 取得高速高性價比 AI
     sponsorCtaJalapenoCloud: 取得 GLM 5.3 五折優惠
     setApiKeyWarning:
@@ -584,6 +585,9 @@ options:
     selectionAnnotation:
       title: "劃詞標註"
       description: "為選取的文字加上底線，並在行間顯示釋義。"
+    selectionAnnotationMode:
+      title: "標註模式"
+      description: "無需開啟工具列即可開啟或關閉標註模式。開啟後，選取的文字都會自動標註。"
     actions:
       title: "AI 指令"
       description: "對選取的文字執行 AI 指令。自訂指令預設沒有快速鍵，在這裡設定即可。"
@@ -832,6 +836,8 @@ options:
             unquotedAttributeOutput: 請為這個屬性值加上引號，否則值可能突破屬性範圍。
             filterIgnored: 「$1」標籤中的篩選器會被忽略，請先將篩選後的值指派給變數。
             newlineToBrNotLast: newline_to_br 只有作為輸出的最後一個篩選器才有效。
+            mathFilterNotLast: $1 只有作為輸出的最後一個篩選器才有效。
+            mathFilterInAttribute: 不要在屬性值裡使用 $1，它畫出的公式含有引號，會提前結束屬性。
             tooLong: 版面超過 $1 個字元，無法儲存。
             fieldNotShown: 「$1」未在此版面中顯示。
             reservedFieldName: 欄位名稱「$1」是版面保留名稱，請重新命名該欄位。
@@ -1450,7 +1456,7 @@ options:
       title: 基礎設定
       enable:
         title: 開啟影片字幕
-        description: 在 YouTube、X 和 Netflix 的影片播放器控制列加上翻譯按鈕。
+        description: 在 YouTube、X、Netflix、嗶哩嗶哩、Udemy 和 edX 的影片播放器控制列加上翻譯按鈕。
       autoStart:
         title: 打開影片就翻譯
         description: 影片載入完成後自動開始翻譯字幕，不用再點按鈕。
@@ -1617,9 +1623,9 @@ translation:
   extensionContextInvalidated: 擴充功能已更新，請重新整理此頁面後再試一次。
 annotation:
   annotate: "劃詞標註"
-  enterMode: "進入劃詞模式"
-  exitMode: "退出劃詞模式"
-  modeLabel: "劃詞模式"
+  enterMode: "進入標註模式"
+  exitMode: "退出標註模式"
+  modeLabel: "標註模式"
   noTextSelected: "沒有選取文字"
   tooLong: "請選擇一個詞或短語來標註"
   multipleParagraphs: "請在同一段落內選取文字來標註"
