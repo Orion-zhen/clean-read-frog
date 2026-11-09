@@ -168,6 +168,7 @@ options:
         videoSubtitles: 動画字幕
         inputTranslation: 入力翻訳
         languageDetection: 言語検出
+        pdfTranslation: PDF 翻訳
     sponsorCta: 高速で高コスパのAIを入手
     sponsorCtaJalapenoCloud: GLM 5.3 を 50% オフで入手
     setApiKeyWarning:
@@ -551,6 +552,9 @@ options:
     selectionAnnotation:
       title: "注釈"
       description: "選択したテキストに下線を引き、行間に意味を表示します。"
+    selectionAnnotationMode:
+      title: "注釈モード"
+      description: "ツールバーを開かずに注釈モードをオン・オフします。オンの間は、選択したテキストに自動で注釈が付きます。"
     actions:
       title: "AI アクション"
       description: "選択したテキストに AI アクションを実行します。カスタムアクションには最初はショートカットがないので、ここで設定してください。"
@@ -794,6 +798,8 @@ options:
             unquotedAttributeOutput: この属性値を引用符で囲んでください。囲まないと値が属性の外にはみ出すおそれがあります。
             filterIgnored: 「$1」タグではフィルターは無視されます。先にフィルター後の値を代入してください。
             newlineToBrNotLast: newline_to_br は出力の最後のフィルターとしてのみ機能します。
+            mathFilterNotLast: $1 は出力の最後のフィルターとしてのみ機能します。
+            mathFilterInAttribute: 属性値の中では $1 を使わないでください。描画した数式に含まれる引用符で属性が終わってしまいます。
             tooLong: このレイアウトは $1 文字を超えているため保存できません。
             fieldNotShown: 「$1」はこのレイアウトに表示されません。
             reservedFieldName: フィールド名「$1」はレイアウトの予約名です。フィールドの名前を変更してください。
@@ -1408,7 +1414,7 @@ options:
       title: 基本設定
       enable:
         title: 動画字幕を有効にする
-        description: YouTube、X、Netflix の動画プレーヤーのコントロールバーに翻訳ボタンを表示します。
+        description: YouTube、X、Netflix、Bilibili、Udemy、edX の動画プレーヤーのコントロールバーに翻訳ボタンを表示します。
       autoStart:
         title: 動画を開いたら翻訳する
         description: 動画の読み込みが終わり次第、ボタンを押さなくても字幕の翻訳を始めます。

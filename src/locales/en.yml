@@ -168,6 +168,7 @@ options:
         videoSubtitles: Video subtitles
         inputTranslation: Input translation
         languageDetection: Language detection
+        pdfTranslation: PDF translation
     sponsorCta: Get fast, cost-effective AI
     sponsorCtaJalapenoCloud: Get 50% Off GLM 5.3
     setApiKeyWarning:
@@ -584,6 +585,9 @@ options:
     selectionAnnotation:
       title: "Annotate"
       description: "Underline the text you selected and write its meaning between the lines."
+    selectionAnnotationMode:
+      title: "Annotation mode"
+      description: "Turn annotation mode on or off without opening the toolbar. While it's on, any text you select is annotated."
     actions:
       title: "AI actions"
       description: "Run an AI action on the text you selected. Custom actions have no key until you set one here."
@@ -832,6 +836,8 @@ options:
             unquotedAttributeOutput: Quote this attribute value, or the value can break out of it.
             filterIgnored: Filters are ignored in a “$1” tag. Assign the filtered value first.
             newlineToBrNotLast: newline_to_br only works as the last filter of an output.
+            mathFilterNotLast: $1 only works as the last filter of an output.
+            mathFilterInAttribute: Leave $1 out of an attribute value. The formulas it draws contain quotes, which end the attribute.
             tooLong: This layout is longer than $1 characters and can't be saved.
             fieldNotShown: “$1” isn't shown in this layout.
             reservedFieldName: The field name “$1” is reserved in layouts. Rename the field.
@@ -1587,7 +1593,7 @@ options:
       title: Basics
       enable:
         title: Enable video subtitles
-        description: Puts a translate button in the video player's controls on YouTube, X and Netflix.
+        description: Puts a translate button in the video player's controls on YouTube, X, Netflix, Bilibili, Udemy and edX.
       autoStart:
         title: Translate on open
         description: Start translating as soon as a video loads, without pressing the button.

@@ -168,6 +168,7 @@ options:
         videoSubtitles: Video altyazıları
         inputTranslation: Giriş çevirisi
         languageDetection: Dil algılama
+        pdfTranslation: PDF çevirisi
     sponsorCta: Hızlı ve uygun maliyetli yapay zekâ al
     sponsorCtaJalapenoCloud: GLM 5.3ʼte %50 indirim al
     setApiKeyWarning:
@@ -551,6 +552,9 @@ options:
     selectionAnnotation:
       title: "Not ekle"
       description: "Seçili metnin altını çizer ve anlamını satırların arasına yazar."
+    selectionAnnotationMode:
+      title: "Not modu"
+      description: "Araç çubuğunu açmadan not modunu açar veya kapatır. Açıkken seçtiğiniz her metne not eklenir."
     actions:
       title: "AI eylemleri"
       description: "Seçili metin üzerinde bir AI eylemi çalıştırır. Özel eylemlerin, burada atayana kadar kısayolu yoktur."
@@ -794,6 +798,8 @@ options:
             unquotedAttributeOutput: Bu öznitelik değerini tırnak içine alın, yoksa değer öznitelikten taşabilir.
             filterIgnored: '"$1" etiketinde filtreler yok sayılır. Önce filtrelenmiş değeri atayın.'
             newlineToBrNotLast: newline_to_br yalnızca bir çıktının son filtresi olarak çalışır.
+            mathFilterNotLast: $1 yalnızca bir çıktının son filtresi olarak çalışır.
+            mathFilterInAttribute: $1 filtresini bir öznitelik değerinin içinde kullanmayın. Çizdiği formüllerdeki tırnaklar özniteliği kapatır.
             tooLong: Bu düzen $1 karakterden uzun ve kaydedilemez.
             fieldNotShown: '"$1" bu düzende gösterilmiyor.'
             reservedFieldName: '"$1" alan adı düzenlerde ayrılmıştır. Alanı yeniden adlandırın.'
@@ -1408,7 +1414,7 @@ options:
       title: Temel ayarlar
       enable:
         title: Video altyazılarını aç
-        description: YouTube, X ve Netflix'te oynatıcı kontrollerine bir çeviri düğmesi ekler.
+        description: YouTube, X, Netflix, Bilibili, Udemy ve edX'te oynatıcı kontrollerine bir çeviri düğmesi ekler.
       autoStart:
         title: Video açılınca çevir
         description: Video yüklenir yüklenmez, düğmeye basmadan altyazıları çevirmeye başlar.

@@ -168,6 +168,7 @@ options:
         videoSubtitles: Video subtitrləri
         inputTranslation: Daxil edilən mətnin tərcüməsi
         languageDetection: Dilin aşkarlanması
+        pdfTranslation: PDF tərcüməsi
     sponsorCta: Sürətli və sərfəli süni intellekt əldə et
     sponsorCtaJalapenoCloud: GLM 5.3 üçün 50% endirim əldə et
     setApiKeyWarning:
@@ -552,6 +553,9 @@ options:
     selectionAnnotation:
       title: "Qeyd əlavə et"
       description: "Seçilmiş mətnin altını cızır və mənasını sətirlər arasına yazır."
+    selectionAnnotationMode:
+      title: "Qeyd rejimi"
+      description: "Alətlər panelini açmadan qeyd rejimini açır və ya bağlayır. Açıq olduqda seçdiyiniz hər mətnə qeyd əlavə olunur."
     actions:
       title: "Süni intellekt əməliyyatları"
       description: "Seçilmiş mətn üzərində süni intellekt əməliyyatı işə salın. Fərdi əməliyyatların burada təyin edənə qədər qısayolu olmur."
@@ -795,6 +799,8 @@ options:
             unquotedAttributeOutput: Bu atribut dəyərini dırnaq içinə alın, əks halda dəyər atributdan kənara çıxa bilər.
             filterIgnored: '"$1" teqində filtrlər nəzərə alınmır. Əvvəlcə filtrlənmiş dəyəri mənimsədin.'
             newlineToBrNotLast: newline_to_br yalnız çıxışın son filtri olduqda işləyir.
+            mathFilterNotLast: $1 yalnız çıxışın son filtri olduqda işləyir.
+            mathFilterInAttribute: $1 filtrini atribut dəyərinin içində istifadə etməyin. Onun çəkdiyi düsturlardakı dırnaqlar atributu bağlayır.
             tooLong: Bu tərtibat $1 simvoldan uzundur və yadda saxlanıla bilməz.
             fieldNotShown: '"$1" bu tərtibatda göstərilmir.'
             reservedFieldName: '"$1" sahə adı tərtibatlarda ehtiyatda saxlanılır. Sahənin adını dəyişin.'
@@ -1413,7 +1419,7 @@ options:
       title: Əsas parametrlər
       enable:
         title: Video subtitrlərini aktiv et
-        description: YouTube, X və Netflix-də video pleyerin idarəetmə panelinə tərcümə düyməsi əlavə edir.
+        description: YouTube, X, Netflix, Bilibili, Udemy və edX-də video pleyerin idarəetmə panelinə tərcümə düyməsi əlavə edir.
       autoStart:
         title: Açılan kimi tərcümə et
         description: Düyməyə basmadan video yüklənən kimi tərcüməyə başlayın.
