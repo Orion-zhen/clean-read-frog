@@ -52,6 +52,7 @@ vi.mock("@/utils/atoms/config", () => {
 vi.mock("../../../atoms", () => ({
   enablePageTranslationAtom: atom({ enabled: false }),
   isDraggingButtonAtom: atom(false),
+  isFloatingButtonHiddenUntilReloadAtom: atom(false),
   isSideOpenAtom: atom(false),
 }))
 
@@ -148,7 +149,6 @@ function mockRect(element: Element, rect: Partial<DOMRect>) {
 const TOOLTIP_CONTROL_LABELS = [
   "options.floatingButton.tooltips.togglePageTranslation",
   "options.floatingButton.tooltips.settings",
-  "options.floatingButton.tooltips.feedback",
 ] as const
 
 async function expectTooltipSide(label: string, side: "left" | "right") {
@@ -262,7 +262,74 @@ describe("floatingButton controls", () => {
     expect(closeTrigger).toHaveClass("visible")
     expect(closeTrigger).toHaveClass("pointer-events-auto")
     expect(document.querySelector('[data-slot="tooltip-content"][data-open]')).toBeNull()
-    expect(screen.getByText("options.floatingButton.closeMenu.disableForSite")).toBeInTheDocument()
+    expect(screen.getByText("options.floatingButton.closeMenu.title")).toBeInTheDocument()
+  })
+
+  describe("close menu", () => {
+    function chooseHideOption(name: string) {
+      fireEvent.mouseEnter(getMainButton())
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "options.floatingButton.tooltips.floatingButtonOptions",
+        }),
+      )
+      fireEvent.click(screen.getByRole("menuitem", { name }))
+    }
+
+    it("names what it hides, offers three scopes, and says where to turn it back on", () => {
+      renderFloatingButton()
+      fireEvent.mouseEnter(getMainButton())
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "options.floatingButton.tooltips.floatingButtonOptions",
+        }),
+      )
+
+      expect(screen.getByText("options.floatingButton.closeMenu.title")).toBeInTheDocument()
+      expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+        "hideMenu.untilReload",
+        "hideMenu.onSite",
+        "hideMenu.onAllSites",
+      ])
+      expect(screen.getByRole("menuitem", { name: "hideMenu.onSite" })).toHaveAttribute(
+        "title",
+        window.location.hostname,
+      )
+      expect(screen.getByText(/^hideMenu\.restoreHint/)).toHaveTextContent(
+        "popup.options → options.floatingButton.title",
+      )
+    })
+
+    it("hides the button until reload without changing a setting", () => {
+      const { store } = renderFloatingButton()
+      const before = getFloatingButtonConfig(store)
+
+      chooseHideOption("hideMenu.untilReload")
+
+      expect(screen.queryByTestId("floating-button-container")).toBeNull()
+      expect(getFloatingButtonConfig(store)).toEqual(before)
+    })
+
+    it("hides the button on this site with the same pattern the popup stores", () => {
+      const { store } = renderFloatingButton({ disabledFloatingButtonPatterns: ["github.com"] })
+
+      chooseHideOption("hideMenu.onSite")
+
+      expect(getFloatingButtonConfig(store).disabledFloatingButtonPatterns).toEqual([
+        "github.com",
+        `*.${window.location.hostname}`,
+      ])
+      expect(screen.queryByTestId("floating-button-container")).toBeNull()
+    })
+
+    it("turns the button off on all sites", () => {
+      const { store } = renderFloatingButton()
+
+      chooseHideOption("hideMenu.onAllSites")
+
+      expect(getFloatingButtonConfig(store).enabled).toBe(false)
+      expect(screen.queryByTestId("floating-button-container")).toBeNull()
+    })
   })
 
   it("does not show a tooltip for the lock control", () => {
@@ -285,7 +352,7 @@ describe("floatingButton controls", () => {
     async ({ floatingSide, tooltipSide }) => {
       renderFloatingButton({ side: floatingSide })
       fireEvent.mouseEnter(getMainButton())
-      expect(TOOLTIP_CONTROL_LABELS).toHaveLength(3)
+      expect(TOOLTIP_CONTROL_LABELS).toHaveLength(2)
 
       for (const label of TOOLTIP_CONTROL_LABELS) {
         await expectTooltipSide(label, tooltipSide)
@@ -316,44 +383,6 @@ describe("floatingButton controls", () => {
     })
 
     expect(sendMessage).toHaveBeenCalledWith("toggleSidePanel", undefined)
-  })
-
-  it("places feedback after settings and opens a localized Featurebase URL with safe metadata", () => {
-    window.history.replaceState({}, "", "/private/path?token=secret#section")
-    renderFloatingButton()
-
-    const settingsButton = screen.getByRole("button", {
-      name: "options.floatingButton.tooltips.settings",
-    })
-    const feedbackButton = screen.getByRole("button", {
-      name: "options.floatingButton.tooltips.feedback",
-    })
-
-    expect(
-      settingsButton.compareDocumentPosition(feedbackButton) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-
-    fireEvent.click(feedbackButton)
-
-    const openPageCall = vi
-      .mocked(sendMessage)
-      .mock.calls.find(([message]) => message === "openPage")
-    const openPagePayload = openPageCall?.[1] as { active: boolean; url: string } | undefined
-    expect(openPagePayload).toBeDefined()
-    const openedUrl = new URL(openPagePayload!.url)
-
-    expect(openedUrl.origin).toBe("https://feedback.readfrog.app")
-    expect(openedUrl.pathname).toBe("/en")
-    expect(JSON.parse(openedUrl.searchParams.get("metaData")!)).toEqual({
-      browser: "chrome",
-      extension_version: "1.0.0",
-      // The intent is query/hash stripping, not the origin itself.
-      page_url: `${window.location.origin}/private/path`,
-    })
-    expect(openPagePayload).toEqual({
-      url: openedUrl.toString(),
-      active: true,
-    })
   })
 
   it("shows a Firefox sidebar help link when the browser requires an extension user action", async () => {
@@ -482,7 +511,7 @@ describe("floatingButton controls", () => {
     renderFloatingButton()
 
     const mainButton = getMainButton()
-    expect(screen.getAllByRole("button")).toHaveLength(5)
+    expect(screen.getAllByRole("button")).toHaveLength(4)
 
     fireEvent.pointerDown(mainButton, {
       pointerId: 1,

@@ -69,6 +69,7 @@ popup:
     emailUs: メールで問い合わせ
     featureRequest: 機能リクエスト
     bugReport: 不具合を報告
+    diagnosePage: "このページを診断"
     community: コミュニティ
     joinDiscord: Discordに参加
     joinWechat: WeChatグループに参加
@@ -135,6 +136,13 @@ options:
     bugReport:
       title: 不具合を報告
       description: サポートチケットを作成し、解決までの状況を追えます
+    troubleshooting:
+      title: "トラブルシューティング"
+    diagnostics:
+      title: "診断情報をエクスポート"
+      description: "最近のログと設定（API キーは除く）を保存して、不具合の報告に添付できます"
+      exportSuccess: "診断情報を保存しました"
+      exportFailed: "診断情報をエクスポートできませんでした"
     community:
       title: コミュニティ
     discord:
@@ -151,6 +159,22 @@ options:
     configTitle: プロバイダー設定
     addProvider: プロバイダーを追加
     builtInProvider: 組み込みプロバイダー
+    thirdPartyProviders: サードパーティのプロバイダー
+    builtInModel:
+      reasoningDescription: "$1 が回答する前にどれだけ考えるかです。レベルが高いほど難しい文章をうまく扱えますが、回答が遅くなり、クォータの消費も増えます。"
+      reasoningDefault: "デフォルト"
+      reasoningLevels:
+        none: "オフ"
+        minimal: "最小"
+        low: "低"
+        medium: "中"
+        high: "高"
+        xhigh: "最高"
+      unavailableTitle:
+        temporary: "$1 は一時的に利用できません"
+        removed: "$1 は提供が終了しました"
+      unavailableDescription: "利用できない間、これを使う機能はエラーになります。引き続き使うには、それらの機能を $1 に切り替えてください。"
+      unavailableDescriptionNoAlternatives: "利用できない間、これを使う機能はエラーになります。引き続き使うには、それらの機能を別のプロバイダーに切り替えてください。"
     builtInAiUsage:
       title: 組み込み AI クォータ
       remaining: "残り $1%"
@@ -171,12 +195,14 @@ options:
         pdfTranslation: PDF 翻訳
     sponsorCta: 高速で高コスパのAIを入手
     sponsorCtaJalapenoCloud: GLM 5.3 を 50% オフで入手
+    sponsorCtaIfapi: 初回チャージ +10%・コード READFROG
     setApiKeyWarning:
       message: API キーは $1 ページで設定してください
     badges:
       featureCount: $1 件の機能
       sponsor: スポンサー
       sponsorJalapenoCloud: $$1 無料
+      sponsorIfapi: モデル 90% オフ
     dialog:
       title: 新しいプロバイダーを追加
       groups:
@@ -268,6 +294,7 @@ options:
         xai: リアルタイムデータアクセス可能なGrokモデルを提供するイーロン・マスクのAI企業
         atlascloud: DeepSeek、Kimi、Qwen、Doubao、GLMなどの新しめのモデルにOpenAI互換でアクセスできる統合プラットフォーム
         jalapenocloud: トップチームが使うエンタープライズ級 AI を、あなたにも！
+        ifapi: GPT・Claude・Gemini など主要モデルを公式価格の最大 90% オフで
         siliconflow: 中国および国際モデル向けの高性能推論プラットフォーム
         tensdaq: 革命的入札型AI MaaSプラットフォーム、市場の需給で価格が決まり高コスト固定料金を排除
         openaiCompatible: OpenAI Chat Completions API 互換のカスタムエンドポイントに接続
@@ -611,15 +638,13 @@ options:
       panel: サイドパネルを開く
       translate: ページ翻訳を切り替え
     closeMenu:
-      disableForSite: このサイトで無効化
-      disableGlobally: グローバルで無効化
+      title: フローティングボタンを非表示
     tooltips:
       togglePageTranslation: ページ翻訳を切り替え
       floatingButtonOptions: フローティングボタンのオプション
       lockPosition: 位置を固定
       unlockPosition: 位置の固定を解除
       settings: 設定
-      feedback: フィードバックを送信
   selectionToolbar:
     title: 選択ツールバー
     pageDescription: テキストを選択したときに表示するアクションと、ツールバーを表示するサイトを設定します。
@@ -652,6 +677,12 @@ options:
         providerDescription: 保存候補を生成する AI プロバイダー
     display:
       title: 表示
+      placement:
+        title: 位置
+        description: 選択したテキストのどちら側にツールバーを表示するかを選びます。選んだ側に空きがない場合は反対側に表示します
+        followDirection: 選択方向に合わせる
+        above: 常に上
+        below: 常に下
       opacity:
         title: 透明度
         description: 選択ツールバーとそこから開く展開ウィンドウの透明度を調整します
@@ -661,8 +692,7 @@ options:
         enterUrlPattern: URL パターンを入力
         urlPattern: URL パターン
     closeMenu:
-      disableForSite: このサイトで無効化
-      disableGlobally: グローバルで無効化
+      title: 選択ツールバーを非表示
     errors:
       customActionFailed: カスタムアクションに失敗しました
       customActionFailedFallback: カスタムアクションのリクエストに失敗しました
@@ -1321,7 +1351,7 @@ options:
         error: 値は $1 から $2 の間である必要があります
     translationQueue:
       title: 翻訳キュー
-      description: リクエストを送る速さ、1回あたりのテキスト量、読者よりどれだけ先を翻訳するか
+      description: リクエストを送る速さ、1回あたりのテキスト量、1回あたりの最大待ち時間、読者よりどれだけ先を翻訳するか
       manageQueue: キューを管理
       requestQueueConfig:
         title: 翻訳速度
@@ -1336,6 +1366,9 @@ options:
           description: 最大文字数：1 回の AI リクエストで送るテキストの量
         maxItemsPerBatch:
           description: 最大段落数：1 回のリクエストにまとめる段落の数。AI 以外の翻訳サービスには効きません
+      requestTimeout:
+        title: リクエストのタイムアウト
+        description: "応答を待つ秒数。超えると打ち切って再試行します。AI のバッチリクエストは文章の長さに応じて最大 100 秒まで追加で待ちます。遅いモデルでタイムアウトが続くときは大きくしてください"
       preloadConfig:
         title: 事前翻訳範囲
         description: ビューポート下のコンテンツをどれだけ事前翻訳するかを制御し、API コストを節約します
@@ -1414,10 +1447,11 @@ options:
       title: 基本設定
       enable:
         title: 動画字幕を有効にする
-        description: YouTube、X、Netflix、Bilibili、Udemy、edX の動画プレーヤーのコントロールバーに翻訳ボタンを表示します。
-      autoStart:
-        title: 動画を開いたら翻訳する
-        description: 動画の読み込みが終わり次第、ボタンを押さなくても字幕の翻訳を始めます。
+        description: "サイトごとに選べます：オフ、手動（プレーヤーの翻訳ボタンで開始）、自動（動画を開いたら開始）。"
+        mode:
+          off: "オフ"
+          manual: "手動"
+          auto: "自動"
       aiSegmentation:
         title: AI スマート区切り
         description: AI が字幕を文単位に切り直します。翻訳の応答が遅くなります。高性能な LLM が必要です。性能の低いモデルでは字幕の欠落やずれが起きることがあります。
@@ -1507,7 +1541,7 @@ options:
           videoSummary: 動画要約（AI スマートコンテキストが必要）
     subtitlesQueue:
       title: 字幕キュー
-      description: 字幕リクエストを送る速さと、1回あたりの行数
+      description: 字幕リクエストを送る速さ、1回あたりの行数、1回あたりの最大待ち時間
       manageQueue: キューを管理
       requestQueueConfig:
         title: 翻訳速度
@@ -1522,6 +1556,9 @@ options:
           description: 最大文字数：1 回の AI リクエストで送るテキストの量
         maxItemsPerBatch:
           description: 最大字幕行数：1 回のリクエストにまとめる字幕の数。AI 以外の翻訳サービスには効きません
+      requestTimeout:
+        title: リクエストのタイムアウト
+        description: "応答を待つ秒数。超えると打ち切って再試行します。AI のバッチリクエストは文章の長さに応じて最大 100 秒まで追加で待ちます。遅いモデルでタイムアウトが続くときは大きくしてください"
     cache:
       title: キャッシュ
       clearCache:
@@ -1579,6 +1616,24 @@ translation:
   sameLanguage: ソース言語とターゲット言語は異なる必要があります
   autoModeSameLanguage: 検出された言語 '$1' はターゲット言語と同じです
   extensionContextInvalidated: 拡張機能が更新されました。このページを再読み込みしてからもう一度お試しください。
+pageDiagnosis:
+  title: "ページ診断"
+  summary: "翻訳済み $1 段落、未翻訳 $2 段落"
+  empty: "まだ表示する内容がありません。ページ翻訳をオンにしてから、もう一度開いてください。"
+  emptyWhileTranslating: "まだ表示する内容がありません。ページ翻訳が段落に達すると、ここに表示されます。"
+  framesNotIncluded: "埋め込みフレーム内のテキストはここには含まれません。"
+  hint: "理由をクリックすると、該当する段落をページ上で囲んで表示します。"
+  close: "閉じる"
+  unavailable: "このページでは Read Frog を実行できません"
+  reasons:
+    noProse: "翻訳する文字がありません"
+    tooShort: "短すぎるため翻訳しません"
+    targetLanguage: "すでに翻訳先の言語です"
+    skipLanguage: "スキップする言語に設定されています"
+    noTranslationNeeded: "AI が翻訳不要と判断しました"
+    sameAsSource: "訳文が原文と同じでした"
+    emptyResult: "翻訳サービスから何も返されませんでした"
+    error: "翻訳に失敗しました"
 annotation:
   annotate: "注釈を付ける"
   enterMode: "注釈モード"
@@ -1601,6 +1656,11 @@ speak:
   noTextSelected: テキストが選択されていません
   openaiNotConfigured: OpenAIプロバイダーが設定されていないか有効になっていません
   openaiApiKeyNotConfigured: OpenAI APIキーが設定されていません
+hideMenu:
+  untilReload: ページを再読み込みするまで
+  onSite: $1 で
+  onAllSites: すべてのサイトで
+  restoreHint: 「$1」からいつでも再表示できます。
 action:
   copy: コピー
   copied: コピー済み
@@ -1692,6 +1752,7 @@ subtitles:
   requestAiSubtitles: AI字幕をリクエスト
   usingAiSubtitles: AI字幕を使用中
   settings: 字幕設定
+  autoStartOnPlatform: "$1 で自動開始"
   toggle:
     enabled: 字幕翻訳をオンにしました
     disabled: 字幕翻訳をオフにしました
@@ -1752,6 +1813,26 @@ hostedAi:
     rateLimited: リクエストが多すぎます。後でもう一度お試しください。
     guestRateLimited: ゲストからのリクエストが多すぎます。後でもう一度お試しください。
     userRateLimited: リクエストが多すぎます。後でもう一度お試しください。
+    modelUnavailable: "$1 は現在利用できません。代わりに $2 をお試しください。"
+    modelUnavailableNoAlternatives: "$1 は現在利用できず、ほかに利用できる組み込み AI モデルもありません。しばらくしてからもう一度お試しください。"
+    modelBusy: "$1 は現在混み合っています。少し待ってからもう一度お試しいただくか、$2 に切り替えてください。"
+    modelBusyNoAlternatives: "$1 は現在混み合っています。少し待ってからもう一度お試しください。"
+  unavailable:
+    temporary: "$1 は一時的に利用できません。代わりに $2 をお試しください。"
+    temporaryNoAlternatives: "$1 は一時的に利用できません。しばらくしてからもう一度お試しください。"
+    removed: "$1 は提供が終了しました。代わりに $2 をお試しください。"
+    removedNoAlternatives: "$1 は提供が終了しました。別のプロバイダーを選んでください。"
+  actions:
+    chooseModel: "モデルを選択"
+  builtInAiPrompt:
+    logInTitle: "ログインして組み込み AI を使う"
+    logInDescription: "ログインすると、組み込み AI を週に約 12 万トークンまで無料で使えます。"
+    upgradeTitle: "今週の組み込み AI を使い切りました"
+    upgradeDescription: "Pro なら毎月約 3,000 件、Ultra なら約 10,000 件のウェブページを翻訳できます。"
+    upgradeDescriptionPro: "Ultra なら毎月約 10,000 件のウェブページを翻訳できます。"
+    useMachineTranslation: "機械翻訳を使う"
+    switched: "$1は $2 を使うようになりました。"
+    switchFailed: "機械翻訳に切り替えられませんでした。もう一度お試しください。"
 hotkey:
   control: Ctrl
   alt: Option
@@ -1780,183 +1861,3 @@ translationHub:
   translationFailed: 翻訳に失敗しました
   translationFailedFallback: 翻訳に失敗しました
   retryTranslation: 翻訳を再試行
-languages:
-  eng: 英語
-  cmn: 簡体字中国語
-  cmnHant: 繁体字中国語
-  yue: 広東語
-  spa: スペイン語
-  rus: ロシア語
-  arb: アラビア語
-  ben: ベンガル語
-  hin: ヒンディー語
-  por: ポルトガル語
-  ind: インドネシア語
-  jpn: 日本語
-  fra: フランス語
-  deu: ドイツ語
-  jav: ジャワ語
-  kor: 韓国語
-  tel: テルグ語
-  vie: ベトナム語
-  mar: マラーティー語
-  ita: イタリア語
-  tam: タミル語
-  tur: トルコ語
-  urd: ウルドゥー語
-  guj: グジャラート語
-  pol: ポーランド語
-  ukr: ウクライナ語
-  kan: カンナダ語
-  mai: マイティリー語
-  mal: マラヤーラム語
-  pes: ペルシャ語
-  mya: ビルマ語
-  swh: スワヒリ語
-  sun: スンダ語
-  ron: ルーマニア語
-  pan: パンジャブ語
-  bho: ボージュプリー語
-  amh: アムハラ語
-  hau: ハウサ語
-  fuv: フラ語
-  bos: ボスニア語
-  hrv: クロアチア語
-  nld: オランダ語
-  srp: セルビア語
-  tha: タイ語
-  ckb: 中央クルド語
-  yor: ヨルバ語
-  uzn: ウズベク語
-  zlm: マレー語
-  ibo: イボ語
-  npi: ネパール語
-  ceb: セブアノ語
-  skr: サライキ語
-  tgl: タガログ語
-  hun: ハンガリー語
-  azj: アゼルバイジャン語
-  sin: シンハラ語
-  koi: コミ・ペルミャク語
-  ell: ギリシャ語
-  ces: チェコ語
-  mag: マガヒー語
-  run: ルンディ語
-  bel: ベラルーシ語
-  plt: マダガスカル語
-  qug: チンボラソ高地キチュア語
-  mad: マドゥラ語
-  nya: チェワ語
-  zyb: チワン語
-  pbu: パシュトー語
-  kin: ルワンダ語
-  zul: ズールー語
-  bul: ブルガリア語
-  swe: スウェーデン語
-  lin: リンガラ語
-  som: ソマリ語
-  hms: 黔東ミャオ語
-  hnj: フモン語
-  ilo: イロカノ語
-  kaz: カザフ語
-  heb: ヘブライ語
-  nob: ノルウェー語（ブークモール）
-  nno: ノルウェー語（ニーノシュク）
-  afr: アフリカーンス語
-  sqi: アルバニア語
-  asm: アッサム語
-  eus: バスク語
-  bre: ブルトン語
-  cat: カタルーニャ語
-  cos: コルシカ語
-  cym: ウェールズ語
-  dan: デンマーク語
-  div: ディベヒ語
-  epo: エスペラント
-  ekk: エストニア語
-  fao: フェロー語
-  fij: フィジー語
-  fin: フィンランド語
-  fry: 西フリジア語
-  gla: スコットランド・ゲール語
-  gle: アイルランド語
-  glg: ガリシア語
-  grn: グアラニー語
-  hat: ハイチ・クレオール語
-  haw: ハワイ語
-  hye: アルメニア語
-  ido: イド語
-  ina: インターリングア
-  isl: アイスランド語
-  kat: ジョージア語
-  khm: クメール語
-  kir: キルギス語
-  lao: ラオ語
-  lat: ラテン語
-  lvs: ラトビア語
-  lit: リトアニア語
-  ltz: ルクセンブルク語
-  mkd: マケドニア語
-  mlt: マルタ語
-  mon: モンゴル語
-  mri: マオリ語
-  nso: 北ソト語
-  oci: オック語
-  ori: オリヤー語
-  orm: オロモ語
-  prs: ダリー語
-  san: サンスクリット語
-  slk: スロバキア語
-  slv: スロベニア語
-  smo: サモア語
-  sna: ショナ語
-  snd: シンド語
-  sot: 南ソト語
-  tah: タヒチ語
-  tat: タタール語
-  tgk: タジク語
-  tir: ティグリニャ語
-  ton: トンガ語
-  tsn: ツワナ語
-  tuk: トルクメン語
-  uig: ウイグル語
-  vol: ヴォラピュク
-  wol: ウォロフ語
-  xho: コサ語
-  ydd: イディッシュ語
-  aka: アカン語
-  bam: バンバラ語
-  bis: ビスラマ語
-  bod: チベット語
-  che: チェチェン語
-  chv: チュヴァシ語
-  dzo: ゾンカ語
-  ewe: エウェ語
-  kab: カビル語
-  lug: ガンダ語
-  oss: オセット語
-  ssw: スワジ語
-  ven: ベンダ語
-  war: ワライ語
-  nde: 北ンデベレ語
-  nbl: 南ンデベレ語
-  pam: パンパンガ語
-  hil: ヒリガイノン語
-  bcl: 中央ビコール語
-  min: ミナンカバウ語
-  ace: アチェ語
-  bug: ブギス語
-  ban: バリ語
-  bjn: バンジャル語
-  mak: マカッサル語
-  sas: ササク語
-  tet: テトゥン語
-  cha: チャモロ語
-  niu: ニウエ語
-  tvl: ツバル語
-  gil: キリバス語
-  mah: マーシャル語
-  pau: パラオ語
-  wls: ウォリス語
-  rar: ラロトンガ語
-  hif: フィジー・ヒンディー語

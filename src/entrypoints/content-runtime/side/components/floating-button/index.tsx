@@ -1,13 +1,13 @@
 import type { FloatingButtonSide } from "@/types/config/floating-button"
-import { IconLock, IconLockOpen, IconMessageCircle, IconSettings, IconX } from "@tabler/icons-react"
-import { useAtom, useAtomValue } from "jotai"
+import { IconLock, IconLockOpen, IconSettings, IconX } from "@tabler/icons-react"
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useEffect, useRef, useState } from "react"
 import { browser } from "#imports"
 import readFrogLogo from "@/assets/icons/read-frog.png?url&no-inline"
+import { addSitePattern, HideMenuItems } from "@/components/hide-menu-items"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/base-ui/dropdown-menu"
 import { anchoredToastManager } from "@/components/ui/base-ui/toast"
@@ -16,13 +16,15 @@ import { ANALYTICS_FEATURE, ANALYTICS_SURFACE } from "@/types/analytics"
 import { createFeatureUsageContext } from "@/utils/analytics"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
 import { APP_NAME } from "@/utils/constants/app"
-import { buildFeaturebaseFeedbackMetadata, buildFeaturebasePortalUrl } from "@/utils/featurebase"
 import { i18n } from "@/utils/i18n"
-import { resolveUiLocale } from "@/utils/i18n/locale-map"
 import { sendMessage } from "@/utils/message"
 import { cn } from "@/utils/styles/utils"
 import { urlMatchesPattern } from "@/utils/url-pattern"
-import { enablePageTranslationAtom, isDraggingButtonAtom } from "../../atoms"
+import {
+  enablePageTranslationAtom,
+  isDraggingButtonAtom,
+  isFloatingButtonHiddenUntilReloadAtom,
+} from "../../atoms"
 import { shadowWrapper } from "../../main"
 import HiddenButton from "./components/hidden-button"
 import TranslateButton from "./translate-button"
@@ -125,13 +127,13 @@ function getNormalizedFloatingContainerTop(mainButtonTop: number, mainOffsetY: n
 
 export default function FloatingButton() {
   const [floatingButton, setFloatingButton] = useAtom(configFieldsAtomMap.floatingButton)
-  const uiLanguage = useAtomValue(configFieldsAtomMap.uiLanguage)
   const translationState = useAtomValue(enablePageTranslationAtom)
   const [isDraggingButton, setIsDraggingButton] = useAtom(isDraggingButtonAtom)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isHitAreaExpanded, setIsHitAreaExpanded] = useState(false)
   const [dragPreviewPosition, setDragPreviewPosition] = useState<DragPoint | null>(null)
   const isFullscreen = useIsFullscreen()
+  const isHiddenUntilReload = useAtomValue(isFloatingButtonHiddenUntilReloadAtom)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mainButtonRef = useRef<HTMLDivElement | null>(null)
   const pendingDragRef = useRef<PendingDragState | null>(null)
@@ -140,7 +142,6 @@ export default function FloatingButton() {
   const floatingButtonSide = getFloatingButtonSide(floatingButton.side)
   const isFloatingButtonExpanded = isHitAreaExpanded || isDropdownOpen
   const isMainButtonAttached = isFloatingButtonLocked || isFloatingButtonExpanded
-  const locale = resolveUiLocale(uiLanguage)
 
   useEffect(() => {
     if (!isDraggingButton) return undefined
@@ -215,20 +216,6 @@ export default function FloatingButton() {
         })
       }
     })
-  }
-
-  const handleFeedbackClick = () => {
-    const url = buildFeaturebasePortalUrl({
-      destination: "feedback",
-      locale,
-      metadata: buildFeaturebaseFeedbackMetadata({
-        browserName: import.meta.env.BROWSER,
-        extensionVersion: browser.runtime.getManifest().version,
-        pageUrl: window.location.href,
-      }),
-    })
-
-    void sendMessage("openPage", { url, active: true })
   }
 
   const startActiveDrag = () => {
@@ -360,6 +347,7 @@ export default function FloatingButton() {
 
   if (
     isFullscreen ||
+    isHiddenUntilReload ||
     !floatingButton.enabled ||
     floatingButton.disabledFloatingButtonPatterns.some((pattern) =>
       urlMatchesPattern(window.location.href, pattern),
@@ -465,15 +453,6 @@ export default function FloatingButton() {
           }}
         />
       )}
-      {!isDraggingButton && (
-        <HiddenButton
-          side={floatingButtonSide}
-          expanded={isFloatingButtonExpanded}
-          icon={<IconMessageCircle className="h-5 w-5" />}
-          label={i18n.t("options.floatingButton.tooltips.feedback")}
-          onClick={handleFeedbackClick}
-        />
-      )}
     </div>
   )
 }
@@ -490,6 +469,7 @@ function FloatingButtonCloseMenu({
   onDropdownOpenChange,
 }: FloatingButtonCloseMenuProps) {
   const [floatingButton, setFloatingButton] = useAtom(configFieldsAtomMap.floatingButton)
+  const setHiddenUntilReload = useSetAtom(isFloatingButtonHiddenUntilReloadAtom)
   const [open, setOpen] = useState(false)
   const controlOffsetClassName =
     !floatingButton.locked && !expanded
@@ -501,17 +481,17 @@ function FloatingButtonCloseMenu({
     onDropdownOpenChange(nextOpen)
   }
 
-  const handleDisableForSite = () => {
-    const currentDomain = window.location.hostname
-    const currentPatterns = floatingButton.disabledFloatingButtonPatterns || []
-
+  const handleHideOnSite = (hostname: string) => {
     void setFloatingButton({
       ...floatingButton,
-      disabledFloatingButtonPatterns: [...currentPatterns, currentDomain],
+      disabledFloatingButtonPatterns: addSitePattern(
+        floatingButton.disabledFloatingButtonPatterns ?? [],
+        hostname,
+      ),
     })
   }
 
-  const handleDisableGlobally = () => {
+  const handleHideOnAllSites = () => {
     void setFloatingButton({ ...floatingButton, enabled: false })
   }
 
@@ -538,14 +518,16 @@ function FloatingButtonCloseMenu({
         container={shadowWrapper}
         align="start"
         side={side === "right" ? "left" : "right"}
-        className="z-2147483647 w-fit! whitespace-nowrap"
+        className="z-2147483647 w-fit! max-w-72 min-w-48 whitespace-nowrap"
       >
-        <DropdownMenuItem onMouseDown={(e) => e.stopPropagation()} onClick={handleDisableForSite}>
-          {i18n.t("options.floatingButton.closeMenu.disableForSite")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onMouseDown={(e) => e.stopPropagation()} onClick={handleDisableGlobally}>
-          {i18n.t("options.floatingButton.closeMenu.disableGlobally")}
-        </DropdownMenuItem>
+        <HideMenuItems
+          title={i18n.t("options.floatingButton.closeMenu.title")}
+          settingsLocation={`${i18n.t("popup.options")} → ${i18n.t("options.floatingButton.title")}`}
+          onHideUntilReload={() => setHiddenUntilReload(true)}
+          onHideOnSite={handleHideOnSite}
+          onHideOnAllSites={handleHideOnAllSites}
+          onItemMouseDown={(e) => e.stopPropagation()}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -2,26 +2,27 @@ import type { Config } from "@/types/config/config"
 import type { ConfigMeta, ConfigValueAndMeta } from "@/types/config/meta"
 import { storage } from "#imports"
 import { configSchema } from "@/types/config/config"
+import { createLogger } from "@/utils/logging/logger"
 import { CONFIG_SCHEMA_VERSION, CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from "../constants/config"
-import { logger } from "../logger"
-import { normalizeConfigForDistribution } from "./distribution"
+
+const log = createLogger("config/storage")
 
 export async function getLocalConfig() {
   const config = await storage.getItem<Config>(`local:${CONFIG_STORAGE_KEY}`)
   if (!config) {
-    logger.warn("No config found in storage")
+    log.warn("No config found in storage")
     return null
   }
-  const parsedConfig = configSchema.safeParse(normalizeConfigForDistribution(config).config)
+  const parsedConfig = configSchema.safeParse(config)
   if (!parsedConfig.success) {
-    logger.error("Config is invalid, using default config")
+    log.error("Config is invalid, using default config")
     return DEFAULT_CONFIG
   }
   return parsedConfig.data
 }
 
 export async function setLocalConfig(config: Config) {
-  const parsedConfig = configSchema.safeParse(normalizeConfigForDistribution(config).config)
+  const parsedConfig = configSchema.safeParse(config)
   if (!parsedConfig.success) {
     throw new Error("Config is invalid")
   }
@@ -42,7 +43,7 @@ export async function getLocalConfigAndMeta(): Promise<ConfigValueAndMeta> {
       throw new Error("Local config not found")
     }
 
-    const parsedConfig = configSchema.safeParse(normalizeConfigForDistribution(config).config)
+    const parsedConfig = configSchema.safeParse(config)
     if (!parsedConfig.success) {
       throw new Error("Local config is invalid")
     }
@@ -55,14 +56,14 @@ export async function getLocalConfigAndMeta(): Promise<ConfigValueAndMeta> {
       },
     }
   } catch (error) {
-    logger.error("Failed to get local config", error)
+    log.error("Failed to get local config", { error })
     throw error
   }
 }
 
 export async function setLocalConfigAndMeta(config: Config, meta: Partial<ConfigMeta>) {
   const lastModifiedAt = meta.lastModifiedAt ?? Date.now()
-  const parsedConfig = configSchema.safeParse(normalizeConfigForDistribution(config).config)
+  const parsedConfig = configSchema.safeParse(config)
   if (!parsedConfig.success) {
     throw new Error("Config is invalid")
   }

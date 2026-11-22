@@ -349,6 +349,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     pageKey: "options.translation.title",
   },
   {
+    sectionId: "request-timeout",
+    route: "/page-translation/translation-queue",
+    titleKey: "options.translation.translationQueue.requestTimeout.title",
+    descriptionKey: "options.translation.translationQueue.requestTimeout.description",
+    pageKey: "options.translation.title",
+  },
+  {
     sectionId: "preload-config",
     route: "/page-translation/translation-queue",
     titleKey: "options.translation.translationQueue.preloadConfig.title",
@@ -448,6 +455,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     pageKey: "options.selectionToolbar.title",
   },
   {
+    sectionId: "selection-toolbar-placement",
+    route: "/selection-toolbar",
+    titleKey: "options.selectionToolbar.display.placement.title",
+    descriptionKey: "options.selectionToolbar.display.placement.description",
+    pageKey: "options.selectionToolbar.title",
+  },
+  {
     sectionId: "selection-toolbar-opacity",
     route: "/selection-toolbar",
     titleKey: "options.selectionToolbar.display.opacity.title",
@@ -504,18 +518,11 @@ const SEARCH_ITEM_DEFINITIONS = [
 
   // Video Subtitles page
   {
-    sectionId: "subtitles-enable",
-    route: "/video-subtitles",
+    // Its own page, drilled into from the Enable row of the Basics section.
+    sectionId: "subtitles-sites",
+    route: "/video-subtitles/sites",
     titleKey: "options.videoSubtitles.preference.enable.title",
     descriptionKey: "options.videoSubtitles.preference.enable.description",
-    pageKey: "options.videoSubtitles.title",
-  },
-  {
-    // Its own page, drilled into from the Translate on open row of the Basics section.
-    sectionId: "subtitles-auto-start",
-    route: "/video-subtitles/auto-start",
-    titleKey: "options.videoSubtitles.preference.autoStart.title",
-    descriptionKey: "options.videoSubtitles.preference.autoStart.description",
     pageKey: "options.videoSubtitles.title",
   },
   {
@@ -576,6 +583,13 @@ const SEARCH_ITEM_DEFINITIONS = [
     route: "/video-subtitles/subtitles-queue",
     titleKey: "options.videoSubtitles.subtitlesQueue.batchQueueConfig.title",
     descriptionKey: "options.videoSubtitles.subtitlesQueue.batchQueueConfig.description",
+    pageKey: "options.videoSubtitles.title",
+  },
+  {
+    sectionId: "subtitles-request-timeout",
+    route: "/video-subtitles/subtitles-queue",
+    titleKey: "options.videoSubtitles.subtitlesQueue.requestTimeout.title",
+    descriptionKey: "options.videoSubtitles.subtitlesQueue.requestTimeout.description",
     pageKey: "options.videoSubtitles.title",
   },
   {

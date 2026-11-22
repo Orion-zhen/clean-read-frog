@@ -11,7 +11,7 @@ import {
   buildImproveWritingActionLayout,
   buildSentenceAnalysisActionLayout,
 } from "@/utils/layout-host/slots"
-import { BUILT_IN_AI_PROVIDER_ID } from "@/utils/providers/provider-registry"
+import { DEFAULT_BUILT_IN_AI_PROVIDER_ID } from "@/utils/providers/provider-registry"
 import {
   BUILT_IN_ACTION_DEFAULT_SHORTCUTS,
   BUILT_IN_ACTION_IDS,
@@ -64,6 +64,7 @@ import {
   DEFAULT_PRELOAD_THRESHOLD,
   DEFAULT_REQUEST_CAPACITY,
   DEFAULT_REQUEST_RATE,
+  DEFAULT_REQUEST_TIMEOUT_MS,
   DEFAULT_SELECTION_TRANSLATION_SHORTCUT_KEY,
   DEFAULT_TRANSLATION_MODE_SHORTCUT_KEY,
 } from "./translate"
@@ -76,15 +77,15 @@ export const LAST_SYNCED_CONFIG_STORAGE_KEY = "lastSyncedConfig"
 export const GOOGLE_DRIVE_TOKEN_STORAGE_KEY = "__googleDriveToken"
 
 export const THEME_STORAGE_KEY = "theme"
-export const DEFAULT_DETECTED_CODE = "eng" as const
-export const CONFIG_SCHEMA_VERSION = 121
+export const DEFAULT_DETECTED_CODE = "en" as const
+export const CONFIG_SCHEMA_VERSION = 129
 
 export const DEFAULT_FLOATING_BUTTON_POSITION = 0.66
 export const DEFAULT_FLOATING_BUTTON_SIDE: FloatingButtonSide = "right"
 
 const DEFAULT_CUSTOM_ACTION_PROVIDER_ID = __PURE_BUILD__
   ? DEFAULT_PROVIDER_CONFIG.openai.id
-  : BUILT_IN_AI_PROVIDER_ID
+  : DEFAULT_BUILT_IN_AI_PROVIDER_ID
 
 type OutputSchema = SelectionToolbarCustomActionOutputField[]
 
@@ -173,7 +174,7 @@ export function createDefaultImproveWritingAction(): SelectionToolbarCustomActio
 export const DEFAULT_CONFIG: Config = {
   language: {
     sourceCode: "auto",
-    targetCode: "cmn",
+    targetCode: "zh-Hans",
     level: "intermediate",
   },
   providersConfig: DEFAULT_PROVIDER_CONFIG_LIST,
@@ -208,6 +209,7 @@ export const DEFAULT_CONFIG: Config = {
     requestQueueConfig: {
       capacity: DEFAULT_REQUEST_CAPACITY,
       rate: DEFAULT_REQUEST_RATE,
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
     },
     batchQueueConfig: {
       maxCharactersPerBatch: DEFAULT_BATCH_CONFIG.maxCharactersPerBatch,
@@ -235,6 +237,7 @@ export const DEFAULT_CONFIG: Config = {
     enabled: true,
     disabledSelectionToolbarPatterns: [],
     opacity: DEFAULT_SELECTION_OVERLAY_OPACITY,
+    placement: "followDirection",
     features: {
       translate: {
         enabled: true,
@@ -298,14 +301,13 @@ export const DEFAULT_CONFIG: Config = {
     timeThreshold: 300,
   },
   videoSubtitles: {
-    enabled: true,
-    autoStart: {
-      youtube: false,
-      xcom: false,
-      netflix: false,
-      bilibili: false,
-      udemy: false,
-      edx: false,
+    platforms: {
+      youtube: "manual",
+      xcom: "manual",
+      netflix: "manual",
+      bilibili: "manual",
+      udemy: "manual",
+      edx: "manual",
     },
     toggleShortcut: DEFAULT_SUBTITLES_TOGGLE_SHORTCUT_KEY,
     providerId: MICROSOFT_TRANSLATE_PROVIDER_ID,
@@ -335,6 +337,7 @@ export const DEFAULT_CONFIG: Config = {
     requestQueueConfig: {
       capacity: DEFAULT_REQUEST_CAPACITY,
       rate: DEFAULT_REQUEST_RATE,
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
     },
     batchQueueConfig: {
       maxCharactersPerBatch: DEFAULT_BATCH_CONFIG.maxCharactersPerBatch,
@@ -361,19 +364,44 @@ export const DEFAULT_CONFIG: Config = {
     promptId: DEFAULT_TRANSLATE_PROMPTS_CONFIG.promptId,
   },
   glossary: { ...DEFAULT_GLOSSARY_CONFIG },
+  builtInAi: { models: {} },
 }
 
 /**
- * Translate features start on Microsoft Translate, which is reachable everywhere; a fresh
- * install is moved onto Google Translate afterwards where that endpoint answers — see
- * `selectFreshTranslateProviders`.
+ * A fresh install translates pages, selections, inputs and video subtitles with Built-in AI,
+ * on its default model. A guest cannot run it there: the first try asks them to log in, or
+ * to switch to a machine translator that needs no account. Note suggestions and language
+ * detection keep their defaults. Existing configs never read this: they keep the providers
+ * they have.
  */
 export function buildFreshDefaultConfig(): Config {
+  const providersConfig = buildDefaultProviderConfigList()
+  if (__PURE_BUILD__) return { ...DEFAULT_CONFIG, providersConfig }
+
   return {
     ...DEFAULT_CONFIG,
-    providersConfig: buildDefaultProviderConfigList(),
+    providersConfig,
+    pageTranslation: {
+      ...DEFAULT_CONFIG.pageTranslation,
+      providerId: DEFAULT_BUILT_IN_AI_PROVIDER_ID,
+    },
+    inputTranslation: {
+      ...DEFAULT_CONFIG.inputTranslation,
+      providerId: DEFAULT_BUILT_IN_AI_PROVIDER_ID,
+    },
+    videoSubtitles: {
+      ...DEFAULT_CONFIG.videoSubtitles,
+      providerId: DEFAULT_BUILT_IN_AI_PROVIDER_ID,
+    },
     selectionToolbar: {
       ...DEFAULT_CONFIG.selectionToolbar,
+      features: {
+        ...DEFAULT_CONFIG.selectionToolbar.features,
+        translate: {
+          ...DEFAULT_CONFIG.selectionToolbar.features.translate,
+          providerId: DEFAULT_BUILT_IN_AI_PROVIDER_ID,
+        },
+      },
       builtInActions: {
         dictionary: {
           enabled: true,

@@ -2,9 +2,11 @@ import type { ConfigSyncAdapter, SyncResult } from "./types"
 import type { Config } from "@/types/config/config"
 import { dequal } from "dequal"
 import { configSchema } from "@/types/config/config"
+import { createLogger } from "@/utils/logging/logger"
 import { getLocalConfigAndMeta, setLocalConfigAndMeta } from "../config/storage"
 import { CONFIG_SCHEMA_VERSION } from "../constants/config"
-import { logger } from "../logger"
+
+const log = createLogger("config-sync/engine")
 
 export function createConfigSync(adapter: ConfigSyncAdapter) {
   /** Save the resolved config locally, upload it, then advance this target's baseline. */
@@ -15,7 +17,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
       // Validate merged config
       const validatedConfigResult = configSchema.safeParse(mergedConfig)
       if (!validatedConfigResult.success) {
-        logger.error("Merged config is invalid, cannot sync merged config")
+        log.error("Merged config is invalid, cannot sync merged config")
         throw new Error("Merged config is invalid for syncing")
       }
 
@@ -40,9 +42,9 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
         lastSyncedAt: Date.now(),
       })
 
-      logger.info("Synced config successfully")
+      log.info("Synced config successfully")
     } catch (error) {
-      logger.error("Failed to sync config", error)
+      log.error("Failed to sync config", { error })
       throw error
     }
   }
@@ -60,7 +62,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
         targetId !== lastSyncedConfigValueAndMeta.meta.targetId
       ) {
         if (remoteConfigValueAndMeta) {
-          logger.info("Remote config found, saving remote config")
+          log.info("Remote config found, saving remote config")
           await setLocalConfigAndMeta(remoteConfigValueAndMeta.value, remoteConfigValueAndMeta.meta)
           await adapter.writeBaseline(remoteConfigValueAndMeta.value, {
             ...remoteConfigValueAndMeta.meta,
@@ -69,7 +71,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
           })
           return { status: "success", action: "downloaded" }
         }
-        logger.info("No remote config found, uploading local config")
+        log.info("No remote config found, uploading local config")
         await adapter.writeRemote(localConfigValueAndMeta)
         await adapter.writeBaseline(localConfigValueAndMeta.value, {
           ...localConfigValueAndMeta.meta,
@@ -89,7 +91,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
           lastSyncedConfigValueAndMeta.meta.lastModifiedAt
 
       if (localChangedSinceSync && remoteChangedSinceSync) {
-        logger.info("Both local and remote changed since last sync, checking for conflicts")
+        log.info("Both local and remote changed since last sync, checking for conflicts")
 
         const sameLocalAndRemote = dequal(
           localConfigValueAndMeta.value,
@@ -97,7 +99,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
         )
 
         if (sameLocalAndRemote) {
-          logger.info("Local and remote configurations are the same, no conflicts detected")
+          log.info("Local and remote configurations are the same, no conflicts detected")
           const syncedAt = Date.now()
 
           // if the schemaVersion is different, use local config's schemaVersion
@@ -126,7 +128,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
           },
         }
       } else if (localChangedSinceSync) {
-        logger.info("Local config is newer, uploading local config")
+        log.info("Local config is newer, uploading local config")
         await adapter.writeRemote(localConfigValueAndMeta)
         await adapter.writeBaseline(localConfigValueAndMeta.value, {
           ...localConfigValueAndMeta.meta,
@@ -135,7 +137,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
         })
         return { status: "success", action: "uploaded" }
       } else if (remoteChangedSinceSync) {
-        logger.info("Remote config is newer, downloading remote config")
+        log.info("Remote config is newer, downloading remote config")
         await setLocalConfigAndMeta(remoteConfigValueAndMeta.value, remoteConfigValueAndMeta.meta)
         await adapter.writeBaseline(remoteConfigValueAndMeta.value, {
           ...remoteConfigValueAndMeta.meta,
@@ -144,7 +146,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
         })
         return { status: "success", action: "downloaded" }
       }
-      logger.info("No changes, skipping sync")
+      log.info("No changes, skipping sync")
       await adapter.writeBaseline(localConfigValueAndMeta.value, {
         ...localConfigValueAndMeta.meta,
         targetId,
@@ -152,7 +154,7 @@ export function createConfigSync(adapter: ConfigSyncAdapter) {
       })
       return { status: "success", action: "no-change" }
     } catch (error) {
-      logger.error("Config sync failed", error)
+      log.error("Config sync failed", { error })
       return {
         status: "error",
         error: error instanceof Error ? error : new Error(String(error)),

@@ -131,7 +131,11 @@ describe("WebDAV sync", () => {
       )
       expect(await syncWebDavConfig(settings)).toEqual({ status: "success", action: "downloaded" })
       const local = await getLocalConfigAndMeta()
-      expect(local.value.language).toEqual(oldConfig.language)
+      expect(local.value.language).toEqual({
+        ...oldConfig.language,
+        sourceCode: "en",
+        targetCode: "zh-Hans",
+      })
       expect(local.value.providersConfig).toContainEqual(
         expect.objectContaining({ provider: "google", apiKey: "goog-key" }),
       )
@@ -144,11 +148,11 @@ describe("WebDAV sync", () => {
           outputSchema: originalAction.outputSchema,
         }),
       )
-      expect(local.value.providersConfig.map((provider) => provider.provider)).not.toContain(
-        "jalapenocloud",
-      )
+      const providerTypes = local.value.providersConfig.map((provider) => provider.provider)
+      expect(providerTypes).not.toContain("jalapenocloud")
+      expect(providerTypes).not.toContain("ifapi")
 
-      local.value.language.targetCode = "jpn"
+      local.value.language.targetCode = "ja"
       await setLocalConfigAndMeta(local.value, { ...local.meta, lastModifiedAt: 3000 })
       fetchMock
         .mockResolvedValueOnce(
@@ -157,7 +161,7 @@ describe("WebDAV sync", () => {
         .mockResolvedValueOnce(uploaded())
       expect(await syncWebDavConfig(settings)).toEqual({ status: "success", action: "uploaded" })
       const uploadedConfig = JSON.parse(fetchMock.mock.lastCall?.[1]?.body as string)
-      expect(uploadedConfig.value.language.targetCode).toBe("jpn")
+      expect(uploadedConfig.value.language.targetCode).toBe("ja")
       expect(uploadedConfig.value.selectionToolbar.customActions).toEqual(
         local.value.selectionToolbar.customActions,
       )

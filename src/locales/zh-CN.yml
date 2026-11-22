@@ -15,8 +15,8 @@ dataTypes:
   number: 数字
 contextMenu:
   translate: 翻译
-  translateSelection: 翻译”%s”
-  readAloudSelection: 朗读”%s”
+  translateSelection: 翻译“%s”
+  readAloudSelection: 朗读“%s”
   showOriginal: 显示原文
 sidePanel:
   firefoxUserActionHint: 在 Firefox 中，请从浏览器侧边栏打开陪读蛙。
@@ -69,6 +69,7 @@ popup:
     emailUs: 邮件联系
     featureRequest: 功能建议
     bugReport: 报告问题
+    diagnosePage: "诊断此页面"
     community: 社区
     joinDiscord: 加入 Discord
     joinWechat: 加入微信群
@@ -135,6 +136,13 @@ options:
     bugReport:
       title: 报告问题
       description: 提交工单，并跟进直到问题解决
+    troubleshooting:
+      title: "故障排查"
+    diagnostics:
+      title: "导出诊断信息"
+      description: "保存最近的日志和设置（不含 API 密钥），附在问题反馈里"
+      exportSuccess: "诊断信息已保存"
+      exportFailed: "无法导出诊断信息"
     community:
       title: 社区
     discord:
@@ -151,6 +159,22 @@ options:
     configTitle: 提供商配置
     addProvider: 添加提供商
     builtInProvider: 内置提供商
+    thirdPartyProviders: 第三方提供商
+    builtInModel:
+      reasoningDescription: "$1 回答前思考的程度。档位越高，越能处理难懂的文本，但回答更慢，消耗的额度也更多。"
+      reasoningDefault: "默认"
+      reasoningLevels:
+        none: "关闭"
+        minimal: "极低"
+        low: "低"
+        medium: "中"
+        high: "高"
+        xhigh: "超高"
+      unavailableTitle:
+        temporary: "$1 暂时无法使用"
+        removed: "$1 已不再提供"
+      unavailableDescription: "它无法运行期间，用它的功能会报错。如需继续使用，请把这些功能改用 $1。"
+      unavailableDescriptionNoAlternatives: "它无法运行期间，用它的功能会报错。如需继续使用，请把这些功能改用其他提供商。"
     builtInAiUsage:
       title: 内置 AI 额度
       remaining: "剩余 $1%"
@@ -171,12 +195,14 @@ options:
         pdfTranslation: PDF 翻译
     sponsorCta: 获取高速性价比 AI
     sponsorCtaJalapenoCloud: 获取 GLM 5.3 五折优惠
+    sponsorCtaIfapi: 首充加赠 10%，优惠码 READFROG
     setApiKeyWarning:
       message: 请在 $1 页面设置 API Key
     badges:
       featureCount: $1 个功能
       sponsor: 赞助
       sponsorJalapenoCloud: $$1 免费额度
+      sponsorIfapi: 1 折模型
     dialog:
       title: 添加新提供商
       groups:
@@ -269,6 +295,7 @@ options:
         xai: 马斯克的 AI 公司，提供具有实时数据访问能力的 Grok 模型
         atlascloud: 统一的 OpenAI 兼容模型平台，提供 DeepSeek、Kimi、Qwen、豆包、GLM 等较新模型
         jalapenocloud: 顶尖团队都在用的企业级 AI，现在为你而来！
+        ifapi: GPT、Claude、Gemini 等主流模型，低至官方价 1 折，国内专线直连
         siliconflow: 面向中国和国际模型的高性能推理平台
         tensdaq: 革命性竞价 AI MaaS 平台，价格由市场供需决定，告别高成本固定定价
         openaiCompatible: 连接兼容 OpenAI Chat Completions API 的自定义端点
@@ -644,15 +671,13 @@ options:
       panel: 打开侧边栏
       translate: 切换页面翻译
     closeMenu:
-      disableForSite: 当前网站禁用
-      disableGlobally: 全局禁用
+      title: 隐藏悬浮按钮
     tooltips:
       togglePageTranslation: 切换页面翻译
       floatingButtonOptions: 悬浮按钮选项
       lockPosition: 锁定位置
       unlockPosition: 解锁位置
       settings: 设置
-      feedback: 发送反馈
   selectionToolbar:
     title: 选择工具栏
     pageDescription: 设置选中文本时出现哪些操作，以及工具栏在哪些网站显示。
@@ -685,6 +710,12 @@ options:
         providerDescription: 用于生成「猜你想存」的 AI 提供商
     display:
       title: 显示
+      placement:
+        title: 位置
+        description: 工具栏出现在选中文本的哪一侧。选定的一侧没有空间时，会改到另一侧显示
+        followDirection: 跟随划选方向
+        above: 始终在上方
+        below: 始终在下方
       opacity:
         title: 透明度
         description: 调整选择工具栏及其展开内容窗的透明度
@@ -694,8 +725,7 @@ options:
         enterUrlPattern: 输入网址模式
         urlPattern: 网址模式
     closeMenu:
-      disableForSite: 当前网站禁用
-      disableGlobally: 全局禁用
+      title: 隐藏选择工具栏
     errors:
       customActionFailed: 自定义操作失败
       customActionFailedFallback: 自定义操作请求失败
@@ -1363,7 +1393,7 @@ options:
         error: 数值必须在 $1 到 $2 之间
     translationQueue:
       title: 翻译队列
-      description: 请求发出的速度、每个请求承载的文本量，以及提前于阅读位置多远开始翻译
+      description: 请求发出的速度、每个请求承载的文本量、每个请求最多等多久，以及提前于阅读位置多远开始翻译
       manageQueue: 管理队列
       requestQueueConfig:
         title: 翻译速率
@@ -1378,6 +1408,9 @@ options:
           description: 最大字符数：一次 AI 请求最多带多少文本
         maxItemsPerBatch:
           description: 最大段落数：多少个段落合并成一次请求。非 AI 的翻译服务不受这两项影响
+      requestTimeout:
+        title: 请求超时
+        description: "等待响应的秒数，超时就放弃并重试。AI 批量请求会按文本长度额外多等，最多再加 100 秒。模型响应慢、经常超时可以调大"
       preloadConfig:
         title: 预翻译范围
         description: 控制视口下方多少内容会被预先翻译，以节省 API 费用
@@ -1456,10 +1489,11 @@ options:
       title: 基础设置
       enable:
         title: 开启视频字幕
-        description: 在 YouTube、X、Netflix、哔哩哔哩、Udemy 和 edX 的视频播放器控制栏加上翻译按钮。
-      autoStart:
-        title: 打开视频就翻译
-        description: 视频加载完成后自动开始翻译字幕，不用再点按钮。
+        description: "按网站选择：关闭、手动开启（点播放器里的翻译按钮），或打开视频时自动开启。"
+        mode:
+          off: "关闭"
+          manual: "手动开启"
+          auto: "自动开启"
       aiSegmentation:
         title: AI 智能断句
         description: 让 AI 把字幕重新切成完整句子，会增加翻译响应时间。需要较强的 LLM，弱模型可能漏句或错位。
@@ -1549,7 +1583,7 @@ options:
           videoSummary: 视频摘要（需启用 AI 智能上下文）
     subtitlesQueue:
       title: 字幕队列
-      description: 字幕请求发出的速度，以及每个请求承载的字幕行数
+      description: 字幕请求发出的速度、每个请求承载的字幕行数，以及每个请求最多等多久
       manageQueue: 管理队列
       requestQueueConfig:
         title: 翻译速率
@@ -1564,6 +1598,9 @@ options:
           description: 最大字符数：一次 AI 请求最多带多少文本
         maxItemsPerBatch:
           description: 最大字幕条数：多少条字幕合并成一次请求。非 AI 的翻译服务不受这两项影响
+      requestTimeout:
+        title: 请求超时
+        description: "等待响应的秒数，超时就放弃并重试。AI 批量请求会按文本长度额外多等，最多再加 100 秒。模型响应慢、经常超时可以调大"
     cache:
       title: 缓存
       clearCache:
@@ -1621,6 +1658,24 @@ translation:
   sameLanguage: 源语言和目标语言必须不同
   autoModeSameLanguage: 检测到的语言 '$1' 与目标语言相同
   extensionContextInvalidated: 扩展已更新，请刷新此页面后重试。
+pageDiagnosis:
+  title: "页面诊断"
+  summary: "已翻译 $1 段，未翻译 $2 段"
+  empty: "暂无内容。请先开启网页翻译，再打开此面板。"
+  emptyWhileTranslating: "暂无内容。网页翻译处理到的段落会显示在这里。"
+  framesNotIncluded: "嵌入框架（iframe）里的文字不在此统计范围内。"
+  hint: "点击原因，在页面上框出对应段落。"
+  close: "关闭"
+  unavailable: "陪读蛙无法在此页面运行"
+  reasons:
+    noProse: "没有可翻译的文字"
+    tooShort: "太短，不翻译"
+    targetLanguage: "已是目标语言"
+    skipLanguage: "属于你设置跳过的语言"
+    noTranslationNeeded: "AI 认为无需翻译"
+    sameAsSource: "译文与原文相同"
+    emptyResult: "翻译服务没有返回内容"
+    error: "翻译失败"
 annotation:
   annotate: "划词标注"
   enterMode: "进入标注模式"
@@ -1643,6 +1698,11 @@ speak:
   noTextSelected: 未选择文本
   openaiNotConfigured: OpenAI 提供商未配置或未启用
   openaiApiKeyNotConfigured: OpenAI API Key 未配置
+hideMenu:
+  untilReload: 直到刷新页面
+  onSite: 在 $1 上
+  onAllSites: 在所有网站上
+  restoreHint: 可在「$1」中重新开启。
 action:
   copy: 复制
   copied: 已复制
@@ -1734,6 +1794,7 @@ subtitles:
   requestAiSubtitles: 请求 AI 字幕
   usingAiSubtitles: 正在使用 AI 字幕中
   settings: 字幕设置
+  autoStartOnPlatform: "在 $1 上自动开启"
   toggle:
     enabled: 字幕翻译已开启
     disabled: 字幕翻译已关闭
@@ -1794,6 +1855,26 @@ hostedAi:
     rateLimited: 请求过于频繁，请稍后再试
     guestRateLimited: 游客请求过于频繁，请稍后再试
     userRateLimited: 请求过于频繁，请稍后再试
+    modelUnavailable: "$1 暂时无法使用，可改用 $2"
+    modelUnavailableNoAlternatives: "$1 暂时无法使用，目前也没有其他可用的内置 AI 模型，请稍后再试"
+    modelBusy: "$1 当前繁忙，请稍后再试，或改用 $2"
+    modelBusyNoAlternatives: "$1 当前繁忙，请稍后再试"
+  unavailable:
+    temporary: "$1 暂时无法使用，可改用 $2"
+    temporaryNoAlternatives: "$1 暂时无法使用，请稍后再试"
+    removed: "$1 已不再提供，可改用 $2"
+    removedNoAlternatives: "$1 已不再提供，请改用其他提供商"
+  actions:
+    chooseModel: "选择模型"
+  builtInAiPrompt:
+    logInTitle: "登录后使用内置 AI"
+    logInDescription: "登录后即可免费使用内置 AI，每周约 12 万 token。"
+    upgradeTitle: "本周的内置 AI 额度用完了"
+    upgradeDescription: "Pro 每月约可翻译 3,000 个网页，Ultra 约 10,000 个。"
+    upgradeDescriptionPro: "Ultra 每月约可翻译 10,000 个网页。"
+    useMachineTranslation: "改用机器翻译"
+    switched: "$1已改用 $2"
+    switchFailed: "没能切换到机器翻译，请重试"
 hotkey:
   control: Ctrl
   alt: Option
@@ -1822,183 +1903,3 @@ translationHub:
   translationFailed: 翻译失败
   translationFailedFallback: 翻译失败
   retryTranslation: 重试翻译
-languages:
-  eng: 英语
-  cmn: 简体中文
-  cmnHant: 繁体中文
-  yue: 粤语
-  spa: 西班牙语
-  rus: 俄语
-  arb: 阿拉伯语
-  ben: 孟加拉语
-  hin: 印地语
-  por: 葡萄牙语
-  ind: 印度尼西亚语
-  jpn: 日语
-  fra: 法语
-  deu: 德语
-  jav: 爪哇语
-  kor: 韩语
-  tel: 泰卢固语
-  vie: 越南语
-  mar: 马拉地语
-  ita: 意大利语
-  tam: 泰米尔语
-  tur: 土耳其语
-  urd: 乌尔都语
-  guj: 古吉拉特语
-  pol: 波兰语
-  ukr: 乌克兰语
-  kan: 卡纳达语
-  mai: 迈蒂利语
-  mal: 马拉雅拉姆语
-  pes: 波斯语
-  mya: 缅甸语
-  swh: 斯瓦希里语
-  sun: 巽他语
-  ron: 罗马尼亚语
-  pan: 旁遮普语
-  bho: 博杰普尔语
-  amh: 阿姆哈拉语
-  hau: 豪萨语
-  fuv: 富拉语
-  bos: 波斯尼亚语
-  hrv: 克罗地亚语
-  nld: 荷兰语
-  srp: 塞尔维亚语
-  tha: 泰语
-  ckb: 中库尔德语
-  yor: 约鲁巴语
-  uzn: 乌兹别克语
-  zlm: 马来语
-  ibo: 伊博语
-  npi: 尼泊尔语
-  ceb: 宿务语
-  skr: 萨拉基语
-  tgl: 塔加洛语
-  hun: 匈牙利语
-  azj: 阿塞拜疆语
-  sin: 僧伽罗语
-  koi: 科米-彼尔米亚克语
-  ell: 希腊语
-  ces: 捷克语
-  mag: 摩揭陀语
-  run: 基隆迪语
-  bel: 白俄罗斯语
-  plt: 马达加斯加语
-  qug: 钦博拉索高地克丘亚语
-  mad: 马都拉语
-  nya: 齐切瓦语
-  zyb: 壮语
-  pbu: 普什图语
-  kin: 卢旺达语
-  zul: 祖鲁语
-  bul: 保加利亚语
-  swe: 瑞典语
-  lin: 林加拉语
-  som: 索马里语
-  hms: 黔东苗语
-  hnj: 苗语
-  ilo: 伊洛卡诺语
-  kaz: 哈萨克语
-  heb: 希伯来语
-  nob: 挪威语(书面语)
-  nno: 挪威语(新挪威语)
-  afr: 南非荷兰语
-  sqi: 阿尔巴尼亚语
-  asm: 阿萨姆语
-  eus: 巴斯克语
-  bre: 布列塔尼语
-  cat: 加泰罗尼亚语
-  cos: 科西嘉语
-  cym: 威尔士语
-  dan: 丹麦语
-  div: 迪维希语
-  epo: 世界语
-  ekk: 爱沙尼亚语
-  fao: 法罗语
-  fij: 斐济语
-  fin: 芬兰语
-  fry: 西弗里斯兰语
-  gla: 苏格兰盖尔语
-  gle: 爱尔兰语
-  glg: 加利西亚语
-  grn: 瓜拉尼语
-  hat: 海地克里奥尔语
-  haw: 夏威夷语
-  hye: 亚美尼亚语
-  ido: 伊多语
-  ina: 国际语
-  isl: 冰岛语
-  kat: 格鲁吉亚语
-  khm: 高棉语
-  kir: 吉尔吉斯语
-  lao: 老挝语
-  lat: 拉丁语
-  lvs: 拉脱维亚语
-  lit: 立陶宛语
-  ltz: 卢森堡语
-  mkd: 马其顿语
-  mlt: 马耳他语
-  mon: 蒙古语
-  mri: 毛利语
-  nso: 北索托语
-  oci: 奥克语
-  ori: 奥里亚语
-  orm: 奥罗莫语
-  prs: 达里语
-  san: 梵语
-  slk: 斯洛伐克语
-  slv: 斯洛文尼亚语
-  smo: 萨摩亚语
-  sna: 绍纳语
-  snd: 信德语
-  sot: 南索托语
-  tah: 塔希提语
-  tat: 鞑靼语
-  tgk: 塔吉克语
-  tir: 提格里尼亚语
-  ton: 汤加语
-  tsn: 茨瓦纳语
-  tuk: 土库曼语
-  uig: 维吾尔语
-  vol: 沃拉普克语
-  wol: 沃洛夫语
-  xho: 科萨语
-  ydd: 意第绪语
-  aka: 阿肯语
-  bam: 班巴拉语
-  bis: 比斯拉马语
-  bod: 藏语
-  che: 车臣语
-  chv: 楚瓦什语
-  dzo: 宗卡语
-  ewe: 埃维语
-  kab: 卡比尔语
-  lug: 卢干达语
-  oss: 奥塞梯语
-  ssw: 斯威士语
-  ven: 文达语
-  war: 瓦瑞语
-  nde: 北恩德贝莱语
-  nbl: 南恩德贝莱语
-  pam: 邦板牙语
-  hil: 希利盖农语
-  bcl: 中比科尔语
-  min: 米南卡保语
-  ace: 亚齐语
-  bug: 布吉语
-  ban: 巴厘语
-  bjn: 班查尔语
-  mak: 望加锡语
-  sas: 萨萨克语
-  tet: 德顿语
-  cha: 查莫罗语
-  niu: 纽埃语
-  tvl: 图瓦卢语
-  gil: 吉尔伯特语
-  mah: 马绍尔语
-  pau: 帕劳语
-  wls: 瓦利斯语
-  rar: 拉罗汤加语
-  hif: 斐济印地语

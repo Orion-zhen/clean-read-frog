@@ -1,6 +1,10 @@
-import type { LangCodeISO6393 } from "@read-frog/definitions"
+import type { LanguageTag } from "@read-frog/definitions"
 import type { GuideDictionaryNotebaseCompletionInput } from "./guide/dictionary-notebase"
-import type { FeatureUsageContext, FeatureUsedEventProperties } from "@/types/analytics"
+import type {
+  BuiltInAiPromptEvent,
+  FeatureUsageContext,
+  FeatureUsedEventProperties,
+} from "@/types/analytics"
 import type {
   BackgroundGenerateTextPayload,
   BackgroundGenerateTextResponse,
@@ -19,9 +23,13 @@ import type {
   TTSPlaybackStartResponse,
   TTSPlaybackStopRequest,
 } from "@/types/tts-playback"
+import type { FreeTranslateProviderId } from "@/utils/config/free-translate-provider"
+import type { DiagnosticsReport } from "@/utils/diagnostics/report"
 import type { GlossarySnapshot } from "@/utils/glossary/active-matcher"
 import type { MatchedTerm } from "@/utils/glossary/types"
 import type { HostedAiStatus } from "@/utils/hosted-ai/types"
+import type { LogRecord } from "@/utils/logging/logger"
+import type { ForwardingLogContext } from "@/utils/logging/stored-record"
 import type { PromptableProviderRef, SerializableProviderRef } from "@/utils/providers/provider-ref"
 import type { EdgeTTSVoice } from "@/utils/server/edge-tts/types"
 import { defineExtensionMessaging } from "@webext-core/messaging"
@@ -43,13 +51,19 @@ interface ProtocolMap {
   >
   // config
   getInitialConfig: () => Config | null
+  // The machine translator a guest can use instead of Built-in AI: Google where this
+  // network reaches it, Microsoft otherwise. Probed in the background, once a session.
+  getFreeTranslateProviderId: () => FreeTranslateProviderId
+  // Automatic page translation may ask to upgrade in a dialog once a browser session; the
+  // first ask gets true. Kept in the background: content scripts can't read session storage.
+  claimBuiltInAiAutoPrompt: () => boolean
   // glossary — the terms live in IndexedDB, which a content script cannot open,
   // so it asks the background once per page and compiles a matcher locally.
   // `url` says which page is asking; glossaries scoped to other sites are left
   // out of the answer rather than filtered on arrival.
   getGlossarySnapshot: (data: {
     url: string | undefined
-    targetLang: LangCodeISO6393
+    targetLang: LanguageTag
   }) => Promise<GlossarySnapshot>
   // translation state
   getEnablePageTranslationByTabId: (data: { tabId: number }) => boolean | undefined
@@ -72,26 +86,45 @@ interface ProtocolMap {
   ensureIframeHostContentInjected: (data: { tabId?: number }) => void
   injectCurrentIframesAfterTopFrameNodeTranslation: () => void
   activateSameOriginIframeSelectionRuntime: () => boolean
+  // The url of the tab a frame is in: a frame can't read it when the page
+  // around it is on another site.
+  getSenderTabUrl: () => string | null
   reportDetectedPageLanguage: (data: {
-    detectedCodeOrUnd: LangCodeISO6393 | "und"
+    detectedCodeOrUnd: LanguageTag | "und"
     url: string
   }) => void
   refreshDetectedPageLanguage: () => void
-  getDetectedCode: () => LangCodeISO6393
-  detectedPageLanguageChanged: (data: { detectedCode: LangCodeISO6393 }) => void
+  getDetectedCode: () => LanguageTag
+  detectedPageLanguageChanged: (data: { detectedCode: LanguageTag }) => void
   // ask host to start page translation
   askManagerToTogglePageTranslation: (data: {
     enabled: boolean
     analyticsContext?: FeatureUsageContext<"page_translation">
   }) => void
-  openSelectionTranslationFromContextMenu: (data: { selectionText: string }) => void
+  // `fromEbookSection`: the menu was opened in a book section of the ebook
+  // reader, which relays its selection to the receiving top frame.
+  openSelectionTranslationFromContextMenu: (data: {
+    selectionText: string
+    fromEbookSection?: boolean
+  }) => void
   openSelectionCustomActionFromContextMenu: (data: {
     actionId: string
     selectionText: string
+    fromEbookSection?: boolean
   }) => void
-  readAloudSelectionFromContextMenu: (data: { selectionText: string }) => void
+  readAloudSelectionFromContextMenu: (data: {
+    selectionText: string
+    fromEbookSection?: boolean
+  }) => void
+  // The selection toolbar's "Until I reload this page", kept for the whole tab
+  hideSelectionToolbarUntilReload: () => void
+  isSelectionToolbarHiddenUntilReload: () => boolean
+  selectionToolbarHiddenUntilReload: () => void
+  // popup → the tab's top frame: open or close the "Diagnose this page" panel
+  togglePageTranslationDiagnostics: () => void
   // analytics
   trackFeatureUsedEvent: (data: FeatureUsedEventProperties) => void
+  trackBuiltInAiPromptEvent: (data: BuiltInAiPromptEvent) => void
   // user guide
   pinStateChanged: (data: { isPinned: boolean }) => void
   getPinState: () => boolean
@@ -187,6 +220,10 @@ interface ProtocolMap {
   getHostedAiStatus: () => Promise<HostedAiStatus | null>
   // network proxy
   backgroundFetch: (data: ProxyRequest) => Promise<ProxyResponse>
+  // local log — the background owns it; every other context hands it its
+  // records (utils/logging/sinks/forward.ts)
+  storeLogRecords: (data: { context: ForwardingLogContext; records: LogRecord[] }) => void
+  getDiagnosticsReport: () => Promise<DiagnosticsReport>
   // cache management
   clearAllTranslationRelatedCache: () => Promise<void>
   clearAiSegmentationCache: () => Promise<void>

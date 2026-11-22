@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it } from "vitest"
 import { browser } from "wxt/browser"
 import { storage } from "#imports"
 import { initializeConfig } from "@/utils/config/init"
+import { migrateConfig } from "@/utils/config/migration"
 import { getLocalConfig } from "@/utils/config/storage"
 import { CONFIG_SCHEMA_VERSION, CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from "@/utils/constants/config"
 import { DEFAULT_PROVIDER_CONFIG } from "@/utils/constants/providers"
 import { getBuiltInActions } from "@/utils/custom-actions"
 import { IS_PURE_BUILD } from "@/utils/distribution"
-import { BUILT_IN_AI_PROVIDER_ID } from "@/utils/providers/provider-registry"
+import { DEFAULT_BUILT_IN_AI_PROVIDER_ID } from "@/utils/providers/provider-registry"
 
 describe.skipIf(!IS_PURE_BUILD)("pure config lifecycle", () => {
   beforeEach(async () => {
@@ -30,18 +31,38 @@ describe.skipIf(!IS_PURE_BUILD)("pure config lifecycle", () => {
 
   it("keeps saved preferences while replacing official-only services on startup", async () => {
     const saved = structuredClone(DEFAULT_CONFIG)
-    saved.language.targetCode = "jpn"
-    saved.providersConfig.push(structuredClone(DEFAULT_PROVIDER_CONFIG.jalapenocloud))
+    saved.language.targetCode = "ja"
+    saved.betaExperience.enabled = true
+    saved.providersConfig.push(
+      structuredClone(DEFAULT_PROVIDER_CONFIG.jalapenocloud),
+      structuredClone(DEFAULT_PROVIDER_CONFIG.ifapi),
+    )
+    saved.builtInAi.models["gpt-6-luna"] = { reasoning: "high" }
+    saved.translationHub.selectedProviderIds = [
+      DEFAULT_BUILT_IN_AI_PROVIDER_ID,
+      DEFAULT_PROVIDER_CONFIG.ifapi.id,
+      DEFAULT_PROVIDER_CONFIG["microsoft-translate"].id,
+    ]
+    saved.videoSubtitles.providerId = DEFAULT_BUILT_IN_AI_PROVIDER_ID
     saved.pageTranslation.providerId = DEFAULT_PROVIDER_CONFIG.jalapenocloud.id
     saved.selectionToolbar.noteSuggestion.enabled = true
-    saved.selectionToolbar.builtInActions.dictionary.providerId = BUILT_IN_AI_PROVIDER_ID
+    saved.selectionToolbar.builtInActions.dictionary.providerId = DEFAULT_BUILT_IN_AI_PROVIDER_ID
     saved.selectionToolbar.builtInActions.dictionary.notebaseConnection = {
       notebaseId: "dictionary",
       notebaseNameSnapshot: "Dictionary",
       connectedAccount: { id: "reader", name: "Reader", email: "reader@example.com" },
       mappings: [],
     }
-    await storage.setItem(`local:${CONFIG_STORAGE_KEY}`, saved)
+    const rawConfig = {
+      ...saved,
+      providersConfig: saved.providersConfig.map((provider) =>
+        provider.provider === "ifapi"
+          ? { ...provider, model: { model: "retired-model" } }
+          : provider,
+      ),
+    }
+    const imported = await migrateConfig(rawConfig, CONFIG_SCHEMA_VERSION)
+    await storage.setItem(`local:${CONFIG_STORAGE_KEY}`, rawConfig)
     await storage.setMeta(`local:${CONFIG_STORAGE_KEY}`, {
       schemaVersion: CONFIG_SCHEMA_VERSION,
     })
@@ -52,7 +73,15 @@ describe.skipIf(!IS_PURE_BUILD)("pure config lifecycle", () => {
       .filter((provider) => provider.enabled)
       .map((provider) => provider.id)
 
-    expect(config.language.targetCode).toBe("jpn")
+    expect(config).toEqual(imported)
+    expect(await storage.getItem(`local:${CONFIG_STORAGE_KEY}`)).toEqual(config)
+    expect(config.language.targetCode).toBe("ja")
+    expect(config.builtInAi.models).toEqual({})
+    expect(config.translationHub.selectedProviderIds).toEqual([
+      DEFAULT_PROVIDER_CONFIG["microsoft-translate"].id,
+    ])
+    expect(config.providersConfig.some((provider) => provider.provider === "ifapi")).toBe(false)
+    expect(enabledProviderIds).toContain(config.videoSubtitles.providerId)
     expect(enabledProviderIds).not.toContain(DEFAULT_PROVIDER_CONFIG.jalapenocloud.id)
     expect(enabledProviderIds).toContain(config.pageTranslation.providerId)
     expect(enabledProviderIds).toContain(

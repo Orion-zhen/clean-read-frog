@@ -65,6 +65,16 @@ describe("Pure account UI build boundaries", () => {
     ],
     [customActionPanel, "/src/components/ui/selection-popover/review-due-tab.tsx", "ReviewDueTab"],
     [
+      "/src/entrypoints/content-runtime/selection/app.tsx",
+      "/src/entrypoints/content-runtime/selection/built-in-ai-prompt-dialog.tsx",
+      "BuiltInAiPromptDialog",
+    ],
+    [
+      "/src/entrypoints/options/app-sidebar/product-nav.tsx",
+      "/src/entrypoints/options/app-sidebar/survey-nav-item.tsx",
+      "SurveyNavItem",
+    ],
+    [
       translationProvider,
       "/src/components/ui/selection-popover/review-due-tab.tsx",
       "ReviewDueTab",
@@ -94,6 +104,18 @@ describe("Pure account UI build boundaries", () => {
     runInNewContext(chunk.code, context)
     expect(context.PureGateway.showNotebaseLimitExceededToast!()).toBeUndefined()
     expect(Object.keys(chunk.modules).sort()).toEqual([root + importer, root + gateway].sort())
+  })
+
+  it("does not seed IF API when a Pure install migrates past v122", async () => {
+    const chunk = await buildGateway(
+      "/src/utils/config/migration.ts",
+      "/src/utils/config/migration-scripts/v122-to-v123.ts",
+      "migrate",
+    )
+    const context = { PureGateway: {} as { migrate: (config: unknown) => unknown } }
+    runInNewContext(chunk.code, context)
+    const config = { providersConfig: [] }
+    expect(context.PureGateway.migrate(config)).toBe(config)
   })
 
   it("rejects an unreviewed quota promotion caller", async () => {

@@ -1,5 +1,9 @@
-import { langCodeISO6393Schema, langLevel } from "@read-frog/definitions"
+import { langLevel } from "@read-frog/definitions"
 import { z } from "zod"
+import {
+  filterProviderConfigsForDistribution,
+  normalizeConfigForDistribution,
+} from "@/utils/config/distribution"
 import {
   BUILT_IN_ACTION_IDS,
   BUILT_IN_ACTION_KEYS,
@@ -17,13 +21,17 @@ import {
   getProviderIdsForCapability,
 } from "@/utils/providers/provider-registry"
 import { normalizeSelectionToolbarLists } from "@/utils/selection-toolbar-order"
+import { builtInAiConfigSchema } from "./built-in-ai"
 import { floatingButtonSchema } from "./floating-button"
 import { glossaryConfigSchema } from "./glossary"
 import { languageDetectionConfigSchema } from "./language-detection"
+import { storedLanguageTagSchema } from "./language-tag"
 import { providersConfigSchema } from "./provider"
+import { storedProviderIdListSchema, storedProviderIdSchema } from "./provider-id"
 import {
   selectionToolbarBuiltInActionsSchema,
   selectionToolbarCustomActionsSchema,
+  selectionToolbarPlacementSchema,
 } from "./selection-toolbar"
 import { shortcutSchema } from "./shortcut"
 import { siteRulesConfigSchema } from "./site-rules"
@@ -32,14 +40,14 @@ import { translateConfigSchema } from "./translate"
 import { ttsConfigSchema } from "./tts"
 // Language schema
 const languageSchema = z.object({
-  sourceCode: langCodeISO6393Schema.or(z.literal("auto")),
-  targetCode: langCodeISO6393Schema,
+  sourceCode: storedLanguageTagSchema.or(z.literal("auto")),
+  targetCode: storedLanguageTagSchema,
   level: langLevel,
 })
 
 const selectionToolbarFeatureSchema = z.object({
   enabled: z.boolean(),
-  providerId: z.string().nonempty(),
+  providerId: storedProviderIdSchema,
   shortcut: shortcutSchema,
 })
 
@@ -77,6 +85,9 @@ const selectionToolbarSchema = z
     enabled: z.boolean(),
     disabledSelectionToolbarPatterns: z.array(z.string()),
     opacity: z.number().min(MIN_SELECTION_OVERLAY_OPACITY).max(MAX_SELECTION_OVERLAY_OPACITY),
+    // `.default()` lets a config stored before v128 parse in UI contexts that
+    // load ahead of the background migration.
+    placement: selectionToolbarPlacementSchema.default("followDirection"),
     features: z.object({
       translate: selectionToolbarFeatureSchema,
       speak: selectionToolbarSpeakFeatureSchema,
@@ -96,7 +107,7 @@ const selectionToolbarSchema = z
     noteSuggestion: z.object({
       enabled: z.boolean(),
       actionId: z.string().nonempty(),
-      providerId: z.string().nonempty(),
+      providerId: storedProviderIdSchema,
     }),
   })
   .superRefine((selectionToolbar, ctx) => {
@@ -129,9 +140,9 @@ const sideContentSchema = z.object({
 const translationHubSchema = z
   .object({
     shortcut: shortcutSchema,
-    selectedProviderIds: z.array(z.string().min(1)).nullable().default(null),
-    sourceCode: langCodeISO6393Schema.or(z.literal("auto")).nullable().default(null),
-    targetCode: langCodeISO6393Schema.nullable().default(null),
+    selectedProviderIds: storedProviderIdListSchema.nullable().default(null),
+    sourceCode: storedLanguageTagSchema.or(z.literal("auto")).nullable().default(null),
+    targetCode: storedLanguageTagSchema.nullable().default(null),
     // A missing ID in a pre-migration config must stay unset until v102 copies
     // the page prompt; another UI context may write this config first.
     promptId: z.string().min(1).nullable().default(null),
@@ -158,13 +169,13 @@ const contextMenuSchema = z.object({
 const inputTranslationLangSchema = z.union([
   z.literal("sourceCode"),
   z.literal("targetCode"),
-  langCodeISO6393Schema,
+  storedLanguageTagSchema,
 ])
 
 // input translation schema (triple-space trigger)
 const inputTranslationSchema = z.object({
   enabled: z.boolean(),
-  providerId: z.string().nonempty(),
+  providerId: storedProviderIdSchema,
   fromLang: inputTranslationLangSchema,
   toLang: inputTranslationLangSchema,
   enableCycle: z.boolean(),
@@ -193,26 +204,34 @@ const uiLanguageSchema = z
 export type UiLanguage = z.infer<typeof uiLanguageSchema>
 
 // Complete config schema
-export const configSchema = z
-  .object({
-    language: languageSchema,
-    providersConfig: providersConfigSchema,
-    pageTranslation: translateConfigSchema,
-    languageDetection: languageDetectionConfigSchema,
-    tts: ttsConfigSchema,
-    floatingButton: floatingButtonSchema,
-    selectionToolbar: selectionToolbarSchema,
-    sideContent: sideContentSchema,
-    betaExperience: betaExperienceSchema,
-    contextMenu: contextMenuSchema,
-    inputTranslation: inputTranslationSchema,
-    videoSubtitles: videoSubtitlesSchema,
-    siteControl: siteControlSchema,
-    siteRules: siteRulesConfigSchema,
-    uiLanguage: uiLanguageSchema,
-    translationHub: translationHubSchema,
-    glossary: glossaryConfigSchema,
-  })
+const configShape = z.object({
+  language: languageSchema,
+  // Discard official-only provider rows before validating their model and option fields.
+  providersConfig: __PURE_BUILD__
+    ? z.preprocess(filterProviderConfigsForDistribution, providersConfigSchema)
+    : providersConfigSchema,
+  pageTranslation: translateConfigSchema,
+  languageDetection: languageDetectionConfigSchema,
+  tts: ttsConfigSchema,
+  floatingButton: floatingButtonSchema,
+  selectionToolbar: selectionToolbarSchema,
+  sideContent: sideContentSchema,
+  betaExperience: betaExperienceSchema,
+  contextMenu: contextMenuSchema,
+  inputTranslation: inputTranslationSchema,
+  videoSubtitles: videoSubtitlesSchema,
+  siteControl: siteControlSchema,
+  siteRules: siteRulesConfigSchema,
+  uiLanguage: uiLanguageSchema,
+  translationHub: translationHubSchema,
+  glossary: glossaryConfigSchema,
+  builtInAi: builtInAiConfigSchema,
+})
+
+export type Config = z.infer<typeof configShape>
+
+export const configSchema = configShape
+  .transform((config) => normalizeConfigForDistribution(config))
   .superRefine((data, ctx) => {
     for (const featureKey of FEATURE_KEYS) {
       const def = FEATURE_PROVIDER_DEFS[featureKey]
@@ -295,5 +314,3 @@ export const configSchema = z
       }
     })
   })
-
-export type Config = z.infer<typeof configSchema>

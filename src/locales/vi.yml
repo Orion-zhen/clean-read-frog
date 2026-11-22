@@ -69,6 +69,7 @@ popup:
     emailUs: Gửi email cho chúng tôi
     featureRequest: Đề xuất tính năng
     bugReport: Báo lỗi
+    diagnosePage: "Chẩn đoán trang này"
     community: Cộng đồng
     joinDiscord: Tham gia Discord
     joinWechat: Tham gia nhóm WeChat
@@ -135,6 +136,13 @@ options:
     bugReport:
       title: Báo lỗi
       description: Mở phiếu hỗ trợ và theo dõi cho đến khi được khắc phục
+    troubleshooting:
+      title: "Khắc phục sự cố"
+    diagnostics:
+      title: "Xuất dữ liệu chẩn đoán"
+      description: "Lưu nhật ký gần đây và cài đặt (không gồm khóa API) để đính kèm vào báo cáo lỗi"
+      exportSuccess: "Đã lưu dữ liệu chẩn đoán"
+      exportFailed: "Không thể xuất dữ liệu chẩn đoán"
     community:
       title: Cộng đồng
     discord:
@@ -151,6 +159,22 @@ options:
     configTitle: Cấu hình nhà cung cấp
     addProvider: Thêm nhà cung cấp
     builtInProvider: Nhà cung cấp tích hợp
+    thirdPartyProviders: Nhà cung cấp bên thứ ba
+    builtInModel:
+      reasoningDescription: "Mức độ $1 suy nghĩ trước khi trả lời. Mức càng cao càng xử lý tốt văn bản khó, nhưng trả lời chậm hơn và dùng nhiều hạn mức hơn."
+      reasoningDefault: "Mặc định"
+      reasoningLevels:
+        none: "Tắt"
+        minimal: "Tối thiểu"
+        low: "Thấp"
+        medium: "Trung bình"
+        high: "Cao"
+        xhigh: "Rất cao"
+      unavailableTitle:
+        temporary: "$1 tạm thời không khả dụng"
+        removed: "$1 không còn được cung cấp"
+      unavailableDescription: "Trong lúc mô hình này không chạy được, các tính năng dùng nó sẽ báo lỗi. Để tiếp tục, hãy chuyển chúng sang $1."
+      unavailableDescriptionNoAlternatives: "Trong lúc mô hình này không chạy được, các tính năng dùng nó sẽ báo lỗi. Để tiếp tục, hãy chuyển chúng sang nhà cung cấp khác."
     builtInAiUsage:
       title: Hạn mức AI tích hợp
       remaining: "Còn lại $1%"
@@ -171,12 +195,14 @@ options:
         pdfTranslation: Dịch PDF
     sponsorCta: Nhận AI nhanh, tiết kiệm chi phí
     sponsorCtaJalapenoCloud: Nhận ưu đãi giảm 50% GLM 5.3
+    sponsorCtaIfapi: Tặng thêm 10% với mã READFROG
     setApiKeyWarning:
       message: Hãy đặt API Key ở trang $1
     badges:
       featureCount: $1 tính năng
       sponsor: Tài trợ
       sponsorJalapenoCloud: Miễn phí $$1
+      sponsorIfapi: Mô hình -90%
     dialog:
       title: Thêm nhà cung cấp mới
       groups:
@@ -268,6 +294,7 @@ options:
         xai: Công ty AI của Elon Musk cung cấp các mô hình Grok với truy cập dữ liệu thời gian thực
         atlascloud: Nền tảng hợp nhất tương thích OpenAI cho các mô hình mới như DeepSeek, Kimi, Qwen, Doubao và GLM
         jalapenocloud: AI cấp doanh nghiệp được các đội ngũ hàng đầu sử dụng, nay dành cho bạn!
+        ifapi: GPT, Claude, Gemini và nhiều mô hình khác, chỉ từ 10% giá chính thức
         siliconflow: Nền tảng suy luận hiệu suất cao cho các mô hình Trung Quốc và quốc tế
         tensdaq: Nền tảng MaaS đấu giá AI cách mạng với giá thị trường, loại bỏ giá cố định cao
         openaiCompatible: Kết nối với endpoint tùy chỉnh tương thích với OpenAI Chat Completions API
@@ -611,15 +638,13 @@ options:
       panel: Mở bảng điều khiển bên
       translate: Bật/tắt dịch trang
     closeMenu:
-      disableForSite: Tắt cho trang web này
-      disableGlobally: Tắt toàn cục
+      title: Ẩn nút nổi
     tooltips:
       togglePageTranslation: Bật/tắt dịch trang
       floatingButtonOptions: Tùy chọn nút nổi
       lockPosition: Khóa vị trí
       unlockPosition: Mở khóa vị trí
       settings: Cài đặt
-      feedback: Gửi phản hồi
   selectionToolbar:
     title: Thanh công cụ chọn
     pageDescription: Đặt các thao tác xuất hiện khi bạn chọn văn bản và nơi hiển thị thanh công cụ.
@@ -652,6 +677,12 @@ options:
         providerDescription: Nhà cung cấp AI tạo ra gợi ý
     display:
       title: Hiển thị
+      placement:
+        title: Vị trí
+        description: Chọn thanh công cụ hiện ở phía nào của văn bản đã chọn. Nếu phía đã chọn không đủ chỗ, thanh sẽ hiện ở phía còn lại
+        followDirection: Theo hướng chọn
+        above: Luôn ở trên
+        below: Luôn ở dưới
       opacity:
         title: Độ mờ
         description: Điều chỉnh độ mờ của thanh công cụ chọn văn bản và cửa sổ mở rộng mở từ đó
@@ -661,8 +692,7 @@ options:
         enterUrlPattern: Nhập mẫu URL
         urlPattern: Mẫu URL
     closeMenu:
-      disableForSite: Tắt cho trang web này
-      disableGlobally: Tắt toàn cục
+      title: Ẩn thanh công cụ chọn
     errors:
       customActionFailed: Hành động tuỳ chỉnh thất bại
       customActionFailedFallback: Yêu cầu hành động tuỳ chỉnh thất bại
@@ -1321,7 +1351,7 @@ options:
         error: Giá trị phải từ $1 đến $2
     translationQueue:
       title: Hàng đợi dịch
-      description: Yêu cầu gửi đi nhanh đến mức nào, mỗi yêu cầu mang bao nhiêu văn bản và dịch trước người đọc bao xa
+      description: Yêu cầu gửi đi nhanh đến mức nào, mỗi yêu cầu mang bao nhiêu văn bản, mỗi yêu cầu được chờ bao lâu và dịch trước người đọc bao xa
       manageQueue: Quản lý hàng đợi
       requestQueueConfig:
         title: Tốc độ dịch
@@ -1336,6 +1366,9 @@ options:
           description: "Số ký tự tối đa: mỗi yêu cầu tới AI mang bao nhiêu văn bản"
         maxItemsPerBatch:
           description: "Số đoạn tối đa: bao nhiêu đoạn gộp chung một yêu cầu. Nhà cung cấp không dùng AI bỏ qua cả hai"
+      requestTimeout:
+        title: Thời gian chờ yêu cầu
+        description: "Số giây chờ phản hồi trước khi bỏ cuộc và thử lại. Yêu cầu AI theo lô được chờ thêm tùy độ dài, tối đa thêm 100 giây. Hãy tăng lên nếu một mô hình chậm liên tục hết thời gian chờ"
       preloadConfig:
         title: Phạm vi dịch trước
         description: Kiểm soát lượng nội dung bên dưới vùng nhìn được dịch trước để tiết kiệm chi phí API
@@ -1414,10 +1447,11 @@ options:
       title: Cơ bản
       enable:
         title: Bật phụ đề video
-        description: Thêm nút dịch vào thanh điều khiển của trình phát trên YouTube, X, Netflix, Bilibili, Udemy và edX.
-      autoStart:
-        title: Mở video là dịch
-        description: Bắt đầu dịch ngay khi video tải xong, không cần bấm nút.
+        description: "Chọn cho từng trang: tắt, thủ công (bắt đầu bằng nút dịch trong trình phát) hoặc tự động (bắt đầu ngay khi mở video)."
+        mode:
+          off: "Tắt"
+          manual: "Thủ công"
+          auto: "Tự động"
       aiSegmentation:
         title: AI phân đoạn thông minh
         description: AI cắt lại phụ đề thành từng câu. Bản dịch sẽ phản hồi chậm hơn. Cần LLM mạnh; mô hình yếu có thể bỏ sót hoặc lệch dòng.
@@ -1507,7 +1541,7 @@ options:
           videoSummary: Tóm tắt video (yêu cầu ngữ cảnh thông minh AI)
     subtitlesQueue:
       title: Hàng đợi phụ đề
-      description: Yêu cầu phụ đề gửi đi nhanh đến mức nào và mỗi yêu cầu mang bao nhiêu dòng
+      description: Yêu cầu phụ đề gửi đi nhanh đến mức nào, mỗi yêu cầu mang bao nhiêu dòng và mỗi yêu cầu được chờ bao lâu
       manageQueue: Quản lý hàng đợi
       requestQueueConfig:
         title: Tốc độ dịch
@@ -1522,6 +1556,9 @@ options:
           description: "Số ký tự tối đa: mỗi yêu cầu tới AI mang bao nhiêu văn bản"
         maxItemsPerBatch:
           description: "Số dòng tối đa: bao nhiêu dòng phụ đề gộp chung một yêu cầu. Nhà cung cấp không dùng AI bỏ qua cả hai"
+      requestTimeout:
+        title: Thời gian chờ yêu cầu
+        description: "Số giây chờ phản hồi trước khi bỏ cuộc và thử lại. Yêu cầu AI theo lô được chờ thêm tùy độ dài, tối đa thêm 100 giây. Hãy tăng lên nếu một mô hình chậm liên tục hết thời gian chờ"
     cache:
       title: Bộ nhớ đệm
       clearCache:
@@ -1579,6 +1616,24 @@ translation:
   sameLanguage: Ngôn ngữ nguồn và đích phải khác nhau
   autoModeSameLanguage: Ngôn ngữ phát hiện '$1' giống với ngôn ngữ đích
   extensionContextInvalidated: Tiện ích đã được cập nhật. Hãy tải lại trang này rồi thử lại.
+pageDiagnosis:
+  title: "Chẩn đoán trang"
+  summary: "Đã dịch $1, chưa dịch $2"
+  empty: "Chưa có gì để hiển thị. Hãy bật dịch trang rồi mở lại mục này."
+  emptyWhileTranslating: "Chưa có gì để hiển thị. Các đoạn sẽ hiện ở đây khi tính năng dịch trang xử lý đến chúng."
+  framesNotIncluded: "Văn bản bên trong các khung nhúng không được tính ở đây."
+  hint: "Nhấp vào một lý do để khoanh các đoạn tương ứng trên trang."
+  close: "Đóng"
+  unavailable: "Read Frog không thể chạy trên trang này"
+  reasons:
+    noProse: "Không có chữ để dịch"
+    tooShort: "Quá ngắn để dịch"
+    targetLanguage: "Đã ở ngôn ngữ đích"
+    skipLanguage: "Thuộc ngôn ngữ bạn bỏ qua"
+    noTranslationNeeded: "AI cho rằng không cần dịch"
+    sameAsSource: "Bản dịch giống bản gốc"
+    emptyResult: "Dịch vụ không trả về gì"
+    error: "Dịch thất bại"
 annotation:
   annotate: "Chú thích"
   enterMode: "Chế độ chú thích"
@@ -1601,6 +1656,11 @@ speak:
   noTextSelected: Không có văn bản nào được chọn
   openaiNotConfigured: Nhà cung cấp OpenAI chưa được cấu hình hoặc chưa được bật
   openaiApiKeyNotConfigured: API key OpenAI chưa được cấu hình
+hideMenu:
+  untilReload: Cho đến khi tải lại trang
+  onSite: Trên $1
+  onAllSites: Trên mọi trang web
+  restoreHint: Có thể bật lại trong $1.
 action:
   copy: Sao chép
   copied: Đã sao chép
@@ -1692,6 +1752,7 @@ subtitles:
   requestAiSubtitles: Yêu cầu phụ đề AI
   usingAiSubtitles: Đang dùng phụ đề AI
   settings: Cài đặt phụ đề
+  autoStartOnPlatform: "Tự động bật trên $1"
   toggle:
     enabled: Đã bật dịch phụ đề
     disabled: Đã tắt dịch phụ đề
@@ -1752,6 +1813,26 @@ hostedAi:
     rateLimited: Quá nhiều yêu cầu, vui lòng thử lại sau.
     guestRateLimited: Quá nhiều yêu cầu từ khách. Vui lòng thử lại sau.
     userRateLimited: Quá nhiều yêu cầu. Vui lòng thử lại sau.
+    modelUnavailable: "Hiện không thể dùng $1. Hãy thử $2."
+    modelUnavailableNoAlternatives: "Hiện không thể dùng $1 và bạn không có mô hình AI tích hợp nào khác. Vui lòng thử lại sau."
+    modelBusy: "$1 đang quá tải. Vui lòng thử lại sau giây lát hoặc chuyển sang $2."
+    modelBusyNoAlternatives: "$1 đang quá tải. Vui lòng thử lại sau giây lát."
+  unavailable:
+    temporary: "$1 tạm thời không khả dụng. Hãy thử $2."
+    temporaryNoAlternatives: "$1 tạm thời không khả dụng. Vui lòng thử lại sau."
+    removed: "$1 không còn được cung cấp. Hãy thử $2."
+    removedNoAlternatives: "$1 không còn được cung cấp. Hãy chọn nhà cung cấp khác."
+  actions:
+    chooseModel: "Chọn mô hình"
+  builtInAiPrompt:
+    logInTitle: "Đăng nhập để dùng AI tích hợp"
+    logInDescription: "AI tích hợp miễn phí khi bạn đăng nhập, khoảng 120.000 token mỗi tuần."
+    upgradeTitle: "Bạn đã dùng hết AI tích hợp của tuần này"
+    upgradeDescription: "Pro dịch khoảng 3.000 trang web mỗi tháng, Ultra khoảng 10.000."
+    upgradeDescriptionPro: "Ultra dịch khoảng 10.000 trang web mỗi tháng."
+    useMachineTranslation: "Dùng dịch máy"
+    switched: "$1 giờ dùng $2."
+    switchFailed: "Không thể chuyển sang dịch máy. Vui lòng thử lại."
 hotkey:
   control: Ctrl
   alt: Option
@@ -1780,183 +1861,3 @@ translationHub:
   translationFailed: Dịch Thất Bại
   translationFailedFallback: Dịch thất bại
   retryTranslation: Thử lại dịch
-languages:
-  eng: Tiếng Anh
-  cmn: Tiếng Trung giản thể
-  cmnHant: Tiếng Trung phồn thể
-  yue: Tiếng Quảng Đông
-  spa: Tiếng Tây Ban Nha
-  rus: Tiếng Nga
-  arb: Tiếng Ả Rập
-  ben: Tiếng Bengal
-  hin: Tiếng Hindi
-  por: Tiếng Bồ Đào Nha
-  ind: Tiếng Indonesia
-  jpn: Tiếng Nhật
-  fra: Tiếng Pháp
-  deu: Tiếng Đức
-  jav: Tiếng Java
-  kor: Tiếng Hàn
-  tel: Tiếng Telugu
-  vie: Tiếng Việt
-  mar: Tiếng Marathi
-  ita: Tiếng Ý
-  tam: Tiếng Tamil
-  tur: Tiếng Thổ Nhĩ Kỳ
-  urd: Tiếng Urdu
-  guj: Tiếng Gujarati
-  pol: Tiếng Ba Lan
-  ukr: Tiếng Ukraine
-  kan: Tiếng Kannada
-  mai: Tiếng Maithili
-  mal: Tiếng Malayalam
-  pes: Tiếng Ba Tư
-  mya: Tiếng Miến Điện
-  swh: Tiếng Swahili
-  sun: Tiếng Sunda
-  ron: Tiếng Romania
-  pan: Tiếng Punjab
-  bho: Tiếng Bhojpuri
-  amh: Tiếng Amhara
-  hau: Tiếng Hausa
-  fuv: Tiếng Fulani
-  bos: Tiếng Bosnia
-  hrv: Tiếng Croatia
-  nld: Tiếng Hà Lan
-  srp: Tiếng Serbia
-  tha: Tiếng Thái
-  ckb: Tiếng Kurd Trung
-  yor: Tiếng Yoruba
-  uzn: Tiếng Uzbek
-  zlm: Tiếng Mã Lai
-  ibo: Tiếng Igbo
-  npi: Tiếng Nepal
-  ceb: Tiếng Cebuano
-  skr: Tiếng Saraiki
-  tgl: Tiếng Tagalog
-  hun: Tiếng Hungary
-  azj: Tiếng Azerbaijan
-  sin: Tiếng Sinhala
-  koi: Tiếng Komi-Permyak
-  ell: Tiếng Hy Lạp
-  ces: Tiếng Séc
-  mag: Tiếng Magahi
-  run: Tiếng Rundi
-  bel: Tiếng Belarus
-  plt: Tiếng Malagasy
-  qug: Tiếng Quechua Chimborazo
-  mad: Tiếng Madura
-  nya: Tiếng Chewa
-  zyb: Tiếng Choang
-  pbu: Tiếng Pashto
-  kin: Tiếng Kinyarwanda
-  zul: Tiếng Zulu
-  bul: Tiếng Bulgaria
-  swe: Tiếng Thụy Điển
-  lin: Tiếng Lingala
-  som: Tiếng Somali
-  hms: Tiếng Miêu Qiandong
-  hnj: Tiếng Hmong Njua
-  ilo: Tiếng Ilocano
-  kaz: Tiếng Kazakh
-  heb: Tiếng Hebrew
-  nob: Tiếng Na Uy (Bokmål)
-  nno: Tiếng Na Uy (Nynorsk)
-  afr: Tiếng Afrikaans
-  sqi: Tiếng Albania
-  asm: Tiếng Assam
-  eus: Tiếng Basque
-  bre: Tiếng Breton
-  cat: Tiếng Catalan
-  cos: Tiếng Corsica
-  cym: Tiếng Wales
-  dan: Tiếng Đan Mạch
-  div: Tiếng Divehi
-  epo: Tiếng Esperanto
-  ekk: Tiếng Estonia
-  fao: Tiếng Faroe
-  fij: Tiếng Fiji
-  fin: Tiếng Phần Lan
-  fry: Tiếng Frisia
-  gla: Tiếng Gael Scotland
-  gle: Tiếng Ireland
-  glg: Tiếng Galicia
-  grn: Tiếng Guarani
-  hat: Tiếng Creole Haiti
-  haw: Tiếng Hawaii
-  hye: Tiếng Armenia
-  ido: Tiếng Ido
-  ina: Tiếng Interlingua
-  isl: Tiếng Iceland
-  kat: Tiếng Georgia
-  khm: Tiếng Khmer
-  kir: Tiếng Kyrgyz
-  lao: Tiếng Lào
-  lat: Tiếng Latin
-  lvs: Tiếng Latvia
-  lit: Tiếng Lithuania
-  ltz: Tiếng Luxembourg
-  mkd: Tiếng Macedonia
-  mlt: Tiếng Malta
-  mon: Tiếng Mông Cổ
-  mri: Tiếng Maori
-  nso: Tiếng Bắc Sotho
-  oci: Tiếng Occitan
-  ori: Tiếng Odia
-  orm: Tiếng Oromo
-  prs: Tiếng Dari
-  san: Tiếng Phạn
-  slk: Tiếng Slovak
-  slv: Tiếng Slovenia
-  smo: Tiếng Samoa
-  sna: Tiếng Shona
-  snd: Tiếng Sindhi
-  sot: Tiếng Nam Sotho
-  tah: Tiếng Tahiti
-  tat: Tiếng Tatar
-  tgk: Tiếng Tajik
-  tir: Tiếng Tigrinya
-  ton: Tiếng Tonga
-  tsn: Tiếng Tswana
-  tuk: Tiếng Turkmen
-  uig: Tiếng Uyghur
-  vol: Tiếng Volapük
-  wol: Tiếng Wolof
-  xho: Tiếng Xhosa
-  ydd: Tiếng Yiddish
-  aka: Tiếng Akan
-  bam: Tiếng Bambara
-  bis: Tiếng Bislama
-  bod: Tiếng Tây Tạng
-  che: Tiếng Chechen
-  chv: Tiếng Chuvash
-  dzo: Tiếng Dzongkha
-  ewe: Tiếng Ewe
-  kab: Tiếng Kabyle
-  lug: Tiếng Luganda
-  oss: Tiếng Ossetia
-  ssw: Tiếng Swati
-  ven: Tiếng Venda
-  war: Tiếng Waray
-  nde: Tiếng Bắc Ndebele
-  nbl: Tiếng Nam Ndebele
-  pam: Tiếng Pampanga
-  hil: Tiếng Hiligaynon
-  bcl: Tiếng Bicolano Trung
-  min: Tiếng Minangkabau
-  ace: Tiếng Aceh
-  bug: Tiếng Bugis
-  ban: Tiếng Bali
-  bjn: Tiếng Banjar
-  mak: Tiếng Makassar
-  sas: Tiếng Sasak
-  tet: Tiếng Tetum
-  cha: Tiếng Chamorro
-  niu: Tiếng Niue
-  tvl: Tiếng Tuvalu
-  gil: Tiếng Kiribati
-  mah: Tiếng Marshall
-  pau: Tiếng Palau
-  wls: Tiếng Wallis
-  rar: Tiếng Rarotongan
-  hif: Tiếng Hindi Fiji

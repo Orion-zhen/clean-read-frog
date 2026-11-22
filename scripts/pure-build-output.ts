@@ -18,9 +18,31 @@ const FORBIDDEN_SOURCE_MODULE_PATTERNS = [
   "/src/entrypoints/background/notebase-pending-save.ts",
   "/src/utils/subtitles/ai/",
   "/src/utils/config/migration-scripts/v097-to-v098.ts",
+  "/src/utils/config/migration-scripts/v122-to-v123.ts",
+  "/src/utils/hosted-ai/upgrade-plan.ts",
+  "/src/utils/survey-prompt.ts",
+  "/src/entrypoints/background/site-rules-update.ts",
 ] as const
 
 const PURE_GATEWAY_REPLACEMENTS = {
+  "/src/entrypoints/background/site-rules-update.ts": `
+    export const setUpSiteRulesUpdate = () => {};
+  `,
+  "/src/entrypoints/options/app-sidebar/survey-nav-item.tsx": `
+    export const SurveyNavItem = () => null;
+  `,
+  "/src/entrypoints/content-runtime/selection/built-in-ai-prompt-dialog.tsx": `
+    export const BuiltInAiPromptDialog = () => null;
+  `,
+  "/src/utils/content-runtime/built-in-ai-prompt.ts": `
+    export const promptForBuiltInAiRefusal = async () => false;
+  `,
+  "/src/utils/hosted-ai/upgrade-plan.ts": `
+    export const getBuiltInAiUpgradePlan = async () => null;
+  `,
+  "/src/utils/config/migration-scripts/v122-to-v123.ts": `
+    export const migrate = (oldConfig) => oldConfig;
+  `,
   "/src/entrypoints/options/pages/preference/user-experience/analytics.tsx": `
     export const AnalyticsItem = () => null;
   `,
@@ -53,6 +75,7 @@ const PURE_GATEWAY_REPLACEMENTS = {
   `,
   "/src/entrypoints/background/analytics.ts": `
     export const captureFeatureUsedEventInBackground = async () => {};
+    export const captureBuiltInAiPromptEventInBackground = async () => {};
   `,
   "/src/utils/auth/auth-client.ts": `
     const guest = { data: null, isPending: false, error: null };
@@ -121,6 +144,22 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
   keyof typeof PURE_GATEWAY_REPLACEMENTS,
   readonly string[]
 > = {
+  "/src/entrypoints/background/site-rules-update.ts": ["/src/entrypoints/background/index.ts"],
+  "/src/entrypoints/options/app-sidebar/survey-nav-item.tsx": [
+    "/src/entrypoints/options/app-sidebar/product-nav.tsx",
+  ],
+  "/src/entrypoints/content-runtime/selection/built-in-ai-prompt-dialog.tsx": [
+    "/src/entrypoints/content-runtime/selection/app.tsx",
+  ],
+  "/src/utils/content-runtime/built-in-ai-prompt.ts": [
+    "/src/entrypoints/content-runtime/host/translation-control/node-translation.ts",
+    "/src/entrypoints/content-runtime/host/translation-control/page-translation.ts",
+    "/src/entrypoints/content-runtime/selection/annotation/provider.tsx",
+    "/src/entrypoints/content-runtime/selection/input-translation/use-input-translation.ts",
+    "/src/utils/subtitles/built-in-ai-refusal.ts",
+  ],
+  "/src/utils/hosted-ai/upgrade-plan.ts": ["/src/utils/providers/provider-ref.ts"],
+  "/src/utils/config/migration-scripts/v122-to-v123.ts": ["/src/utils/config/migration.ts"],
   "/src/entrypoints/options/pages/preference/user-experience/analytics.tsx": [
     "/src/entrypoints/options/pages/preference/user-experience/index.tsx",
   ],
@@ -184,6 +223,8 @@ const PURE_GATEWAY_ALLOWED_IMPORTER_PATTERNS: Record<
   "/src/entrypoints/options/pages/custom-actions/action-config-form/notebase-connection-field.tsx":
     ["/src/entrypoints/options/pages/custom-actions/action-config-form/action-editor.tsx"],
   "/src/utils/error-action.ts": [
+    "/src/utils/providers/provider-ref.ts",
+    "/src/entrypoints/translation-hub/components/translation-card.tsx",
     "/src/entrypoints/background/background-stream.ts",
     "/src/utils/subtitles/ai/access-guard.ts",
     "/src/utils/subtitles/ai/request-ai-subtitles.ts",

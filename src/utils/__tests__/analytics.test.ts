@@ -1,19 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ANALYTICS_FEATURE, ANALYTICS_SURFACE } from "@/types/analytics"
+import { captureLogs } from "@/utils/logging/testing"
 
-const { sendMessageMock, loggerWarnMock } = vi.hoisted(() => ({
+const { sendMessageMock } = vi.hoisted(() => ({
   sendMessageMock: vi.fn<(...args: any[]) => any>(),
-  loggerWarnMock: vi.fn<(...args: any[]) => any>(),
 }))
 
 vi.mock("@/utils/message", () => ({
   sendMessage: sendMessageMock,
-}))
-
-vi.mock("@/utils/logger", () => ({
-  logger: {
-    warn: loggerWarnMock,
-  },
 }))
 
 const {
@@ -27,7 +21,6 @@ const {
 describe.skipIf(__PURE_BUILD__)("analytics helpers", () => {
   beforeEach(() => {
     sendMessageMock.mockReset()
-    loggerWarnMock.mockReset()
   })
 
   it("derives latency in milliseconds and clamps negative durations", () => {
@@ -47,8 +40,8 @@ describe.skipIf(__PURE_BUILD__)("analytics helpers", () => {
         provider: "openai",
         backend_kind: "llm",
         translation_mode: "bilingual",
-        target_language: "cmn",
-        source_language: "jpn",
+        target_language: "zh-Hans",
+        source_language: "ja",
       }),
     ).toEqual({
       feature: ANALYTICS_FEATURE.PAGE_TRANSLATION,
@@ -58,8 +51,8 @@ describe.skipIf(__PURE_BUILD__)("analytics helpers", () => {
       provider: "openai",
       backend_kind: "llm",
       translation_mode: "bilingual",
-      target_language: "cmn",
-      source_language: "jpn",
+      target_language: "zh-Hans",
+      source_language: "ja",
     })
   })
 
@@ -104,7 +97,7 @@ describe.skipIf(__PURE_BUILD__)("analytics helpers", () => {
         provider: "openai",
         backend_kind: "llm",
         char_count: 42,
-        target_language: "cmn",
+        target_language: "zh-Hans",
       },
       async () => "translated",
     )
@@ -131,7 +124,7 @@ describe.skipIf(__PURE_BUILD__)("analytics helpers", () => {
       provider: "openai" as const,
       backend_kind: "llm" as const,
       translation_mode: "bilingual" as const,
-      target_language: "cmn" as const,
+      target_language: "zh-Hans" as const,
     }
 
     await expect(trackFeatureUsed(input)).resolves.toBeUndefined()
@@ -144,6 +137,7 @@ describe.skipIf(__PURE_BUILD__)("analytics helpers", () => {
   })
 
   it("swallows analytics upload failures", async () => {
+    const logs = captureLogs()
     sendMessageMock.mockRejectedValueOnce(new Error("upload failed"))
 
     await expect(
@@ -156,18 +150,17 @@ describe.skipIf(__PURE_BUILD__)("analytics helpers", () => {
         provider: "openai",
         backend_kind: "llm",
         translation_mode: "bilingual",
-        target_language: "cmn",
+        target_language: "zh-Hans",
       }),
     ).resolves.toBeUndefined()
 
-    expect(loggerWarnMock).toHaveBeenCalledOnce()
+    expect(logs.filter((record) => record.level === "warn")).toHaveLength(1)
   })
 })
 
 describe.skipIf(!__PURE_BUILD__)("pure analytics boundary", () => {
   beforeEach(() => {
     sendMessageMock.mockReset()
-    loggerWarnMock.mockReset()
   })
 
   const context = {
@@ -178,7 +171,7 @@ describe.skipIf(!__PURE_BUILD__)("pure analytics boundary", () => {
     provider: "openai" as const,
     backend_kind: "llm" as const,
     char_count: 42,
-    target_language: "cmn" as const,
+    target_language: "zh-Hans" as const,
   }
 
   it("does not send feature metadata to the background", async () => {
@@ -201,6 +194,5 @@ describe.skipIf(!__PURE_BUILD__)("pure analytics boundary", () => {
       }),
     ).rejects.toBe(error)
     expect(sendMessageMock).not.toHaveBeenCalled()
-    expect(loggerWarnMock).not.toHaveBeenCalled()
   })
 })

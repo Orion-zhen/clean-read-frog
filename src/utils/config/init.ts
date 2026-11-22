@@ -1,24 +1,26 @@
 import type { Config } from "@/types/config/config"
 import type { ConfigMeta } from "@/types/config/meta"
+import { dequal } from "dequal"
 import { storage } from "#imports"
 import { configSchema } from "@/types/config/config"
 import { isAPIProviderConfig } from "@/types/config/provider"
 import { initI18n } from "@/utils/i18n"
+import { createLogger } from "@/utils/logging/logger"
 import {
   buildFreshDefaultConfig,
   CONFIG_SCHEMA_VERSION,
   CONFIG_STORAGE_KEY,
   DEFAULT_CONFIG,
 } from "../constants/config"
-import { logger } from "../logger"
-import { normalizeConfigForDistribution } from "./distribution"
 import { runMigration } from "./migration"
+
+const log = createLogger("config/init")
 
 export interface InitializeConfigResult {
   /**
    * The config was created from defaults in this run — either no stored value existed, or the
    * stored value failed validation and was rebuilt. Callers use it to run one-time setup that
-   * only makes sense on untouched defaults (see `selectFreshTranslateProviders`).
+   * only makes sense on untouched defaults (see the background's `onInstalled`).
    */
   isFreshInstall: boolean
 }
@@ -57,22 +59,19 @@ export async function initializeConfig(): Promise<InitializeConfigResult> {
       didConfigChange = true
       currentVersion = nextVersion
     } catch (error) {
-      console.error(`Migration to version ${nextVersion} failed:`, error)
+      log.error("Config migration failed", { version: nextVersion, error })
       currentVersion = nextVersion
     }
   }
 
-  const distributionResult = normalizeConfigForDistribution(config)
-  config = distributionResult.config
-  didConfigChange = didConfigChange || distributionResult.changed
-
   const parsedConfig = configSchema.safeParse(config)
   if (parsedConfig.success) {
+    didConfigChange ||= __PURE_BUILD__ && !dequal(config, parsedConfig.data)
     // Stored as every reader gets it: defaults filled in, the selection
     // toolbar's order and pins in step with its actions.
     config = parsedConfig.data
   } else {
-    logger.warn("Config is invalid, using default config")
+    log.warn("Config is invalid, using default config")
     await initI18n(DEFAULT_CONFIG.uiLanguage)
     config = buildFreshDefaultConfig()
     currentVersion = CONFIG_SCHEMA_VERSION

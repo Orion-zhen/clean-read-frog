@@ -1,11 +1,12 @@
 import type { ProviderCapability } from "./provider-registry"
 import type { ProvidersConfig } from "@/types/config/provider"
 import type { HostedAiFeature, HostedAiStatus, HostedAiTierStatus } from "@/utils/hosted-ai/types"
+import { findHostedAiModel, getHostedAiModelsFromStatus } from "@/utils/hosted-ai/models"
 import { getHostedAiTierStatus } from "@/utils/hosted-ai/status"
 import {
-  getHostedAiModelTier,
+  DEFAULT_BUILT_IN_AI_PROVIDER_ID,
+  getBuiltInAiModelId,
   getProviderIdsForCapability,
-  isBuiltInAiProviderId,
 } from "./provider-registry"
 
 /**
@@ -35,13 +36,13 @@ export function getHostedFeatureForCapability(
  * change on its own: sign in, or buy a plan (`pro_required` / `ultra_required`).
  *
  * Read off `unavailableReason` rather than recomputed from `accessAllowed` and
- * the `credits` array. The server already separates the two — it reports an
+ * the `pools` array. The server already separates the two — it reports an
  * unfunded plan-gated tier as `pro_required` or `ultra_required` ("an upgrade
  * wall, not an outage") and routes every transient condition to
  * `service_unavailable`, including a billing lookup that threw. Deriving
- * durability from an empty `credits` array instead conflates them in both
- * directions: a momentary billing failure empties `credits` for an account that
- * is perfectly entitled.
+ * durability from the pools instead conflates them in both directions: a
+ * momentary billing failure drops the plan's pools for an account that is
+ * perfectly entitled.
  *
  * Everything else the server can report — `quota_exhausted`,
  * `service_unavailable` (open circuit, unconfigured model, unreadable quota
@@ -63,26 +64,37 @@ export function isDurablyUnusableTier(tier: HostedAiTierStatus | undefined): boo
  * Only built-in providers can be durably unusable: a local provider carries its
  * own credentials, so its usability is a config question this module does not
  * answer (see the API-key warning on the provider form).
+ *
+ * A model goes by its tier's status. A model the list does not name has no
+ * tier to read and is left usable here: whether it can run is the server's
+ * call, and the menus mark it unavailable.
  */
 export function isProviderIdDurablyUnusable(
   providerId: string,
   capability: ProviderCapability,
   status: HostedAiStatus | undefined,
 ): boolean {
-  if (!isBuiltInAiProviderId(providerId)) {
+  const modelId = getBuiltInAiModelId(providerId)
+  if (modelId === null) {
     return false
   }
   const feature = getHostedFeatureForCapability(capability)
   if (!feature) {
     return false
   }
-  return isDurablyUnusableTier(
-    getHostedAiTierStatus(status, feature, getHostedAiModelTier(providerId)),
+  const model = findHostedAiModel(getHostedAiModelsFromStatus(status), modelId)
+  return (
+    model !== undefined && isDurablyUnusableTier(getHostedAiTierStatus(status, feature, model.tier))
   )
 }
 
 /**
- * The provider ids that can actually run this capability for this account.
+ * The provider ids that can actually run this capability for this account:
+ * the user's own first, then the Built-in AI models, the default model ahead
+ * of the rest. Callers that fall back to the first id (a deleted provider's
+ * features, language detection's mode switch) then land on the user's own
+ * provider or on the model new installs start with, never on a pricier model
+ * that happens to be listed first.
  *
  * `getProviderIdsForCapability` appends the built-ins unconditionally — its
  * `requireEnable` filters only local rows — so a bare length check on it is
@@ -95,7 +107,16 @@ export function getUsableProviderIdsForCapability(
   providersConfig: ProvidersConfig,
   status: HostedAiStatus | undefined,
 ): string[] {
-  return getProviderIdsForCapability(capability, providersConfig, { requireEnable: true }).filter(
-    (providerId) => !isProviderIdDurablyUnusable(providerId, capability, status),
-  )
+  const usableIds = getProviderIdsForCapability(capability, providersConfig, {
+    requireEnable: true,
+    builtInAiModels: getHostedAiModelsFromStatus(status),
+  }).filter((providerId) => !isProviderIdDurablyUnusable(providerId, capability, status))
+
+  const defaultIndex = usableIds.indexOf(DEFAULT_BUILT_IN_AI_PROVIDER_ID)
+  const firstBuiltInIndex = usableIds.findIndex((id) => getBuiltInAiModelId(id) !== null)
+  if (defaultIndex > firstBuiltInIndex && firstBuiltInIndex !== -1) {
+    usableIds.splice(defaultIndex, 1)
+    usableIds.splice(firstBuiltInIndex, 0, DEFAULT_BUILT_IN_AI_PROVIDER_ID)
+  }
+  return usableIds
 }

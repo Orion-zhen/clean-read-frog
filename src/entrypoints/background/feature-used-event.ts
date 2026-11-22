@@ -1,6 +1,9 @@
 import { recordFeatureActiveDay } from "@/utils/feature-active-days"
 import { onMessage } from "@/utils/message"
-import { captureFeatureUsedEventInBackground } from "./analytics"
+import {
+  captureBuiltInAiPromptEventInBackground,
+  captureFeatureUsedEventInBackground,
+} from "./analytics"
 
 /**
  * Sole subscriber to the feature-used event, fanning it out to the two consumers that
@@ -27,5 +30,9 @@ export function setupFeatureUsedEventHandlers(): void {
     if (!__PURE_BUILD__) {
       await captureFeatureUsedEventInBackground(message.data, message.sender?.tab)
     }
+  })
+
+  onMessage("trackBuiltInAiPromptEvent", async (message) => {
+    await captureBuiltInAiPromptEventInBackground(message.data)
   })
 }

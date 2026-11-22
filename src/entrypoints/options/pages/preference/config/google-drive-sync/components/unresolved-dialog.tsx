@@ -5,8 +5,12 @@ import { resolvedConfigResultAtom, unresolvedConfigsAtom } from "@/utils/atoms/c
 import { GoogleAccountChangedError } from "@/utils/google-drive/auth"
 import { syncMergedConfig } from "@/utils/google-drive/sync"
 import { i18n } from "@/utils/i18n"
-import { logger } from "@/utils/logger"
+import { createLogger } from "@/utils/logging/logger"
 import { UnresolvedDialog as ConfigSyncUnresolvedDialog } from "../../config-sync/unresolved-dialog"
+
+const log = createLogger(
+  "options/pages/preference/config/google-drive-sync/components/unresolved-dialog",
+)
 
 interface UnresolvedDialogProps {
   open: boolean
@@ -33,7 +37,7 @@ export function UnresolvedDialog({ open, email, onResolved, onCancelled }: Unres
       await syncMergedConfig(resolvedConfigResult.config, email)
       onResolved()
     } catch (error) {
-      logger.error("Failed to sync merged config", error)
+      log.error("Failed to sync merged config", { error })
       // Worth naming: "sync failed, try again" would send the user round the
       // same loop, when what they need to know is which account they are on.
       if (error instanceof GoogleAccountChangedError) {
@@ -49,7 +53,7 @@ export function UnresolvedDialog({ open, email, onResolved, onCancelled }: Unres
   }
 
   const handleCancel = () => {
-    logger.info("Conflict resolution cancelled")
+    log.info("Conflict resolution cancelled")
     onCancelled()
   }
 

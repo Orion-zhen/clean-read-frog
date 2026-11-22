@@ -1,12 +1,12 @@
-import type { LangCodeISO6393 } from "@read-frog/definitions"
+import type { LanguageTag } from "@read-frog/definitions"
 import type { PromptableProviderRef } from "@/utils/providers/provider-ref"
-import { langCodeISO6393Schema } from "@read-frog/definitions"
+import { resolveLanguage } from "@read-frog/definitions"
 import { franc } from "franc"
 import { toastManager } from "@/components/ui/base-ui/toast"
 import { getLocalConfig } from "@/utils/config/storage"
 import { getRandomUUID } from "@/utils/crypto-polyfill"
 import { i18n } from "@/utils/i18n"
-import { logger } from "@/utils/logger"
+import { createLogger } from "@/utils/logging/logger"
 import { sendMessage } from "@/utils/message"
 import {
   getLanguageDetectionSystemPrompt,
@@ -18,6 +18,8 @@ import {
 } from "@/utils/providers/provider-ref"
 import { resolveProviderRefForCapability } from "@/utils/providers/provider-registry"
 import { cleanText } from "./utils"
+
+const log = createLogger("content/language")
 
 const DEFAULT_MIN_LENGTH = 10
 const DEFAULT_MAX_LENGTH_FOR_LLM = 500
@@ -39,7 +41,7 @@ export interface DetectLanguageOptions {
 }
 
 export interface DetectLanguageResult {
-  code: LangCodeISO6393 | "und"
+  code: LanguageTag | "und"
   source: DetectionSource
 }
 
@@ -71,7 +73,7 @@ export async function detectLanguageWithSource(
         return { code: llmResult, source: "llm" }
       }
     } catch (error) {
-      logger.warn("LLM detection failed, falling back to franc:", error)
+      log.warn("LLM detection failed, falling back to franc", { error })
       const isSpeaking = options.llmFallbackToastContext === "speak"
       toastManager.add({
         type: "warning",
@@ -92,12 +94,14 @@ export async function detectLanguageWithSource(
     return { code: "und", source: "fallback" }
   }
 
-  const parsedFrancResult = langCodeISO6393Schema.safeParse(francResult)
-  if (!parsedFrancResult.success) {
+  // franc answers in ISO 639-3 (`cmn`, `por`, `als`). This is the only place
+  // that code is read; from here on the language is a BCP 47 tag.
+  const francLanguage = resolveLanguage(francResult)
+  if (!francLanguage) {
     return { code: "und", source: "fallback" }
   }
 
-  return { code: parsedFrancResult.data, source: "franc" }
+  return { code: francLanguage, source: "franc" }
 }
 
 /**
@@ -109,7 +113,7 @@ export async function detectLanguageWithSource(
 export async function detectLanguage(
   text: string,
   options?: DetectLanguageOptions,
-): Promise<LangCodeISO6393 | null> {
+): Promise<LanguageTag | null> {
   const result = await detectLanguageWithSource(text, options)
   return result.code === "und" ? null : result.code
 }
@@ -123,11 +127,11 @@ export async function detectLanguage(
 export async function detectLanguageWithLLM(
   text: string,
   providerRef?: PromptableProviderRef,
-): Promise<LangCodeISO6393 | "und" | null> {
+): Promise<LanguageTag | "und" | null> {
   const MAX_ATTEMPTS = 3 // 1 original + 2 retries
 
   if (!text.trim()) {
-    logger.warn("No text provided for language detection")
+    log.warn("No text provided for language detection")
     return null
   }
 
@@ -140,12 +144,12 @@ export async function detectLanguageWithLLM(
     try {
       const globalConfig = await getLocalConfig()
       if (!globalConfig) {
-        logger.warn("No config found for language detection")
+        log.warn("No config found for language detection")
         return null
       }
       const ldProviderId = globalConfig.languageDetection.providerId
       if (!ldProviderId) {
-        logger.info("No provider configured for language detection")
+        log.info("No provider configured for language detection")
         return null
       }
       const resolved = resolveProviderRefForCapability(
@@ -154,7 +158,7 @@ export async function detectLanguageWithLLM(
         ldProviderId,
       )
       if (!resolved) {
-        logger.info(`Provider "${ldProviderId}" cannot run language detection`)
+        log.info("Provider cannot run language detection", { providerId: ldProviderId })
         return null
       }
       ref = await serializeProviderRef(resolved, "languageDetection")
@@ -168,7 +172,7 @@ export async function detectLanguageWithLLM(
       if (error instanceof HostedAiProviderUnavailableError) {
         throw error
       }
-      logger.error("Failed to resolve the language detection provider:", error)
+      log.error("Failed to resolve the language detection provider", { error })
       return null
     }
   }
@@ -190,21 +194,21 @@ export async function detectLanguageWithLLM(
         const detectedCode = parseDetectedLanguageCode(response.text)
 
         if (detectedCode) {
-          logger.info(`LLM language detection succeeded on attempt ${attempt}: ${detectedCode}`)
+          log.debug("LLM language detection succeeded", { attempt, detectedCode })
           return detectedCode
         }
-        logger.warn(`LLM returned invalid language code on attempt ${attempt}: "${response.text}"`)
+        log.warn("LLM returned an invalid language code", { attempt, text: response.text })
       } catch (error) {
-        logger.error(`LLM language detection attempt ${attempt}/${MAX_ATTEMPTS} failed:`, error)
+        log.warn("LLM language detection attempt failed", { attempt, error })
       }
 
       if (attempt === MAX_ATTEMPTS) {
-        logger.warn("All LLM language detection attempts failed")
+        log.warn("All LLM language detection attempts failed")
         return null
       }
     }
   } catch (error) {
-    logger.error("Language detection failed:", error)
+    log.error("Language detection failed", { error })
     return null
   }
 

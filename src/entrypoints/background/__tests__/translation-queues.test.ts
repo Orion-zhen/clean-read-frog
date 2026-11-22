@@ -1,6 +1,6 @@
 import type { ProviderConfig } from "@/types/config/provider"
 import type { MatchedTerm } from "@/utils/glossary/types"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import { BATCH_SEPARATOR, NO_TRANSLATION_SENTINEL } from "@/utils/constants/prompt"
 import { isTranslationCancelledError } from "@/utils/request/cancellation"
@@ -109,7 +109,27 @@ const deepLProvider: ProviderConfig = {
   apiKey: "test-key",
 }
 
+/**
+ * Settles `pending` under fake timers, fast-forwarding through the queues' retry
+ * backoff (1 s, 2 s, 4 s…) instead of sleeping it out. Steps in small increments
+ * so timers armed after a real async hop (hashing, mocked promises) still fire.
+ */
+async function fastForward<T>(pending: Promise<T>): Promise<T> {
+  const settled = pending.then(
+    () => true,
+    () => true,
+  )
+  while (!(await Promise.race([settled, Promise.resolve(false)]))) {
+    await vi.advanceTimersByTimeAsync(250)
+  }
+  return pending
+}
+
 describe("translation queue helpers", () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
@@ -126,6 +146,7 @@ describe("translation queue helpers", () => {
         requestQueueConfig: {
           rate: 10,
           capacity: 10,
+          timeoutMs: 20_000,
         },
         batchQueueConfig: {
           maxCharactersPerBatch: 1000,
@@ -177,9 +198,11 @@ describe("translation queue helpers", () => {
     expect(
       shouldUseBatchQueue({
         kind: "system",
-        providerId: "read-frog-free-ai",
+        providerId: "read-frog-ai:gpt-6-luna",
+        model: "gpt-6-luna",
         modelTier: "normal",
         modelRevision: "normal-r1",
+        reasoning: null,
       }),
     ).toBe(true)
   }, 15_000)
@@ -207,6 +230,7 @@ describe("translation queue helpers", () => {
   })
 
   it("reuses the hosted requestId when RequestQueue retries the same model call", async () => {
+    vi.useFakeTimers()
     runStreamTextInBackgroundMock
       .mockRejectedValueOnce(new Error("network error"))
       .mockResolvedValueOnce({
@@ -219,29 +243,34 @@ describe("translation queue helpers", () => {
     const handler = getRegisteredMessageHandler("enqueueTranslateRequest")
 
     await expect(
-      handler({
-        data: {
-          text: "hello",
-          langConfig: DEFAULT_CONFIG.language,
-          providerRef: {
-            kind: "system",
-            providerId: "read-frog-free-ai",
-            modelTier: "normal",
-            modelRevision: "normal-r1",
+      fastForward(
+        handler({
+          data: {
+            text: "hello",
+            langConfig: DEFAULT_CONFIG.language,
+            providerRef: {
+              kind: "system",
+              providerId: "read-frog-ai:gpt-6-luna",
+              model: "gpt-6-luna",
+              modelTier: "normal",
+              modelRevision: "normal-r1",
+              reasoning: null,
+            },
+            scheduleAt: Date.now(),
+            hash: "hosted-retry-hash",
+            hostedFeature: "pageTranslation",
           },
-          scheduleAt: Date.now(),
-          hash: "hosted-retry-hash",
-          hostedFeature: "pageTranslation",
-        },
-      }),
+        }),
+      ),
     ).resolves.toBe("hosted translation")
 
     expect(runStreamTextInBackgroundMock).toHaveBeenCalledTimes(2)
     const firstPayload = runStreamTextInBackgroundMock.mock.calls[0]![0]
     const secondPayload = runStreamTextInBackgroundMock.mock.calls[1]![0]
     expect(firstPayload).toMatchObject({
-      providerId: "read-frog-free-ai",
-      modelTier: "normal",
+      providerId: "read-frog-ai:gpt-6-luna",
+      // The level the ref resolved with its cache identity, so the entry holds what it asked for.
+      builtInAiReasoning: null,
       instructions: "Translate accurately",
       prompt: "Source text",
       requestId: expect.stringMatching(/^[0-9a-f-]{36}$/i),
@@ -255,7 +284,7 @@ describe("translation queue helpers", () => {
       ...DEFAULT_CONFIG,
       pageTranslation: {
         ...DEFAULT_CONFIG.pageTranslation,
-        requestQueueConfig: { rate: 0.1, capacity: 1 },
+        requestQueueConfig: { rate: 0.1, capacity: 1, timeoutMs: 20_000 },
         batchQueueConfig: { maxCharactersPerBatch: 1000, maxItemsPerBatch: 1 },
       },
     })
@@ -267,6 +296,9 @@ describe("translation queue helpers", () => {
       },
     )
 
+    // Imported after the module reset, so the capture sees the queues' logger.
+    const { captureLogs } = await import("@/utils/logging/testing")
+    const logs = captureLogs("warn")
     const { setupPageTranslationHandlers } = await import("../page-translation")
     setupPageTranslationHandlers()
     const enqueue = getRegisteredMessageHandler("enqueueTranslateRequest")
@@ -280,9 +312,11 @@ describe("translation queue helpers", () => {
           langConfig: DEFAULT_CONFIG.language,
           providerRef: {
             kind: "system",
-            providerId: "read-frog-free-ai",
+            providerId: "read-frog-ai:gpt-6-luna",
+            model: "gpt-6-luna",
             modelTier: "normal",
             modelRevision: "normal-r1",
+            reasoning: null,
           },
           scheduleAt: Date.now(),
           hash,
@@ -310,6 +344,8 @@ describe("translation queue helpers", () => {
     )
     expect(cancelledReasons).toEqual([true, true])
     expect(abortSignals[0]?.aborted).toBe(true)
+    // Cancelled on purpose, so no failure goes to the local log.
+    expect(logs).toEqual([])
   }, 5_000)
 
   it("keeps request-local marker zero isolated across LLM batch items", async () => {
@@ -470,6 +506,7 @@ describe("translation queue helpers", () => {
         requestQueueConfig: {
           rate: 10,
           capacity: 10,
+          timeoutMs: 20_000,
         },
         batchQueueConfig: {
           maxCharactersPerBatch: 1000,
@@ -643,6 +680,7 @@ describe("translation queue helpers", () => {
   })
 
   it("preserves the previous cache entry when forced translation fails", async () => {
+    vi.useFakeTimers()
     translationCacheGetMock.mockResolvedValue({
       key: "webpage-hash",
       translation: "still usable",
@@ -654,16 +692,18 @@ describe("translation queue helpers", () => {
     const handler = getRegisteredMessageHandler("enqueueTranslateRequest")
 
     await expect(
-      handler({
-        data: {
-          text: "hello",
-          langConfig: DEFAULT_CONFIG.language,
-          providerRef: localProviderRef(googleProvider),
-          scheduleAt: Date.now(),
-          hash: "webpage-hash",
-          forceRetranslation: true,
-        },
-      }),
+      fastForward(
+        handler({
+          data: {
+            text: "hello",
+            langConfig: DEFAULT_CONFIG.language,
+            providerRef: localProviderRef(googleProvider),
+            scheduleAt: Date.now(),
+            hash: "webpage-hash",
+            forceRetranslation: true,
+          },
+        }),
+      ),
     ).rejects.toThrow("provider unavailable")
 
     expect(translationCacheGetMock).not.toHaveBeenCalled()
@@ -1106,9 +1146,11 @@ describe("translation queue helpers", () => {
         langConfig: DEFAULT_CONFIG.language,
         providerRef: {
           kind: "system" as const,
-          providerId: "read-frog-advance-ai",
+          providerId: "read-frog-ai:gpt-6.2-sol",
+          model: "gpt-6.2-sol",
           modelTier: "advance",
           modelRevision: "advance-r1",
+          reasoning: null,
         },
         scheduleAt: Date.now(),
         hash: "subtitle-hosted-hash",
@@ -1134,9 +1176,11 @@ describe("translation queue helpers", () => {
         langConfig: DEFAULT_CONFIG.language,
         providerRef: {
           kind: "system" as const,
-          providerId: "read-frog-free-ai",
+          providerId: "read-frog-ai:gpt-6-luna",
+          model: "gpt-6-luna",
           modelTier: "normal",
           modelRevision: "normal-r1",
+          reasoning: null,
         },
         scheduleAt: Date.now(),
         hash: "hosted-input-route-hash",
@@ -1166,9 +1210,11 @@ describe("translation queue helpers", () => {
         webContent: "Body",
         providerRef: {
           kind: "system",
-          providerId: "read-frog-free-ai",
+          providerId: "read-frog-ai:gpt-6-luna",
+          model: "gpt-6-luna",
           modelTier: "normal",
           modelRevision: "r1",
+          reasoning: null,
         },
         hostedFeature,
       }
@@ -1199,9 +1245,11 @@ describe("translation queue helpers", () => {
       langConfig: DEFAULT_CONFIG.language,
       providerRef: {
         kind: "system" as const,
-        providerId: "read-frog-free-ai",
+        providerId: "read-frog-ai:gpt-6-luna",
+        model: "gpt-6-luna",
         modelTier: "normal",
         modelRevision: "normal-r1",
+        reasoning: null,
       },
       scheduleAt: Date.now(),
     }
@@ -1233,6 +1281,72 @@ describe("translation queue helpers", () => {
     expect(billedFeatures).toEqual(["inputTranslation", "pageTranslation"])
   })
 
+  it("keeps a Built-in AI model's requests at different reasoning levels in separate batches", async () => {
+    ensureInitializedConfigMock.mockResolvedValue({
+      ...DEFAULT_CONFIG,
+      pageTranslation: {
+        ...DEFAULT_CONFIG.pageTranslation,
+        batchQueueConfig: { maxCharactersPerBatch: 1000, maxItemsPerBatch: 4 },
+      },
+    })
+    const { setupPageTranslationHandlers } = await import("../page-translation")
+    setupPageTranslationHandlers()
+
+    // Answer every segment, so a merged batch would succeed as one request
+    // rather than fail and fall back to one request per item.
+    getTranslatePromptMock.mockImplementation(async (_targetLangName: string, text: string) => ({
+      systemPrompt: "Translate accurately",
+      prompt: text,
+    }))
+    runStreamTextInBackgroundMock.mockImplementation(async ({ prompt }: { prompt: string }) => ({
+      output: prompt
+        .split(BATCH_SEPARATOR)
+        .map((_, index) => `translated ${index}`)
+        .join(`\n\n${BATCH_SEPARATOR}\n\n`),
+      thinking: { status: "complete", text: "" },
+    }))
+
+    const handler = getRegisteredMessageHandler("enqueueTranslateRequest")
+    const providerRef = {
+      kind: "system" as const,
+      providerId: "read-frog-ai:gpt-6-luna",
+      model: "gpt-6-luna",
+      modelTier: "normal",
+      modelRevision: "normal-r1",
+    }
+    const base = {
+      langConfig: DEFAULT_CONFIG.language,
+      scheduleAt: Date.now(),
+      hostedFeature: "pageTranslation",
+    }
+    await Promise.all([
+      handler({
+        data: {
+          ...base,
+          providerRef: { ...providerRef, reasoning: "low" },
+          text: "first paragraph",
+          hash: "reasoning-batch-low-hash",
+        },
+      }),
+      handler({
+        data: {
+          ...base,
+          providerRef: { ...providerRef, reasoning: "high" },
+          text: "second paragraph",
+          hash: "reasoning-batch-high-hash",
+        },
+      }),
+    ])
+
+    // A batch is sent at its first item's level, and each item is cached
+    // under its own: one merged batch would cache "high" output made at "low".
+    expect(runStreamTextInBackgroundMock).toHaveBeenCalledTimes(2)
+    const levels = runStreamTextInBackgroundMock.mock.calls
+      .map((call) => (call[0] as { builtInAiReasoning?: string }).builtInAiReasoning)
+      .sort((a, b) => (a ?? "").localeCompare(b ?? ""))
+    expect(levels).toEqual(["high", "low"])
+  })
+
   it("bills the webpage summary against the sender's route and stamps an idempotency key", async () => {
     generateTextForProviderRefMock.mockResolvedValue("hosted summary")
     generateArticleSummaryMock.mockImplementation(
@@ -1255,9 +1369,11 @@ describe("translation queue helpers", () => {
     )
     const hostedRef = {
       kind: "system" as const,
-      providerId: "read-frog-advance-ai",
+      providerId: "read-frog-ai:gpt-6.2-sol",
+      model: "gpt-6.2-sol",
       modelTier: "advance",
       modelRevision: "advance-r1",
+      reasoning: null,
     }
     const { setupPageTranslationHandlers } = await import("../page-translation")
     setupPageTranslationHandlers()
@@ -1597,12 +1713,13 @@ describe("translation queue helpers", () => {
 
   describe("glossary terms on the individual fallback", () => {
     it("sends each item's own terms when a batch exhausts its retries", async () => {
+      vi.useFakeTimers()
       ensureInitializedConfigMock.mockResolvedValue({
         ...DEFAULT_CONFIG,
         pageTranslation: {
           ...DEFAULT_CONFIG.pageTranslation,
           providerId: llmProvider.id,
-          requestQueueConfig: { rate: 10, capacity: 10 },
+          requestQueueConfig: { rate: 10, capacity: 10, timeoutMs: 20_000 },
           batchQueueConfig: { maxCharactersPerBatch: 1000, maxItemsPerBatch: 10 },
         },
       })
@@ -1630,30 +1747,32 @@ describe("translation queue helpers", () => {
       setupPageTranslationHandlers()
       const handler = getRegisteredMessageHandler("enqueueTranslateRequest")
 
-      const results = await Promise.all([
-        handler({
-          data: {
-            text: "alpha",
-            langConfig: DEFAULT_CONFIG.language,
-            providerRef: localProviderRef(llmProvider),
-            scheduleAt: Date.now(),
-            hash: "fallback-glossary-one",
-            glossaryTerms: [apiTerm],
-            glossaryRevision: 4,
-          },
-        }),
-        handler({
-          data: {
-            text: "beta",
-            langConfig: DEFAULT_CONFIG.language,
-            providerRef: localProviderRef(llmProvider),
-            scheduleAt: Date.now(),
-            hash: "fallback-glossary-two",
-            glossaryTerms: [queueTerm],
-            glossaryRevision: 4,
-          },
-        }),
-      ])
+      const results = await fastForward(
+        Promise.all([
+          handler({
+            data: {
+              text: "alpha",
+              langConfig: DEFAULT_CONFIG.language,
+              providerRef: localProviderRef(llmProvider),
+              scheduleAt: Date.now(),
+              hash: "fallback-glossary-one",
+              glossaryTerms: [apiTerm],
+              glossaryRevision: 4,
+            },
+          }),
+          handler({
+            data: {
+              text: "beta",
+              langConfig: DEFAULT_CONFIG.language,
+              providerRef: localProviderRef(llmProvider),
+              scheduleAt: Date.now(),
+              hash: "fallback-glossary-two",
+              glossaryTerms: [queueTerm],
+              glossaryRevision: 4,
+            },
+          }),
+        ]),
+      )
 
       expect(results).toEqual(["translated alpha", "translated beta"])
 
@@ -1675,7 +1794,7 @@ describe("translation queue helpers", () => {
       expect(optionsFor("alpha").glossaryTerms).toEqual([apiTerm])
       expect(optionsFor("beta").glossaryTerms).toEqual([queueTerm])
       expect(optionsFor("alpha").isBatch).toBeUndefined()
-    }, 15_000)
+    })
   })
 
   // The merge above runs BELOW the batch key, so it can only ever see members
@@ -1714,7 +1833,7 @@ describe("translation queue helpers", () => {
         pageTranslation: {
           ...DEFAULT_CONFIG.pageTranslation,
           providerId: llmProvider.id,
-          requestQueueConfig: { rate: 10, capacity: 10 },
+          requestQueueConfig: { rate: 10, capacity: 10, timeoutMs: 20_000 },
           batchQueueConfig: { maxCharactersPerBatch: 1000, maxItemsPerBatch: 10 },
         },
       })
@@ -1870,5 +1989,155 @@ describe("translation queue helpers", () => {
 
       expect(sentTexts()).toEqual([members.map((member) => member.text).join(JOINED)])
     }, 15_000)
+  })
+
+  describe("request timeout", () => {
+    function configWithTimeout(timeoutMs: number) {
+      return {
+        ...DEFAULT_CONFIG,
+        pageTranslation: {
+          ...DEFAULT_CONFIG.pageTranslation,
+          providerId: llmProvider.id,
+          requestQueueConfig: { ...DEFAULT_CONFIG.pageTranslation.requestQueueConfig, timeoutMs },
+        },
+      }
+    }
+
+    /** Provider calls that never answer, each recording when it started and was aborted. */
+    function hangProviderCalls() {
+      const attempts: { startedAt: number; abortedAt?: number }[] = []
+      executeTranslateMock.mockImplementation(
+        (_text: string, _lang: unknown, _provider: unknown, _prompt: unknown, options) => {
+          const attempt: { startedAt: number; abortedAt?: number } = { startedAt: Date.now() }
+          attempts.push(attempt)
+          ;(options as { signal?: AbortSignal } | undefined)?.signal?.addEventListener(
+            "abort",
+            () => {
+              attempt.abortedAt = Date.now()
+            },
+          )
+          return new Promise(() => {})
+        },
+      )
+      return attempts
+    }
+
+    async function waitForAbort(attempts: { abortedAt?: number }[], index = 0) {
+      for (let step = 0; step < 2_000 && attempts[index]?.abortedAt === undefined; step++) {
+        await vi.advanceTimersByTimeAsync(250)
+      }
+      const attempt = attempts[index]!
+      expect(attempt.abortedAt).toBeDefined()
+      return attempt as { startedAt: number; abortedAt: number }
+    }
+
+    function sendPageRequest(providerRef: unknown, text: string, hash: string) {
+      const request = getRegisteredMessageHandler("enqueueTranslateRequest")({
+        data: {
+          text,
+          langConfig: DEFAULT_CONFIG.language,
+          providerRef,
+          scheduleAt: Date.now(),
+          hash,
+        },
+      })
+      // Never answered on purpose; each test reads the attempts instead.
+      request.catch(() => {})
+    }
+
+    async function setupHandlers() {
+      const { setupPageTranslationHandlers } = await import("../page-translation")
+      setupPageTranslationHandlers()
+    }
+
+    it("keeps the old batch timeouts at the 20 s default and shifts them all when raised", async () => {
+      const { getBatchExtraTimeoutMs } = await import("../translation-queues")
+
+      for (const characters of [0, 330, 1000, 4000, 6667, 10_000]) {
+        // The formula before the setting existed.
+        expect(20_000 + getBatchExtraTimeoutMs(characters)).toBe(
+          Math.min(20_000 + characters * 15, 120_000),
+        )
+      }
+      expect(60_000 + getBatchExtraTimeoutMs(1000)).toBe(75_000)
+      // The 100 s cap is on the batch's extra time, never on the user's timeout.
+      expect(60_000 + getBatchExtraTimeoutMs(10_000)).toBe(160_000)
+      expect(180_000 + getBatchExtraTimeoutMs(10_000)).toBe(280_000)
+    })
+
+    it("gives up on a request that is not batched after the user's timeout", async () => {
+      vi.useFakeTimers()
+      ensureInitializedConfigMock.mockResolvedValue(configWithTimeout(45_000))
+      const attempts = hangProviderCalls()
+      await setupHandlers()
+
+      sendPageRequest(localProviderRef(googleProvider), "hello", "timeout-google")
+
+      const attempt = await waitForAbort(attempts)
+      expect(attempt.abortedAt - attempt.startedAt).toBe(45_000)
+    })
+
+    it("gives an AI batch the user's timeout plus its extra time for length", async () => {
+      vi.useFakeTimers()
+      ensureInitializedConfigMock.mockResolvedValue(configWithTimeout(60_000))
+      const attempts = hangProviderCalls()
+      await setupHandlers()
+
+      sendPageRequest(localProviderRef(llmProvider), "x".repeat(1000), "timeout-batch")
+
+      const attempt = await waitForAbort(attempts)
+      expect(attempt.abortedAt - attempt.startedAt).toBe(60_000 + 1000 * 15)
+    })
+
+    it("applies a changed timeout to the running queue without a restart", async () => {
+      vi.useFakeTimers()
+      ensureInitializedConfigMock.mockResolvedValue(configWithTimeout(20_000))
+      const attempts = hangProviderCalls()
+      const { fakeBrowser } = await import("wxt/testing/fake-browser")
+      const { CONFIG_STORAGE_KEY } = await import("@/utils/constants/config")
+      await setupHandlers()
+
+      sendPageRequest(localProviderRef(googleProvider), "first", "timeout-before")
+      const before = await waitForAbort(attempts)
+      expect(before.abortedAt - before.startedAt).toBe(20_000)
+
+      // What the options page does: persist, and let the background's watch apply it.
+      await fakeBrowser.storage.local.set({ [CONFIG_STORAGE_KEY]: configWithTimeout(90_000) })
+      await vi.advanceTimersByTimeAsync(0)
+
+      sendPageRequest(localProviderRef(googleProvider), "second", "timeout-after")
+      await vi.advanceTimersByTimeAsync(0)
+      // The first request keeps retrying alongside, so find the second one's
+      // attempt by its text (each provider call records exactly one attempt).
+      const secondIndex = executeTranslateMock.mock.calls.findIndex(([text]) => text === "second")
+      expect(secondIndex).toBeGreaterThan(-1)
+      const after = await waitForAbort(attempts, secondIndex)
+      expect(after.abortedAt - after.startedAt).toBe(90_000)
+    })
+
+    it("gives an AI batch that is already running the changed timeout on its retry", async () => {
+      vi.useFakeTimers()
+      vi.spyOn(Math, "random").mockReturnValue(0)
+      ensureInitializedConfigMock.mockResolvedValue(configWithTimeout(20_000))
+      const attempts = hangProviderCalls()
+      const { fakeBrowser } = await import("wxt/testing/fake-browser")
+      const { CONFIG_STORAGE_KEY } = await import("@/utils/constants/config")
+      await setupHandlers()
+
+      sendPageRequest(localProviderRef(llmProvider), "x".repeat(1000), "timeout-batch-live")
+      for (let step = 0; step < 100 && attempts.length === 0; step++) {
+        await vi.advanceTimersByTimeAsync(50)
+      }
+      expect(attempts).toHaveLength(1)
+
+      // Raised while the batch's first attempt waits on a slow model.
+      await vi.advanceTimersByTimeAsync(10_000)
+      await fakeBrowser.storage.local.set({ [CONFIG_STORAGE_KEY]: configWithTimeout(60_000) })
+
+      const first = await waitForAbort(attempts, 0)
+      expect(first.abortedAt - first.startedAt).toBe(20_000 + 1000 * 15)
+      const retry = await waitForAbort(attempts, 1)
+      expect(retry.abortedAt - retry.startedAt).toBe(60_000 + 1000 * 15)
+    })
   })
 })

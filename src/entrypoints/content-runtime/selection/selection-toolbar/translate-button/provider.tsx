@@ -1,9 +1,10 @@
 import type { ComponentProps, ReactNode } from "react"
 import type { NoteSuggestionProviderRef, SelectionSession } from "../atoms"
+import type { ContextMenuSelection } from "../use-selection-open-request"
 import type { SelectionPopoverActions } from "@/components/ui/selection-popover"
 import type { SelectionToolbarInlineError } from "@/components/ui/selection-popover/inline-error"
 import type { ThinkingSnapshot } from "@/types/background-stream"
-import { LANG_CODE_TO_EN_NAME } from "@read-frog/definitions"
+import { LANGUAGE_ENGLISH_NAMES } from "@read-frog/definitions"
 import { useAtomValue, useSetAtom } from "jotai"
 import {
   createContext,
@@ -16,6 +17,7 @@ import {
   useState,
 } from "react"
 import { isSaveToNotebaseDialogOpenAtom } from "@/components/custom-action/save-to-notebase-dialog-atom"
+import { useBuiltInAiModels } from "@/components/llm-providers/use-built-in-ai-models"
 import { useHostedAiProviderOptions } from "@/components/llm-providers/use-hosted-ai-provider-options"
 import { toastManager } from "@/components/ui/base-ui/toast"
 import { SelectionPopover } from "@/components/ui/selection-popover"
@@ -143,9 +145,20 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
     [activeSession],
   )
   const titleText = getSourceDocumentTitle() || null
+  // This provider mounts on every page and in every frame, so status is asked
+  // for only once the popover opens. Closed, the stored list is enough: it only
+  // names the models, and a model resolves without it.
+  const { models: builtInAiModels } = useBuiltInAiModels({ enabled: isOpen })
+  const selectedTranslateProviderId = selectionToolbar.features.translate.providerId
   const translateProviders = useMemo(
-    () => getSelectableProvidersForCapability("selectionTranslation", providersConfig),
-    [providersConfig],
+    () =>
+      getSelectableProvidersForCapability(
+        "selectionTranslation",
+        providersConfig,
+        builtInAiModels,
+        [selectedTranslateProviderId],
+      ),
+    [providersConfig, builtInAiModels, selectedTranslateProviderId],
   )
   const translateRequestKey = useMemo(() => JSON.stringify(translateRequest), [translateRequest])
   const isSaveToNotebaseDialogOpen = useAtomValue(isSaveToNotebaseDialogOpenAtom)
@@ -174,7 +187,7 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
         // not as prepared for translation.
         savedSelectionText: normalizeSelectedText(selectionText),
         paragraphsText: paragraphsText ?? preparedText,
-        targetLangName: LANG_CODE_TO_EN_NAME[translateRequest.language.targetCode],
+        targetLangName: LANGUAGE_ENGLISH_NAMES[translateRequest.language.targetCode],
         webTitle: titleText ?? "",
         provider,
       })
@@ -450,18 +463,21 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
     })
   }, [commitOpenRequest, selectionSession])
 
-  const resolveContextMenuRequest = useCallback((): SelectionTranslatePendingOpenRequest | null => {
-    const request = resolveContextMenuOpenRequest()
-    if (!request) {
-      return null
-    }
+  const resolveContextMenuRequest = useCallback(
+    (menu: ContextMenuSelection): SelectionTranslatePendingOpenRequest | null => {
+      const request = resolveContextMenuOpenRequest(menu)
+      if (!request) {
+        return null
+      }
 
-    return {
-      anchor: request.anchor,
-      session: request.session,
-      surface: ANALYTICS_SURFACE.CONTEXT_MENU,
-    }
-  }, [resolveContextMenuOpenRequest])
+      return {
+        anchor: request.anchor,
+        session: request.session,
+        surface: ANALYTICS_SURFACE.CONTEXT_MENU,
+      }
+    },
+    [resolveContextMenuOpenRequest],
+  )
 
   const resolveShortcutRequest = useCallback(
     (session: SelectionSession | null): SelectionTranslatePendingOpenRequest | null => {
@@ -514,11 +530,14 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
     [openSelectionTranslationRequest, selectionSession],
   )
 
-  const openFromContextMenu = useCallback(() => {
-    openSelectionTranslationRequest(resolveContextMenuRequest(), {
-      showMissingSelectionToast: true,
-    })
-  }, [openSelectionTranslationRequest, resolveContextMenuRequest])
+  const openFromContextMenu = useCallback(
+    (menu: ContextMenuSelection) => {
+      openSelectionTranslationRequest(resolveContextMenuRequest(menu), {
+        showMissingSelectionToast: true,
+      })
+    },
+    [openSelectionTranslationRequest, resolveContextMenuRequest],
+  )
 
   // Turned off, the button and its key go together, as Speak's and the actions' do. Hiding the
   // whole toolbar does not stop the key.
@@ -539,8 +558,8 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
   )
 
   useEffect(() => {
-    return onMessage("openSelectionTranslationFromContextMenu", () => {
-      openFromContextMenu()
+    return onMessage("openSelectionTranslationFromContextMenu", (message) => {
+      openFromContextMenu(message.data)
     })
   }, [openFromContextMenu])
 
@@ -582,6 +601,7 @@ export function SelectionTranslationProvider({ children }: { children: ReactNode
             <TranslationContent
               selectionContent={selectionText}
               translatedText={translatedText}
+              targetLanguage={translateRequest.language.targetCode}
               isTranslating={isTranslating}
               thinking={thinking}
             />

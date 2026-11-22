@@ -2,28 +2,37 @@ import type { Config } from "@/types/config/config"
 import type { ProviderConfig } from "@/types/config/provider"
 import type { SelectionToolbarBuiltInActionState } from "@/types/config/selection-toolbar"
 import { isLLMProviderConfig, isTranslateProviderConfig } from "@/types/config/provider"
-import { selectionToolbarBuiltInActionsSchema } from "@/types/config/selection-toolbar"
 import { FEATURE_KEYS, FEATURE_PROVIDER_DEFS } from "@/utils/constants/feature-providers"
 import { DEFAULT_PROVIDER_CONFIG } from "@/utils/constants/providers"
-import { isProviderConfigAvailableInDistribution } from "@/utils/distribution"
-
-export interface NormalizeConfigForDistributionResult {
-  config: Config
-  changed: boolean
-}
+import { isProviderTypeAvailableInDistribution } from "@/utils/distribution"
 
 type ProviderPredicate = (provider: ProviderConfig) => boolean
+
+export function filterProviderConfigsForDistribution(value: unknown): unknown {
+  if (!Array.isArray(value)) return value
+
+  return value.filter(
+    (entry: unknown) =>
+      !(
+        typeof entry === "object" &&
+        entry !== null &&
+        "provider" in entry &&
+        typeof entry.provider === "string" &&
+        !isProviderTypeAvailableInDistribution(entry.provider)
+      ),
+  )
+}
 
 function ensureEnabledFallbackProvider(
   providersConfig: ProviderConfig[],
   predicate: ProviderPredicate,
   defaultProvider: ProviderConfig,
-): { providersConfig: ProviderConfig[]; providerId: string; changed: boolean } {
+): { providersConfig: ProviderConfig[]; providerId: string } {
   const enabledProvider = providersConfig.find(
     (provider) => provider.enabled && predicate(provider),
   )
   if (enabledProvider) {
-    return { providersConfig, providerId: enabledProvider.id, changed: false }
+    return { providersConfig, providerId: enabledProvider.id }
   }
 
   const disabledProviderIndex = providersConfig.findIndex(predicate)
@@ -31,7 +40,7 @@ function ensureEnabledFallbackProvider(
     const provider = providersConfig[disabledProviderIndex]!
     const nextProviders = [...providersConfig]
     nextProviders[disabledProviderIndex] = { ...provider, enabled: true }
-    return { providersConfig: nextProviders, providerId: provider.id, changed: true }
+    return { providersConfig: nextProviders, providerId: provider.id }
   }
 
   const occupiedIds = new Set(providersConfig.map((provider) => provider.id))
@@ -50,7 +59,6 @@ function ensureEnabledFallbackProvider(
   return {
     providersConfig: [...providersConfig, fallbackProvider],
     providerId: fallbackId,
-    changed: true,
   }
 }
 
@@ -79,35 +87,23 @@ function setConfigValueAtPath(config: Config, path: readonly string[], value: st
  * schema migrations describe upstream data versions, while switching between official and pure
  * builds is a build-policy change that must also apply to already-current and imported configs.
  */
-export function normalizeConfigForDistribution(
-  config: Config,
-): NormalizeConfigForDistributionResult {
+export function normalizeConfigForDistribution(config: Config): Config {
   if (!__PURE_BUILD__) {
-    return { config, changed: false }
+    return config
   }
 
-  let changed = false
-  let providersConfig = config.providersConfig.filter((provider) => {
-    const available = isProviderConfigAvailableInDistribution(provider)
-    changed ||= !available
-    return available
-  })
-
   const translateFallback = ensureEnabledFallbackProvider(
-    providersConfig,
+    config.providersConfig,
     isTranslateProviderConfig,
     DEFAULT_PROVIDER_CONFIG["microsoft-translate"],
   )
-  providersConfig = translateFallback.providersConfig
-  changed ||= translateFallback.changed
 
   const llmFallback = ensureEnabledFallbackProvider(
-    providersConfig,
+    translateFallback.providersConfig,
     isLLMProviderConfig,
     DEFAULT_PROVIDER_CONFIG.openai,
   )
-  providersConfig = llmFallback.providersConfig
-  changed ||= llmFallback.changed
+  const { providersConfig } = llmFallback
 
   const llmProviderId = (providerId: string) => {
     const nextProviderId = hasEnabledCompatibleProvider(
@@ -117,24 +113,15 @@ export function normalizeConfigForDistribution(
     )
       ? providerId
       : llmFallback.providerId
-    changed ||= nextProviderId !== providerId
     return nextProviderId
   }
 
   const normalizeBuiltInAction = (action: SelectionToolbarBuiltInActionState) => {
     const { notebaseConnection: _notebaseConnection, ...localAction } = action
     const providerId = llmProviderId(action.providerId)
-    changed ||= action.notebaseConnection !== undefined
     return { ...localAction, providerId }
   }
   const builtInActions = { ...config.selectionToolbar.builtInActions }
-  // UI reads can precede background migration. Normalize schema defaults too.
-  for (const key of ["sentenceAnalysis", "improveWriting"] as const) {
-    if (builtInActions[key] === undefined) {
-      builtInActions[key] = selectionToolbarBuiltInActionsSchema.shape[key].parse(undefined)
-      changed = true
-    }
-  }
   for (const key of Object.keys(builtInActions) as (keyof typeof builtInActions)[]) {
     builtInActions[key] = normalizeBuiltInAction(builtInActions[key])
   }
@@ -142,19 +129,12 @@ export function normalizeConfigForDistribution(
   const customActions = config.selectionToolbar.customActions.map((action) => {
     const { notebaseConnection: _notebaseConnection, ...actionWithoutNotebase } = action
     const providerId = llmProviderId(action.providerId)
-    changed ||= action.notebaseConnection !== undefined
     return { ...actionWithoutNotebase, providerId }
   })
-
-  changed ||= config.selectionToolbar.noteSuggestion.enabled
 
   const languageDetection = (() => {
     if (config.languageDetection.mode !== "llm") {
       return config.languageDetection
-    }
-
-    if (config.languageDetection.providerId === undefined) {
-      changed = true
     }
 
     return {
@@ -168,10 +148,10 @@ export function normalizeConfigForDistribution(
   )
   const localHubIds =
     selectedProviderIds?.filter((id) => availableHubIds.has(id)) ?? selectedProviderIds
-  changed ||= localHubIds?.length !== selectedProviderIds?.length
 
   const normalizedConfig: Config = {
     ...config,
+    builtInAi: { models: {} },
     providersConfig,
     languageDetection,
     translationHub: {
@@ -205,9 +185,8 @@ export function normalizeConfigForDistribution(
 
     if (nextProviderId !== currentProviderId) {
       setConfigValueAtPath(normalizedConfig, definition.configPath, nextProviderId)
-      changed = true
     }
   }
 
-  return { config: normalizedConfig, changed }
+  return normalizedConfig
 }

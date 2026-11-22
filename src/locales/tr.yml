@@ -69,6 +69,7 @@ popup:
     emailUs: Bize e-posta gönderin
     featureRequest: Özellik önerisi
     bugReport: Hata bildir
+    diagnosePage: "Bu sayfayı tanıla"
     community: Topluluk
     joinDiscord: Discord'a Katıl
     joinWechat: WeChat Grubuna Katıl
@@ -135,6 +136,13 @@ options:
     bugReport:
       title: Hata bildir
       description: Destek talebi açın ve çözülene kadar takip edin
+    troubleshooting:
+      title: "Sorun giderme"
+    diagnostics:
+      title: "Tanılama verilerini dışa aktar"
+      description: "Hata bildirimine eklemek için son günlükleri ve ayarlarınızı (API anahtarları hariç) kaydedin"
+      exportSuccess: "Tanılama verileri kaydedildi"
+      exportFailed: "Tanılama verileri dışa aktarılamadı"
     community:
       title: Topluluk
     discord:
@@ -151,6 +159,22 @@ options:
     configTitle: Sağlayıcı yapılandırması
     addProvider: Sağlayıcı ekle
     builtInProvider: Yerleşik sağlayıcı
+    thirdPartyProviders: Üçüncü taraf sağlayıcılar
+    builtInModel:
+      reasoningDescription: "$1 modelinin yanıt vermeden önce ne kadar düşüneceği. Yüksek seviyeler zor metinlerde daha iyi sonuç verir, ancak daha yavaş yanıt verir ve kotanızdan daha fazlasını kullanır."
+      reasoningDefault: "Varsayılan"
+      reasoningLevels:
+        none: "Kapalı"
+        minimal: "Minimum"
+        low: "Düşük"
+        medium: "Orta"
+        high: "Yüksek"
+        xhigh: "Çok yüksek"
+      unavailableTitle:
+        temporary: "$1 geçici olarak kullanılamıyor"
+        removed: "$1 artık sunulmuyor"
+      unavailableDescription: "Çalışamadığı sürece onu kullanan özellikler hata verir. Devam etmek için bu özellikleri $1 modeline geçirin."
+      unavailableDescriptionNoAlternatives: "Çalışamadığı sürece onu kullanan özellikler hata verir. Devam etmek için bu özellikleri başka bir sağlayıcıya geçirin."
     builtInAiUsage:
       title: Yerleşik AI kotası
       remaining: "%$1 kaldı"
@@ -171,12 +195,14 @@ options:
         pdfTranslation: PDF çevirisi
     sponsorCta: Hızlı ve uygun maliyetli yapay zekâ al
     sponsorCtaJalapenoCloud: GLM 5.3ʼte %50 indirim al
+    sponsorCtaIfapi: READFROG koduyla +%10 bakiye
     setApiKeyWarning:
       message: API anahtarınızı $1 sayfasında ayarlayın
     badges:
       featureCount: $1 özellik
       sponsor: Sponsor
       sponsorJalapenoCloud: $$1 ücretsiz
+      sponsorIfapi: Modeller -%90
     dialog:
       title: Yeni sağlayıcı ekle
       groups:
@@ -268,6 +294,7 @@ options:
         xai: Gerçek zamanlı veri erişimli Grok modelleri sunan Elon Musk'ın AI şirketi
         atlascloud: DeepSeek, Kimi, Qwen, Doubao ve GLM gibi yeni modellere OpenAI uyumlu birleşik erişim platformu
         jalapenocloud: En iyi ekiplerin kullandığı kurumsal düzeyde yapay zekâ, şimdi sizin için!
+        ifapi: GPT, Claude, Gemini ve daha fazlası, resmi fiyatın %10'undan başlayan fiyatlarla
         siliconflow: Çin ve uluslararası modeller için yüksek performanslı çıkarım platformu
         tensdaq: Yüksek maliyetli sabit fiyatlandırmayı ortadan kaldıran pazar odaklı fiyatlandırma ile devrimci açık artırma AI MaaS platformu
         openaiCompatible: OpenAI Chat Completions API ile uyumlu özel bir uç noktaya bağlanın
@@ -611,15 +638,13 @@ options:
       panel: Yan paneli aç
       translate: Sayfa çevirisini aç/kapat
     closeMenu:
-      disableForSite: Bu site için devre dışı bırak
-      disableGlobally: Genel olarak devre dışı bırak
+      title: Yüzen butonu gizle
     tooltips:
       togglePageTranslation: Sayfa çevirisini aç/kapat
       floatingButtonOptions: Kayan düğme seçenekleri
       lockPosition: Konumu kilitle
       unlockPosition: Konum kilidini aç
       settings: Ayarlar
-      feedback: Geri bildirim gönder
   selectionToolbar:
     title: Seçim Araç Çubuğu
     pageDescription: Metin seçtiğinizde hangi eylemlerin görüneceğini ve araç çubuğunun nerede çıkacağını belirleyin.
@@ -652,6 +677,12 @@ options:
         providerDescription: Öneriyi üreten yapay zekâ sağlayıcısı
     display:
       title: Görünüm
+      placement:
+        title: Konum
+        description: Araç çubuğunun seçili metnin hangi tarafında görüneceğini seçin. Seçilen tarafta yer yoksa diğer tarafta görünür
+        followDirection: Seçim yönünü takip et
+        above: Her zaman üstte
+        below: Her zaman altta
       opacity:
         title: Opaklık
         description: Seçim araç çubuğunun ve buradan açılan genişletilmiş pencerenin opaklığını ayarlayın
@@ -661,8 +692,7 @@ options:
         enterUrlPattern: URL kalıbı girin
         urlPattern: URL kalıbı
     closeMenu:
-      disableForSite: Bu site için devre dışı bırak
-      disableGlobally: Genel olarak devre dışı bırak
+      title: Seçim araç çubuğunu gizle
     errors:
       customActionFailed: Özel eylem başarısız oldu
       customActionFailedFallback: Özel eylem isteği başarısız oldu
@@ -1321,7 +1351,7 @@ options:
         error: Değer $1 ile $2 arasında olmalıdır
     translationQueue:
       title: Çeviri kuyruğu
-      description: İsteklerin ne kadar hızlı gittiği, her birinin ne kadar metin taşıdığı ve okuyucunun ne kadar önünden gittikleri
+      description: İsteklerin ne kadar hızlı gittiği, her birinin ne kadar metin taşıdığı, her birinin ne kadar sürebileceği ve okuyucunun ne kadar önünden gittikleri
       manageQueue: Kuyruğu yönet
       requestQueueConfig:
         title: Çeviri hızı
@@ -1336,6 +1366,9 @@ options:
           description: "Maksimum karakter: tek bir yapay zekâ isteği ne kadar metin taşır"
         maxItemsPerBatch:
           description: "Maksimum paragraf: tek istekte kaç paragraf birleşir. Yapay zekâ olmayan sağlayıcılar ikisini de yok sayar"
+      requestTimeout:
+        title: İstek zaman aşımı
+        description: "Vazgeçip yeniden denemeden önce yanıt için kaç saniye beklenir. Yapay zekâ toplu istekleri uzunluklarına göre en fazla 100 saniye ek süre alır. Yavaş bir model sürekli zaman aşımına uğruyorsa artırın"
       preloadConfig:
         title: Ön çeviri aralığı
         description: API maliyetlerinden tasarruf etmek için görünüm alanının altındaki ne kadar içeriğin önceden çevrileceğini kontrol edin
@@ -1414,10 +1447,11 @@ options:
       title: Temel ayarlar
       enable:
         title: Video altyazılarını aç
-        description: YouTube, X, Netflix, Bilibili, Udemy ve edX'te oynatıcı kontrollerine bir çeviri düğmesi ekler.
-      autoStart:
-        title: Video açılınca çevir
-        description: Video yüklenir yüklenmez, düğmeye basmadan altyazıları çevirmeye başlar.
+        description: "Her site için seçin: kapalı, elle (oynatıcıdaki çeviri düğmesiyle başlar) veya otomatik (video açılır açılmaz başlar)."
+        mode:
+          off: "Kapalı"
+          manual: "Elle"
+          auto: "Otomatik"
       aiSegmentation:
         title: AI akıllı bölümlendirme
         description: Yapay zekâ altyazıları cümlelere yeniden böler. Çeviriler daha geç gelir. Güçlü bir LLM gerekir; zayıf modeller satırları atlayabilir veya kaydırabilir.
@@ -1507,7 +1541,7 @@ options:
           videoSummary: Video özeti (AI akıllı bağlam gerektirir)
     subtitlesQueue:
       title: Altyazı kuyruğu
-      description: Altyazı isteklerinin ne kadar hızlı gittiği ve her birinin kaç satır taşıdığı
+      description: Altyazı isteklerinin ne kadar hızlı gittiği, her birinin kaç satır taşıdığı ve her birinin ne kadar sürebileceği
       manageQueue: Kuyruğu yönet
       requestQueueConfig:
         title: Çeviri hızı
@@ -1522,6 +1556,9 @@ options:
           description: "Maksimum karakter: tek bir yapay zekâ isteği ne kadar metin taşır"
         maxItemsPerBatch:
           description: "Maksimum altyazı satırı: tek istekte kaç satır birleşir. Yapay zekâ olmayan sağlayıcılar ikisini de yok sayar"
+      requestTimeout:
+        title: İstek zaman aşımı
+        description: "Vazgeçip yeniden denemeden önce yanıt için kaç saniye beklenir. Yapay zekâ toplu istekleri uzunluklarına göre en fazla 100 saniye ek süre alır. Yavaş bir model sürekli zaman aşımına uğruyorsa artırın"
     cache:
       title: Önbellek
       clearCache:
@@ -1579,6 +1616,24 @@ translation:
   sameLanguage: Kaynak ve hedef diller farklı olmalıdır
   autoModeSameLanguage: Algılanan dil '$1' hedef dille aynı
   extensionContextInvalidated: Uzantı güncellendi. Bu sayfayı yenileyip tekrar deneyin.
+pageDiagnosis:
+  title: "Sayfa tanılaması"
+  summary: "$1 çevrildi, $2 çevrilmedi"
+  empty: "Henüz gösterilecek bir şey yok. Sayfa çevirisini açın, ardından bunu yeniden açın."
+  emptyWhileTranslating: "Henüz gösterilecek bir şey yok. Sayfa çevirisi paragraflara ulaştıkça burada görünürler."
+  framesNotIncluded: "Gömülü çerçevelerin içindeki metin burada yer almaz."
+  hint: "Paragraflarını sayfada işaretlemek için bir nedene tıklayın."
+  close: "Kapat"
+  unavailable: "Read Frog bu sayfada çalışamıyor"
+  reasons:
+    noProse: "Çevrilecek kelime yok"
+    tooShort: "Çevrilemeyecek kadar kısa"
+    targetLanguage: "Zaten hedef dilinizde"
+    skipLanguage: "Atladığınız bir dilde"
+    noTranslationNeeded: "Yapay zekâ çeviriye gerek olmadığını söyledi"
+    sameAsSource: "Çeviri orijinalle aynı"
+    emptyResult: "Hizmet hiçbir şey döndürmedi"
+    error: "Çeviri başarısız oldu"
 annotation:
   annotate: "Not ekle"
   enterMode: "Not modu"
@@ -1601,6 +1656,11 @@ speak:
   noTextSelected: Metin seçilmedi
   openaiNotConfigured: OpenAI sağlayıcısı yapılandırılmadı veya etkinleştirilmedi
   openaiApiKeyNotConfigured: OpenAI API anahtarı yapılandırılmadı
+hideMenu:
+  untilReload: Sayfayı yenileyene kadar
+  onSite: $1 sitesinde
+  onAllSites: Tüm sitelerde
+  restoreHint: $1 bölümünden yeniden açabilirsiniz.
 action:
   copy: Kopyala
   copied: Kopyalandı
@@ -1692,6 +1752,7 @@ subtitles:
   requestAiSubtitles: Yapay zeka altyazısı iste
   usingAiSubtitles: Yapay zeka altyazısı kullanılıyor
   settings: Altyazı ayarları
+  autoStartOnPlatform: "$1 üzerinde otomatik başlat"
   toggle:
     enabled: Altyazı çevirisi açık
     disabled: Altyazı çevirisi kapalı
@@ -1752,6 +1813,26 @@ hostedAi:
     rateLimited: Çok fazla istek, lütfen daha sonra tekrar deneyin.
     guestRateLimited: Çok fazla misafir isteği. Lütfen daha sonra tekrar deneyin.
     userRateLimited: Çok fazla istek. Lütfen daha sonra tekrar deneyin.
+    modelUnavailable: "$1 şu anda kullanılamıyor. Bunun yerine $2 modelini deneyin."
+    modelUnavailableNoAlternatives: "$1 şu anda kullanılamıyor ve kullanabileceğiniz başka bir yerleşik AI modeli yok. Lütfen daha sonra tekrar deneyin."
+    modelBusy: "$1 şu anda çok yoğun. Biraz sonra tekrar deneyin veya $2 modeline geçin."
+    modelBusyNoAlternatives: "$1 şu anda çok yoğun. Biraz sonra tekrar deneyin."
+  unavailable:
+    temporary: "$1 geçici olarak kullanılamıyor. Bunun yerine $2 modelini deneyin."
+    temporaryNoAlternatives: "$1 geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin."
+    removed: "$1 artık sunulmuyor. Bunun yerine $2 modelini deneyin."
+    removedNoAlternatives: "$1 artık sunulmuyor. Başka bir sağlayıcı seçin."
+  actions:
+    chooseModel: "Model seç"
+  builtInAiPrompt:
+    logInTitle: "Yerleşik AI'ı kullanmak için giriş yapın"
+    logInDescription: "Giriş yaptığınızda yerleşik AI ücretsizdir: haftada yaklaşık 120.000 token."
+    upgradeTitle: "Bu haftaki yerleşik AI hakkınız bitti"
+    upgradeDescription: "Pro ayda yaklaşık 3.000, Ultra yaklaşık 10.000 web sayfası çevirir."
+    upgradeDescriptionPro: "Ultra ayda yaklaşık 10.000 web sayfası çevirir."
+    useMachineTranslation: "Makine çevirisini kullan"
+    switched: "$1 artık $2 kullanıyor."
+    switchFailed: "Makine çevirisine geçilemedi. Lütfen tekrar deneyin."
 hotkey:
   control: Ctrl
   alt: Option
@@ -1780,183 +1861,3 @@ translationHub:
   translationFailed: Çeviri Başarısız
   translationFailedFallback: Çeviri başarısız
   retryTranslation: Çeviriyi yeniden dene
-languages:
-  eng: İngilizce
-  cmn: Basitleştirilmiş Çince
-  cmnHant: Geleneksel Çince
-  yue: Kantonca
-  spa: İspanyolca
-  rus: Rusça
-  arb: Arapça
-  ben: Bengalce
-  hin: Hintçe
-  por: Portekizce
-  ind: Endonezce
-  jpn: Japonca
-  fra: Fransızca
-  deu: Almanca
-  jav: Cava Dili
-  kor: Korece
-  tel: Telugu
-  vie: Vietnamca
-  mar: Marathi
-  ita: İtalyanca
-  tam: Tamilce
-  tur: Türkçe
-  urd: Urduca
-  guj: Gujarati
-  pol: Lehçe
-  ukr: Ukraynaca
-  kan: Kannada
-  mai: Maithili
-  mal: Malayalam
-  pes: Farsça
-  mya: Birmanca
-  swh: Svahili
-  sun: Sundaca
-  ron: Romence
-  pan: Pencapça
-  bho: Bhojpuri
-  amh: Amharca
-  hau: Hausaca
-  fuv: Fulani
-  bos: Boşnakça
-  hrv: Hırvatça
-  nld: Felemenkçe
-  srp: Sırpça
-  tha: Tayca
-  ckb: Orta Kürtçe
-  yor: Yoruba
-  uzn: Özbekçe
-  zlm: Malayca
-  ibo: İbo Dili
-  npi: Nepalce
-  ceb: Sebuano
-  skr: Saraiki
-  tgl: Tagalogca
-  hun: Macarca
-  azj: Azerice
-  sin: Sinhalaca
-  koi: Komi-Permyak
-  ell: Yunanca
-  ces: Çekçe
-  mag: Magahi
-  run: Kirundi
-  bel: Belarusça
-  plt: Malgaşça
-  qug: Chimborazo Dağlık Quechua
-  mad: Maduraca
-  nya: Çeva
-  zyb: Zhuangca
-  pbu: Peştuca
-  kin: Kinyarwanda
-  zul: Zuluca
-  bul: Bulgarca
-  swe: İsveççe
-  lin: Lingala
-  som: Somalice
-  hms: Qiandong Miao
-  hnj: Hmong Njua
-  ilo: İlokanoca
-  kaz: Kazakça
-  heb: İbranice
-  nob: Norveççe (Bokmål)
-  nno: Norveççe (Nynorsk)
-  afr: Afrikaanca
-  sqi: Arnavutça
-  asm: Asamca
-  eus: Baskça
-  bre: Bretonca
-  cat: Katalanca
-  cos: Korsikaca
-  cym: Galce
-  dan: Danca
-  div: Divehi
-  epo: Esperanto
-  ekk: Estonca
-  fao: Faroece
-  fij: Fiji Dili
-  fin: Fince
-  fry: Batı Frizce
-  gla: İskoç Galcesi
-  gle: İrlandaca
-  glg: Galiçyaca
-  grn: Guarani
-  hat: Haiti Kreolcesi
-  haw: Hawaiice
-  hye: Ermenice
-  ido: İdo
-  ina: Interlingua
-  isl: İzlandaca
-  kat: Gürcüce
-  khm: Kmerce
-  kir: Kırgızca
-  lao: Laoca
-  lat: Latince
-  lvs: Letonca
-  lit: Litvanca
-  ltz: Lüksemburgca
-  mkd: Makedonca
-  mlt: Maltaca
-  mon: Moğolca
-  mri: Maori
-  nso: Kuzey Sotho
-  oci: Oksitanca
-  ori: Oriya
-  orm: Oromo
-  prs: Dari
-  san: Sanskritçe
-  slk: Slovakça
-  slv: Slovence
-  smo: Samoaca
-  sna: Şona
-  snd: Sindhi
-  sot: Güney Sotho
-  tah: Tahitice
-  tat: Tatarca
-  tgk: Tacikçe
-  tir: Tigrinya
-  ton: Tongaca
-  tsn: Tsvana
-  tuk: Türkmence
-  uig: Uygurca
-  vol: Volapük
-  wol: Volofça
-  xho: Zosa
-  ydd: Yidişçe
-  aka: Akan
-  bam: Bambara
-  bis: Bislama
-  bod: Tibetçe
-  che: Çeçence
-  chv: Çuvaşça
-  dzo: Dzongkha
-  ewe: Ewe
-  kab: Kabilce
-  lug: Luganda
-  oss: Osetçe
-  ssw: Svati
-  ven: Venda
-  war: Waray
-  nde: Kuzey Ndebele
-  nbl: Güney Ndebele
-  pam: Pampanga
-  hil: Hiligaynon
-  bcl: Merkez Bikolano
-  min: Minangkabau
-  ace: Açece
-  bug: Bugisce
-  ban: Balice
-  bjn: Banjar
-  mak: Makasarca
-  sas: Sasak
-  tet: Tetum
-  cha: Chamorro
-  niu: Niue Dili
-  tvl: Tuvaluca
-  gil: Kiribatice
-  mah: Marshall Dili
-  pau: Palau Dili
-  wls: Wallis Dili
-  rar: Rarotongan
-  hif: Fiji Hintçesi

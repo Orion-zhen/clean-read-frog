@@ -1,4 +1,4 @@
-import type { LangCodeISO6393 } from "@read-frog/definitions"
+import type { LanguageTag } from "@read-frog/definitions"
 import type { LayoutStatus } from "@read-frog/layout-engine/contract"
 import type { LayoutRenderReport, LayoutWarnCode } from "@read-frog/layout-engine/dom"
 import type { SurfaceByFeature } from "@/types/analytics"
@@ -8,9 +8,11 @@ import { LayoutView } from "@read-frog/layout-engine/react"
 import { useMemo, useRef } from "react"
 import { buildCustomActionLayoutScope, CUSTOM_ACTION_LAYOUT_HOST } from "@/utils/layout-host/host"
 import { loadLayoutMath } from "@/utils/layout-host/math"
-import { logger } from "@/utils/logger"
+import { createLogger } from "@/utils/logging/logger"
 import { FallbackFieldList } from "./fallback-field-list"
 import { useExtensionSpeakAdapter } from "./use-extension-speak-adapter"
+
+const log = createLogger("layout-host/custom-action-layout-view")
 
 // A custom action's result, rendered through its HTML + Liquid layout in an
 // isolated shadow root. When the layout cannot render, the default layout
@@ -31,7 +33,7 @@ interface CustomActionLayoutViewProps {
   value: Record<string, unknown> | null
   selection: string
   // The target language the answer is in; the card's own words follow it.
-  targetCode: LangCodeISO6393
+  targetCode: LanguageTag
   status: LayoutStatus
   theme: "light" | "dark"
   speakSurface?: SurfaceByFeature["text_to_speech"]
@@ -47,7 +49,7 @@ const FALLBACK_SOURCES = [DEFAULT_LAYOUT]
 // What the layout wants known without changing what is shown (a failed
 // constructable stylesheet probe, an ignored host attribute).
 function logLayoutWarning(code: LayoutWarnCode, detail?: unknown) {
-  logger.warn(`[layout] ${code}`, detail)
+  log.warn("Layout warning", { code, detail })
 }
 
 function toRenderInfo(report: LayoutRenderReport): CustomActionLayoutRenderInfo {

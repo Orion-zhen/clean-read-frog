@@ -1,23 +1,27 @@
 import type { SubtitlesFragment } from "../types"
 import type { HostedAiTextStreamRoute } from "@/types/background-stream"
 import type { Config } from "@/types/config/config"
+import type { BatchQueueConfig } from "@/types/config/translate"
 import type { SubtitlePromptContext } from "@/types/content"
+import type { ErrorAction } from "@/utils/error-action"
 import type { MatchedTerm } from "@/utils/glossary/types"
 import type { PromptableProviderRef, SerializableProviderRef } from "@/utils/providers/provider-ref"
-import { LANG_CODE_TO_EN_NAME } from "@read-frog/definitions"
+import { LANGUAGE_ENGLISH_NAMES } from "@read-frog/definitions"
 import { APICallError } from "ai"
 import { toastManager } from "@/components/ui/base-ui/toast"
 import { isLLMProviderConfig } from "@/types/config/provider"
 import { classifySerializedProvider } from "@/utils/analytics-provider"
 import { getLocalConfig } from "@/utils/config/storage"
+import { TRANSLATION_BATCH_SIZE } from "@/utils/constants/subtitles"
 import { cleanText } from "@/utils/content/utils"
 import { resolveGlossaryTerms } from "@/utils/glossary/active-matcher"
 import { trackGlossaryUsed } from "@/utils/glossary/analytics"
 import { Sha256Hex } from "@/utils/hash"
 import { prepareTranslationText } from "@/utils/host/translate/text-preparation"
 import { normalizePromptContextValue } from "@/utils/host/translate/translate-text"
+import { getBuiltInAiRefusalKind } from "@/utils/hosted-ai/refusal"
 import { i18n } from "@/utils/i18n"
-import { logger } from "@/utils/logger"
+import { createLogger } from "@/utils/logging/logger"
 import { sendMessage } from "@/utils/message"
 import { getSubtitlesTranslatePrompt } from "@/utils/prompts/subtitles"
 import {
@@ -27,6 +31,8 @@ import {
   serializeProviderRef,
 } from "@/utils/providers/provider-ref"
 import { resolveProviderRefForCapability } from "@/utils/providers/provider-registry"
+
+const log = createLogger("subtitles/processor/translator")
 
 /**
  * One toast for the whole run, not one per batch: the provider is re-resolved
@@ -145,7 +151,7 @@ async function buildSubtitleHashComponents(
     return hashComponents
   }
 
-  const targetLangName = LANG_CODE_TO_EN_NAME[partialLangConfig.targetCode]
+  const targetLangName = LANGUAGE_ENGLISH_NAMES[partialLangConfig.targetCode]
   // Hashed for the template and the glossary only, with the video context left
   // empty. That context is the page title, the meta description and the AI
   // summary, and none of it is stable across visits: the first two are read
@@ -229,7 +235,12 @@ export type SubtitlesProviderResolution<
   Ref extends SerializableProviderRef = SerializableProviderRef,
 > =
   | { status: "ok"; ref: Ref }
-  | { status: "hostedUnavailable"; message: string }
+  | {
+      status: "hostedUnavailable"
+      message: string
+      action?: ErrorAction
+      error: HostedAiProviderUnavailableError
+    }
   | { status: "notPromptable" }
   | { status: "none" }
 
@@ -273,12 +284,17 @@ export async function resolveSubtitlesProvider(
     return { status: "ok", ref: await serializeProviderRef(resolved, SUBTITLES_TASK_ROUTE[task]) }
   } catch (error) {
     if (error instanceof HostedAiProviderUnavailableError) {
-      return { status: "hostedUnavailable", message: error.message }
+      return {
+        status: "hostedUnavailable",
+        message: error.message,
+        action: error.action,
+        error,
+      }
     }
     // Nothing else is expected to throw here (serializeProviderRef already
     // fails open on an unreachable status endpoint). Keep degrading rather
     // than introducing a new throw into the render path, but leave a trace.
-    logger.warn("[Subtitles] Provider ref resolution failed", error)
+    log.warn("Provider ref resolution failed", { error })
     return { status: "none" }
   }
 }
@@ -301,19 +317,57 @@ export async function resolveSubtitlesProviderRef(
   config: Config,
   task: SubtitlesTask,
 ): Promise<SerializableProviderRef | null> {
-  const resolution = await resolveSubtitlesProvider(config, task)
+  return announceSubtitlesProviderResolution(await resolveSubtitlesProvider(config, task))
+}
+
+/** The ref a resolution gave, or null after saying why there is none where that matters. */
+function announceSubtitlesProviderResolution(
+  resolution: SubtitlesProviderResolution,
+): SerializableProviderRef | null {
   if (resolution.status === "hostedUnavailable") {
     // Silence here is indistinguishable from "these lines have no translation".
+    const { action } = resolution
     toastManager.add({
       type: "error",
       title: resolution.message,
       id: SUBTITLES_HOSTED_UNAVAILABLE_TOAST_ID,
+      // A guest's refusal carries a log-in button, and a spent pool below Ultra an upgrade.
+      ...(action && {
+        actionProps: {
+          children: action.label,
+          onClick: () => {
+            toastManager.close(SUBTITLES_HOSTED_UNAVAILABLE_TOAST_ID)
+            void sendMessage("openPage", { url: action.url, active: true })
+          },
+        },
+      }),
     })
     return null
   }
   // notPromptable degrades silently: unlike a hosted denial (something the
   // user was refused), it is a configuration state the pre-flight UI explains.
   return resolution.status === "ok" ? resolution.ref : null
+}
+
+/**
+ * How many cues one translation pass may take. Only a provider on the batch
+ * queue (the same rule as the background's `shouldUseBatchQueue`) packs them
+ * into one request, so the AI batch limits apply to it alone; any other
+ * provider sends one request per cue and keeps the fixed group size.
+ */
+export function getSubtitlesPassLimits(config: Config): BatchQueueConfig {
+  const resolved = resolveProviderRefForCapability(
+    "videoSubtitles",
+    config.providersConfig,
+    config.videoSubtitles.providerId,
+  )
+  if (resolved && canResolvedProviderRefGenerateText(resolved)) {
+    return config.videoSubtitles.batchQueueConfig
+  }
+  return {
+    maxItemsPerBatch: TRANSLATION_BATCH_SIZE,
+    maxCharactersPerBatch: Number.POSITIVE_INFINITY,
+  }
 }
 
 export async function fetchSubtitlesSummary(
@@ -361,7 +415,13 @@ export async function translateSubtitles(
     return fragments.map((f) => ({ ...f, translation: "" }))
   }
 
-  const providerRef = await resolveSubtitlesProviderRef(config, "lineTranslation")
+  // A guest or a spent pool is thrown rather than blanked: the cues stay untranslated
+  // instead of passing as translated, and the caller asks to log in or upgrade.
+  const resolution = await resolveSubtitlesProvider(config, "lineTranslation")
+  if (resolution.status === "hostedUnavailable" && getBuiltInAiRefusalKind(resolution.error)) {
+    throw resolution.error
+  }
+  const providerRef = announceSubtitlesProviderResolution(resolution)
   if (!providerRef) {
     return fragments.map((f) => ({ ...f, translation: "" }))
   }
@@ -382,10 +442,14 @@ export async function translateSubtitles(
 
   const results = await Promise.allSettled(translationPromises)
 
-  // If all translations failed, throw with friendly error message
-  const allRejected = results.every((r): r is PromiseRejectedResult => r.status === "rejected")
-  if (allRejected && results.length) {
-    throw new Error(toFriendlyErrorMessage(results[0]!.reason))
+  // If all translations failed, throw with friendly error message. So does a batch any
+  // cue of which Built-in AI refused, so it is tried again rather than kept as blank.
+  // The cause keeps the error's code for whoever classifies it.
+  const rejections = results.filter((r): r is PromiseRejectedResult => r.status === "rejected")
+  const refusal = rejections.find((r) => getBuiltInAiRefusalKind(r.reason))
+  if (refusal || (rejections.length === results.length && results.length)) {
+    const reason = (refusal ?? rejections[0]!).reason
+    throw new Error(toFriendlyErrorMessage(reason), { cause: reason })
   }
 
   return fragments.map((fragment, index) => {

@@ -140,7 +140,7 @@ describe("requestAiSubtitles", () => {
       message: "subtitles.errors.aiQuotaExceeded",
       action: {
         label: "action.upgrade",
-        url: "https://readfrog.app/pricing?entry=extension_video_quota",
+        url: "https://readfrog.app/pricing?entry=extension_video_quota&feature=video_subtitles",
       },
     })
     expect(get).not.toHaveBeenCalled()
@@ -156,7 +156,9 @@ describe("requestAiSubtitles", () => {
     await expect(rejection(requestAiSubtitles(ctx))).resolves.toMatchObject({
       name: "ToastSubtitlesError",
       message: "subtitles.errors.aiSubscriptionRequired",
-      action: { url: "https://readfrog.app/pricing?entry=extension_video_quota" },
+      action: {
+        url: "https://readfrog.app/pricing?entry=extension_video_quota&feature=video_subtitles",
+      },
     })
     expect(get).not.toHaveBeenCalled()
   })
@@ -201,15 +203,21 @@ describe("requestAiSubtitles", () => {
   // `get` and `getSubtitles` sit behind the same entitlement middleware as
   // `create`, so a subscription that lapses mid-poll surfaces here.
   it("offers the upgrade when the plan wall arrives while polling", async () => {
+    vi.useFakeTimers()
     create.mockResolvedValue({ id: "job-5", status: "pending", detectedLanguage: null })
     get.mockRejectedValue(
       new ORPCError("VIDEO_TRANSCRIPTION_SUBSCRIPTION_REQUIRED", { defined: true }),
     )
 
-    await expect(rejection(requestAiSubtitles(ctx))).resolves.toMatchObject({
+    const settled = rejection(requestAiSubtitles(ctx))
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    await expect(settled).resolves.toMatchObject({
       name: "ToastSubtitlesError",
       message: "subtitles.errors.aiSubscriptionRequired",
-      action: { url: "https://readfrog.app/pricing?entry=extension_video_quota" },
+      action: {
+        url: "https://readfrog.app/pricing?entry=extension_video_quota&feature=video_subtitles",
+      },
     })
     expect(getSubtitles).not.toHaveBeenCalled()
   })

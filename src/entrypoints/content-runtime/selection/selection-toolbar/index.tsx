@@ -3,6 +3,7 @@ import type {
   EbookBridgeSelectionPayload,
 } from "@read-frog/definitions"
 import type { ModalDialogHostController } from "./modal-dialog-host"
+import type { SelectionVerticalBounds } from "./positioning"
 import type { DeferredSelectionOpenDetail } from "@/utils/constants/selection"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from "react"
@@ -31,10 +32,11 @@ import {
   AnnotateReveal,
   useAnnotateReveal,
 } from "../annotation/toolbar-slot"
-import { buildContextSnapshot, readSelectionSnapshot } from "../utils"
+import { buildContextSnapshot, normalizeSelectedText, readSelectionSnapshot } from "../utils"
 import {
   clearSelectionStateAtom,
   createSelectionSession,
+  isSelectionToolbarHiddenUntilReloadAtom,
   isSelectionToolbarOpenAtom,
   setSelectionStateAtom,
 } from "./atoms"
@@ -233,6 +235,10 @@ export function SelectionToolbar() {
   const selectionStartRef = useRef<{ x: number; y: number } | null>(null) // store selection start position
   const selectionDirectionRef = useRef<SelectionDirection>(SelectionDirection.BOTTOM_RIGHT) // store selection direction
   const selectionAnchorTrackerRef = useRef<ReturnType<typeof createSelectionAnchorTracker>>(null)
+  // How far the selection reaches up and down, which a toolbar pinned above or
+  // below it clears. Remeasured with the anchor; kept while the selection has
+  // no geometry, like the anchor.
+  const selectionBoundsRef = useRef<SelectionVerticalBounds | null>(null)
   const selectionScrollTargetsRef = useRef<Array<Element | ShadowRoot>>([])
   const modalDialogHostControllerRef = useRef<ModalDialogHostController>(null)
   const isPointerDownInsideOverlayRef = useRef(false)
@@ -241,9 +247,13 @@ export function SelectionToolbar() {
   const setSelectionState = useSetAtom(setSelectionStateAtom)
   const clearSelectionState = useSetAtom(clearSelectionStateAtom)
   const selectionToolbar = useAtomValue(configFieldsAtomMap.selectionToolbar)
-  const isSiteDisabled = selectionToolbar.disabledSelectionToolbarPatterns?.some((pattern) =>
-    urlMatchesPattern(window.location.href, pattern),
-  )
+  const placement = selectionToolbar.placement
+  const isHiddenUntilReload = useAtomValue(isSelectionToolbarHiddenUntilReloadAtom)
+  const isHiddenOnPage =
+    isHiddenUntilReload ||
+    selectionToolbar.disabledSelectionToolbarPatterns?.some((pattern) =>
+      urlMatchesPattern(window.location.href, pattern),
+    )
   const annotation = useAnnotation()
   // With nothing pinned the toolbar still shows its "more" menu; with nothing
   // enabled — and the annotation slot off — there is nothing to show.
@@ -251,7 +261,7 @@ export function SelectionToolbar() {
   const hasAnyEnabledItem = enabledItems.length > 0 || annotation.enabled
   const hasAnyPinnedItem = enabledItems.some((item) => item.pinned)
   const isSelectionToolbarVisible =
-    isSelectionToolbarOpen && selectionToolbar.enabled && !isSiteDisabled && hasAnyEnabledItem
+    isSelectionToolbarOpen && selectionToolbar.enabled && !isHiddenOnPage && hasAnyEnabledItem
   const reveal = useAnnotateReveal(tooltipRef, isSelectionToolbarVisible)
   // In annotation mode a selection is annotated where it is made; the toolbar
   // never opens for it. Selections in text controls have nothing to annotate.
@@ -311,6 +321,7 @@ export function SelectionToolbar() {
 
         if (measurement.status === "invalid") {
           selectionAnchorTrackerRef.current = null
+          selectionBoundsRef.current = null
           selectionScrollTargetsRef.current = []
           selectionPositionRef.current = null
           clearSelectionState()
@@ -320,6 +331,9 @@ export function SelectionToolbar() {
 
         selectionAnchorTrackerRef.current = measurement.tracker
         selectionPositionRef.current = measurement.anchor
+        if (measurement.bounds) {
+          selectionBoundsRef.current = measurement.bounds
+        }
       }
 
       const nextSelectionPosition = selectionPositionRef.current
@@ -337,13 +351,15 @@ export function SelectionToolbar() {
         },
         viewport,
         MARGIN,
+        placement,
+        selectionBoundsRef.current,
       )
       const hostPosition = viewportPointToHostPoint(viewportPosition, viewportHost)
 
       tooltip.style.top = `${hostPosition.y}px`
       tooltip.style.left = `${hostPosition.x}px`
     },
-    [clearSelectionState, isSelectionToolbarVisible, setIsSelectionToolbarOpen],
+    [clearSelectionState, isSelectionToolbarVisible, placement, setIsSelectionToolbarOpen],
   )
 
   useLayoutEffect(() => {
@@ -479,6 +495,7 @@ export function SelectionToolbar() {
             selectionSnapshot.ranges,
             selectionPosition,
           )
+          selectionBoundsRef.current = null
           selectionScrollTargetsRef.current = collectSelectionScrollTargets(
             selectionSnapshot.ranges,
           )
@@ -510,6 +527,7 @@ export function SelectionToolbar() {
       selectionStartRef.current = { x: e.clientX, y: e.clientY }
       selectionPositionRef.current = null
       selectionAnchorTrackerRef.current = null
+      selectionBoundsRef.current = null
       selectionScrollTargetsRef.current = []
 
       clearSelectionState()
@@ -527,8 +545,17 @@ export function SelectionToolbar() {
         return
       }
 
-      // if the selected content is cleared, hide the tooltip
-      if (!selection || selection.toString().trim().length === 0) {
+      // Once no text is selected, hide the toolbar. A selection across shadow
+      // roots can stringify blank (and report isCollapsed) while text is
+      // selected, so a blank string is checked by reading the selection. Only
+      // then: reading each one would walk a long selection on every change.
+      // `type` can't decide it either: Firefox reports "Caret" for text
+      // selected in a text control or a shadow root.
+      // https://github.com/mengxi-ream/read-frog/issues/2385
+      if (
+        !selection ||
+        (normalizeSelectedText(selection.toString()) === "" && !readSelectionSnapshot(selection))
+      ) {
         if (preserveSelectionStateRef.current) {
           return
         }
@@ -536,6 +563,7 @@ export function SelectionToolbar() {
         clearSelectionState()
         selectionPositionRef.current = null
         selectionAnchorTrackerRef.current = null
+        selectionBoundsRef.current = null
         selectionScrollTargetsRef.current = []
         // Don't hide toolbar when dropdown is open to prevent unwanted dismissal
         // (Firefox clears selection when dropdown gains focus)
@@ -595,7 +623,7 @@ export function SelectionToolbar() {
 
       preserveSelectionStateRef.current = false
       setSelectionState({
-        selection: { text: detail.text, ranges: [] },
+        selection: { text: detail.text, ranges: [], anchor: detail.anchor },
         context: {
           text: paragraphs.join("\n\n"),
           paragraphs,
@@ -606,6 +634,11 @@ export function SelectionToolbar() {
       selectionDirectionRef.current = EXTERNAL_SELECTION_DIRECTION_MAP[detail.direction]
       selectionPositionRef.current = detail.anchor
       selectionAnchorTrackerRef.current = null
+      // The reader sends the selection's box in this frame's viewport.
+      selectionBoundsRef.current = {
+        top: detail.rect.top,
+        bottom: detail.rect.top + detail.rect.height,
+      }
       selectionScrollTargetsRef.current = []
       setIsSelectionToolbarOpen(true)
       // Force a reposition: the toolbar may already be open, in which case the
@@ -623,6 +656,7 @@ export function SelectionToolbar() {
       clearSelectionState()
       selectionPositionRef.current = null
       selectionAnchorTrackerRef.current = null
+      selectionBoundsRef.current = null
       selectionScrollTargetsRef.current = []
       // Don't hide toolbar when dropdown is open to prevent unwanted dismissal
       if (!dropdownOpenRef.current) setIsSelectionToolbarOpen(false)
@@ -652,7 +686,7 @@ export function SelectionToolbar() {
       )}
       {...{ [SELECTION_CONTENT_OVERLAY_ROOT_ATTRIBUTE]: "" }}
     >
-      {selectionToolbar.enabled && !isSiteDisabled && hasAnyEnabledItem && (
+      {selectionToolbar.enabled && !isHiddenOnPage && hasAnyEnabledItem && (
         <div
           ref={tooltipRef}
           inert={!isSelectionToolbarVisible}

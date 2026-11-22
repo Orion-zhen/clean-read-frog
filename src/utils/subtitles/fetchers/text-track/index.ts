@@ -7,12 +7,14 @@ import {
 } from "@/utils/constants/subtitles"
 import { pollUntil } from "@/utils/poll"
 import { NoSubtitlesError, VideoNotFoundError } from "@/utils/subtitles/errors"
-import { cuesToFragments } from "./cues"
+import { alignToVideo, cuesToFragments } from "./cues"
 
 interface TextTrackFetcherOptions {
   resolveVideo: () => HTMLVideoElement | null
   getVideoId: () => string | null
   isSourceTrack?: (track: TextTrack) => boolean
+  // A track that may count from a broadcast hour; only these are moved back onto the video.
+  isBroadcastTimed?: (track: TextTrack) => boolean
 }
 
 const SUBTITLE_KINDS = new Set<TextTrackKind>(["subtitles", "captions"])
@@ -53,7 +55,10 @@ export class TextTrackFetcher implements SubtitlesFetcher {
     }
 
     this.ensureLoading(track)
-    const fragments = cuesToFragments(await this.waitForCues(track))
+    const raw = cuesToFragments(await this.waitForCues(track))
+    const fragments = this.options.isBroadcastTimed?.(track)
+      ? alignToVideo(raw, await this.waitForDuration(video))
+      : raw
     if (fragments.length === 0) {
       throw new NoSubtitlesError()
     }
@@ -208,5 +213,19 @@ export class TextTrackFetcher implements SubtitlesFetcher {
       throw new NoSubtitlesError()
     }
     return cues
+  }
+
+  // Cues can land before the video's length is known (NaN before metadata, Infinity until a
+  // streamed source sets it), and the fragments are cached once aligned. A live video never gets
+  // a length, so it waits out the timeout and keeps its times.
+  private async waitForDuration(video: HTMLVideoElement): Promise<number> {
+    const duration = await pollUntil(
+      () => (Number.isFinite(video.duration) ? video.duration : null),
+      {
+        timeoutMs: TEXT_TRACK_CUE_WAIT_TIMEOUT_MS,
+        intervalMs: TEXT_TRACK_CUE_POLL_INTERVAL_MS,
+      },
+    )
+    return duration ?? Number.NaN
   }
 }
